@@ -24,7 +24,9 @@ const api = {
 
     if (!response.ok) {
       if (response.status === 503) this.enabled = false;
-      throw new Error(`Erro ${response.status}`);
+      const error = new Error(`Erro ${response.status}`);
+      error.status = response.status;
+      throw error;
     }
 
     if (response.status === 204) return null;
@@ -61,11 +63,23 @@ const pdfSummaryModal = document.querySelector("#pdfSummaryModal");
 const pdfSummaryForm = document.querySelector("#pdfSummaryForm");
 const pdfMonthField = document.querySelector("#pdfMonthField");
 const pdfMonthInput = document.querySelector("#pdfMonthInput");
+const appShell = document.querySelector("#appShell");
+const authScreen = document.querySelector("#authScreen");
+const authError = document.querySelector("#authError");
+const loginForm = document.querySelector("#loginForm");
+const signupForm = document.querySelector("#signupForm");
+const authTitle = document.querySelector("#authTitle");
+const showSignupButton = document.querySelector("#showSignupButton");
+const showLoginButton = document.querySelector("#showLoginButton");
+const accountBox = document.querySelector("#accountBox");
+const accountName = document.querySelector("#accountName");
+const logoutButton = document.querySelector("#logoutButton");
 
 let transactions = [];
 let settings = loadSettings();
 let savingsGoals = [];
 let editingSavingsGoalId = null;
+let authRequired = false;
 
 function todayISO() {
   const date = new Date();
@@ -135,6 +149,48 @@ function loadJSON(key, fallback) {
   }
 }
 
+function showAuth(message = "") {
+  authRequired = true;
+  appShell.hidden = true;
+  authScreen.hidden = false;
+  accountBox.hidden = true;
+  authError.textContent = message;
+  setAuthMode("login");
+}
+
+function showApp(user = null) {
+  appShell.hidden = false;
+  authScreen.hidden = true;
+  accountBox.hidden = !user;
+  accountName.textContent = user ? user.name : "";
+  authError.textContent = "";
+}
+
+async function submitAuth(path, body) {
+  const response = await fetch(path, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  const data = response.status === 204 ? null : await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data.error || "Nao foi possivel autenticar");
+  }
+  return data;
+}
+
+function setAuthMode(mode) {
+  const isSignup = mode === "signup";
+  loginForm.classList.toggle("active", !isSignup);
+  signupForm.classList.toggle("active", isSignup);
+  authTitle.textContent = isSignup ? "Criar cadastro" : "Entrar na conta";
+  authError.textContent = "";
+
+  setTimeout(() => {
+    document.querySelector(isSignup ? "#signupName" : "#loginEmail").focus();
+  }, 80);
+}
+
 function loadTransactions() {
   return loadJSON(TRANSACTIONS_KEY, []);
 }
@@ -184,16 +240,21 @@ async function loadFromApi() {
     transactions = remoteTransactions;
     settings = {
       ...settings,
-      dailyGoal: parseAmount(remoteSettings.dailyGoal || settings.dailyGoal || 0),
+      dailyGoal: parseAmount(remoteSettings.dailyGoal || 0),
     };
     savingsGoals = remoteSavingsGoals.map(normalizeSavingsGoal);
     saveTransactions();
     saveSettings();
     saveSavingsGoals();
-  } catch {
+  } catch (error) {
+    if (error.status === 401) {
+      showAuth("Entre ou crie um cadastro para acessar seus dados.");
+      return false;
+    }
     transactions = loadTransactions();
     savingsGoals = loadSavingsGoals().map(normalizeSavingsGoal);
   }
+  return true;
 }
 
 async function saveSetting(key, value) {
@@ -869,6 +930,55 @@ pdfSummaryModal.addEventListener("click", (event) => {
   }
 });
 
+loginForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  authError.textContent = "";
+  try {
+    const data = await submitAuth("/api/auth/login", {
+      email: document.querySelector("#loginEmail").value,
+      password: document.querySelector("#loginPassword").value,
+    });
+    showApp(data.user);
+    await loadFromApi();
+    render();
+  } catch (error) {
+    authError.textContent = error.message;
+  }
+});
+
+signupForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  authError.textContent = "";
+  try {
+    const data = await submitAuth("/api/auth/signup", {
+      name: document.querySelector("#signupName").value,
+      email: document.querySelector("#signupEmail").value,
+      password: document.querySelector("#signupPassword").value,
+    });
+    showApp(data.user);
+    await loadFromApi();
+    render();
+  } catch (error) {
+    authError.textContent = error.message;
+  }
+});
+
+showSignupButton.addEventListener("click", () => {
+  setAuthMode("signup");
+});
+
+showLoginButton.addEventListener("click", () => {
+  setAuthMode("login");
+});
+
+logoutButton.addEventListener("click", async () => {
+  await fetch("/api/auth/logout", { method: "POST" });
+  transactions = [];
+  savingsGoals = [];
+  settings = loadSettings();
+  showAuth("Voce saiu da conta.");
+});
+
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape" && !transactionModal.hidden) {
     closeTransactionModal();
@@ -881,7 +991,30 @@ document.addEventListener("keydown", (event) => {
 async function start() {
   monthFilter.value = monthISO();
   resetForm();
-  await loadFromApi();
+  pdfMonthInput.value = monthISO();
+
+  try {
+    const health = await fetch("/api/health").then((response) => response.json());
+    authRequired = health.database === "connected";
+  } catch {
+    authRequired = false;
+  }
+
+  if (authRequired) {
+    try {
+      const data = await api.request("/api/auth/me");
+      showApp(data.user);
+      await loadFromApi();
+    } catch (error) {
+      showAuth("Entre ou crie um cadastro para acessar seus dados.");
+      refreshIcons();
+      return;
+    }
+  } else {
+    showApp(null);
+    await loadFromApi();
+  }
+
   render();
   refreshIcons();
 }

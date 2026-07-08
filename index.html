@@ -12,9 +12,58 @@
         <p class="eyebrow">Controle pessoal</p>
         <h1>Planejamento Financeiro</h1>
       </div>
+      <div class="account-box" id="accountBox" hidden>
+        <span id="accountName"></span>
+        <button class="secondary-button account-button" id="logoutButton" type="button">Sair</button>
+      </div>
     </header>
 
-    <main class="layout">
+    <section class="auth-screen" id="authScreen" hidden>
+      <div class="auth-panel">
+        <div>
+          <p class="eyebrow">Acesso</p>
+          <h2 id="authTitle">Entrar na conta</h2>
+          <p class="section-note">Cada pessoa usa seus proprios dados, metas e registros.</p>
+        </div>
+
+        <form class="auth-form active" id="loginForm">
+          <h3>Entrar na conta</h3>
+          <label>
+            Email
+            <input id="loginEmail" type="email" autocomplete="email" required />
+          </label>
+          <label>
+            Senha
+            <input id="loginPassword" type="password" autocomplete="current-password" required />
+          </label>
+          <button class="primary-button" type="submit">Entrar</button>
+          <button class="secondary-button" id="showSignupButton" type="button">Cadastrar</button>
+        </form>
+
+        <form class="auth-form" id="signupForm">
+          <h3>Criar cadastro</h3>
+          <p class="section-note">O primeiro cadastro criado assume os dados antigos que ja estao no banco.</p>
+          <label>
+            Nome
+            <input id="signupName" type="text" autocomplete="name" required />
+          </label>
+          <label>
+            Email
+            <input id="signupEmail" type="email" autocomplete="email" required />
+          </label>
+          <label>
+            Senha
+            <input id="signupPassword" type="password" autocomplete="new-password" minlength="6" required />
+          </label>
+          <button class="primary-button" type="submit">Criar conta</button>
+          <button class="secondary-button" id="showLoginButton" type="button">Voltar para login</button>
+        </form>
+
+        <p class="auth-error" id="authError" role="alert"></p>
+      </div>
+    </section>
+
+    <main class="layout" id="appShell" hidden>
       <nav class="app-tabs" aria-label="Navegacao principal">
         <button class="tab-button active" type="button" data-tab-target="inicio" aria-pressed="true">
           <i data-lucide="home" aria-hidden="true"></i>

@@ -44,6 +44,25 @@ select {
   color: #fff;
 }
 
+.account-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.account-box span {
+  color: #dce9e1;
+  font-weight: 700;
+}
+
+.account-button {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.25);
+  color: #fff;
+}
+
 .eyebrow {
   margin: 0 0 4px;
   color: #c8d8ce;
@@ -121,6 +140,45 @@ button:hover,
 .layout {
   width: min(1180px, calc(100vw - 32px));
   margin: 24px auto 40px;
+}
+
+.auth-screen {
+  width: min(980px, calc(100vw - 32px));
+  margin: 24px auto 40px;
+}
+
+.auth-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  padding: 18px;
+}
+
+.auth-form {
+  display: none;
+  gap: 12px;
+  border: 1px solid var(--line);
+  background: #fbfcfa;
+  padding: 16px;
+}
+
+.auth-form.active {
+  display: grid;
+}
+
+.auth-form h3 {
+  margin: 0;
+}
+
+.auth-error {
+  min-height: 20px;
+  margin: 0;
+  color: var(--red);
+  font-weight: 700;
 }
 
 .app-tabs {
@@ -877,6 +935,10 @@ td.value {
     padding-inline: 20px;
   }
 
+  .auth-screen {
+    width: calc(100vw - 20px);
+  }
+
   .entry-panel,
   .insights-panel,
   .records-band,
@@ -916,6 +978,20 @@ td.value {
   .topbar {
     gap: 14px;
     padding: 18px 16px;
+  }
+
+  .account-box {
+    justify-content: flex-start;
+  }
+
+  .auth-screen {
+    width: min(100% - 20px, 560px);
+    margin-top: 14px;
+  }
+
+  .auth-panel {
+    grid-template-columns: 1fr;
+    padding: 14px;
   }
 
   .topbar-actions {

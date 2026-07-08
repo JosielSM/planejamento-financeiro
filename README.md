@@ -13,6 +13,7 @@ Sistema para acompanhar ganhos diarios, despesas mensais fixas e gastos do dia a
 - Mantem despesas mensais fixas nos meses seguintes automaticamente.
 - Mostra o resumo de despesas por categoria.
 - Salva no PostgreSQL quando `DATABASE_URL` esta configurado.
+- Permite cadastro e login para varias pessoas usarem com dados separados.
 - Usa `localStorage` como fallback enquanto o banco ainda nao estiver configurado.
 - Permite exportar e importar um arquivo `.json` com registros e configuracoes.
 
@@ -47,6 +48,14 @@ Variavel obrigatoria para salvar online:
 ```text
 DATABASE_URL=postgres://usuario:senha@host:5432/banco
 ```
+
+Variavel recomendada para manter as sessoes de login seguras:
+
+```text
+SESSION_SECRET=uma_frase_grande_e_dificil_de_adivinhar
+```
+
+Ao ativar login em um banco que ja tem dados antigos, o primeiro cadastro criado assume automaticamente esses dados sem dono. Crie sua conta primeiro antes de compartilhar o link com outras pessoas.
 
 ## Subir online
 

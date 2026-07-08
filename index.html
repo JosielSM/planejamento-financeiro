@@ -106,6 +106,10 @@
             <span>Consultar</span>
             <strong>Registros</strong>
           </button>
+          <button class="action-tile" id="pdfSummaryButton" type="button">
+            <span>Baixar</span>
+            <strong>Resumo PDF</strong>
+          </button>
         </section>
       </div>
 
@@ -113,10 +117,14 @@
         <div class="records-header">
           <div>
             <h2>Metas para comprar ou realizar</h2>
-            <p class="section-note">Cadastre algo que voce quer conquistar e va depositando ate completar.</p>
+            <p class="section-note">Acompanhe o progresso do que voce quer conquistar.</p>
           </div>
+          <button class="secondary-button goal-toggle" id="savingsGoalToggleButton" type="button">
+            <i data-lucide="circle-plus" aria-hidden="true"></i>
+            <span>Nova meta</span>
+          </button>
         </div>
-        <form class="savings-form" id="savingsGoalForm">
+        <form class="savings-form" id="savingsGoalForm" hidden>
           <label>
             O que voce quer?
             <input id="savingsGoalName" type="text" placeholder="Ex: TV, celular, viagem" required />
@@ -129,7 +137,8 @@
             Observacao
             <input id="savingsGoalNote" type="text" placeholder="Opcional" />
           </label>
-          <button class="primary-button compact" type="submit">Criar meta</button>
+          <button class="primary-button compact" id="savingsGoalSubmitButton" type="submit">Criar meta</button>
+          <button class="secondary-button" id="savingsGoalCancelButton" type="button">Cancelar</button>
         </form>
         <div id="savingsGoalsList" class="savings-list"></div>
         <p id="savingsEmptyState" class="empty-state">Nenhuma meta cadastrada ainda.</p>
@@ -233,7 +242,7 @@
         <div class="form-grid">
           <label>
             Descricao
-            <input id="description" type="text" placeholder="Ex: diaria, aluguel, marmita" required />
+            <input id="description" type="text" placeholder="Ex: diaria, aluguel, comida" required />
           </label>
           <label>
             Valor
@@ -265,6 +274,36 @@
       </form>
     </div>
 
+    <div class="transaction-modal" id="pdfSummaryModal" hidden>
+      <div class="modal-backdrop" data-close-pdf-summary></div>
+      <form class="modal-card compact-modal" id="pdfSummaryForm" role="dialog" aria-modal="true" aria-labelledby="pdfSummaryTitle">
+        <div class="modal-heading">
+          <h2 id="pdfSummaryTitle">Gerar resumo PDF</h2>
+          <button class="delete-button" type="button" data-close-pdf-summary title="Fechar" aria-label="Fechar">x</button>
+        </div>
+
+        <fieldset class="choice-group">
+          <legend>Periodo</legend>
+          <label class="choice-option">
+            <input name="pdfMonthChoice" type="radio" value="current" checked />
+            Mes atual
+          </label>
+          <label class="choice-option">
+            <input name="pdfMonthChoice" type="radio" value="other" />
+            Escolher outro mes
+          </label>
+        </fieldset>
+
+        <label id="pdfMonthField" hidden>
+          Mes do resumo
+          <input id="pdfMonthInput" type="month" />
+        </label>
+
+        <button class="primary-button" type="submit">Baixar PDF</button>
+      </form>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
     <script src="app.js"></script>
   </body>

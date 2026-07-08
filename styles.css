@@ -357,9 +357,17 @@ label {
 
 .savings-form {
   display: grid;
-  grid-template-columns: minmax(190px, 1fr) minmax(150px, 0.55fr) minmax(180px, 1fr) auto;
+  grid-template-columns: minmax(190px, 1fr) minmax(150px, 0.55fr) minmax(180px, 1fr) auto auto;
   gap: 12px;
   align-items: end;
+  margin-top: 16px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  background: #fbfcfa;
+}
+
+.savings-form[hidden] {
+  display: none;
 }
 
 .savings-list {
@@ -381,6 +389,25 @@ label {
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
+}
+
+.goal-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.icon-text-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.icon-text-button svg {
+  width: 16px;
+  height: 16px;
 }
 
 .savings-card h3 {
@@ -797,12 +824,48 @@ td.value {
   box-shadow: 0 22px 70px rgba(10, 20, 16, 0.24);
 }
 
+.compact-modal {
+  width: min(520px, 100%);
+}
+
 .modal-heading {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 14px;
   margin-bottom: 18px;
+}
+
+.choice-group {
+  display: grid;
+  gap: 10px;
+  margin: 0 0 14px;
+  padding: 0;
+  border: 0;
+}
+
+.choice-group legend {
+  margin-bottom: 6px;
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.choice-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  background: #fbfcfa;
+  color: var(--text);
+}
+
+.choice-option input {
+  width: auto;
+  min-height: auto;
+  margin: 0;
 }
 
 @media (min-width: 641px) and (max-width: 1180px) {
@@ -823,6 +886,10 @@ td.value {
 
   .chart-card {
     grid-template-columns: 1fr;
+  }
+
+  .savings-form {
+    grid-template-columns: 1fr 1fr;
   }
 
   .form-grid {

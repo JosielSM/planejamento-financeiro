@@ -4,7 +4,7 @@ const SAVINGS_GOALS_KEY = "planejamento-financeiro-savings-goals-v1";
 
 const categories = {
   income: ["Trabalho", "Freelance", "Venda", "Extra", "Outro ganho"],
-  expense: ["Aluguel", "Luz", "Agua", "Wifi", "Marmita", "Mercado", "Transporte", "Saude", "Lazer", "Outro gasto"],
+  expense: ["Aluguel", "Luz", "Agua", "Wifi", "Comida", "Mercado", "Transporte", "Saude", "Lazer", "Outro gasto"],
 };
 
 const frequencyLabels = {
@@ -36,6 +36,9 @@ const form = document.querySelector("#transactionForm");
 const goalForm = document.querySelector("#goalForm");
 const goalToggleButton = document.querySelector("#goalToggleButton");
 const savingsGoalForm = document.querySelector("#savingsGoalForm");
+const savingsGoalToggleButton = document.querySelector("#savingsGoalToggleButton");
+const savingsGoalSubmitButton = document.querySelector("#savingsGoalSubmitButton");
+const savingsGoalCancelButton = document.querySelector("#savingsGoalCancelButton");
 const categorySelect = document.querySelector("#category");
 const monthFilter = document.querySelector("#monthFilter");
 const typeFilter = document.querySelector("#typeFilter");
@@ -53,10 +56,16 @@ const transactionTypeInput = document.querySelector("#transactionType");
 const transactionModalTitle = document.querySelector("#transactionModalTitle");
 const transactionSubmitButton = document.querySelector("#transactionSubmitButton");
 const transactionTypeButtons = document.querySelectorAll("[data-transaction-type]");
+const pdfSummaryButton = document.querySelector("#pdfSummaryButton");
+const pdfSummaryModal = document.querySelector("#pdfSummaryModal");
+const pdfSummaryForm = document.querySelector("#pdfSummaryForm");
+const pdfMonthField = document.querySelector("#pdfMonthField");
+const pdfMonthInput = document.querySelector("#pdfMonthInput");
 
 let transactions = [];
 let settings = loadSettings();
 let savingsGoals = [];
+let editingSavingsGoalId = null;
 
 function todayISO() {
   const date = new Date();
@@ -76,20 +85,33 @@ function money(value) {
   return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
+function monthName(monthValue) {
+  const [year, month] = monthValue.split("-").map(Number);
+  return new Date(year, month - 1, 1).toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+}
+
 function selectedMonthRange() {
-  const [year, month] = monthFilter.value.split("-").map(Number);
+  return monthRange(monthFilter.value);
+}
+
+function monthRange(monthValue) {
+  const [year, month] = monthValue.split("-").map(Number);
   return {
-    start: `${monthFilter.value}-01`,
+    start: `${monthValue}-01`,
     end: new Date(year, month, 0).toISOString().slice(0, 10),
   };
 }
 
 function isInSelectedMonth(item) {
-  const range = selectedMonthRange();
+  return isInMonth(item, monthFilter.value);
+}
+
+function isInMonth(item, monthValue) {
+  const range = monthRange(monthValue);
   if (item.frequency === "monthly") {
     return item.date <= range.end;
   }
-  return item.date.startsWith(monthFilter.value);
+  return item.date.startsWith(monthValue);
 }
 
 function escapeHTML(value) {
@@ -228,6 +250,24 @@ async function createSavingsGoal(goal) {
       body: JSON.stringify(goal),
     });
     savingsGoals = savingsGoals.map((item) => (item.id === goal.id ? normalizeSavingsGoal(saved) : item));
+    saveSavingsGoals();
+    render();
+  } catch {
+    api.enabled = false;
+  }
+}
+
+async function updateSavingsGoal(id, updates) {
+  savingsGoals = savingsGoals.map((goal) => (goal.id === id ? normalizeSavingsGoal({ ...goal, ...updates }) : goal));
+  saveSavingsGoals();
+  render();
+
+  try {
+    const saved = await api.request(`/api/savings-goals/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(updates),
+    });
+    savingsGoals = savingsGoals.map((goal) => (goal.id === id ? normalizeSavingsGoal(saved) : goal));
     saveSavingsGoals();
     render();
   } catch {
@@ -380,7 +420,13 @@ function renderSavingsGoals() {
           <h3>${escapeHTML(goal.name)}</h3>
           ${goal.note ? `<p class="muted">${escapeHTML(goal.note)}</p>` : ""}
         </div>
-        <button class="delete-button" type="button" data-goal-delete="${goal.id}" title="Excluir meta" aria-label="Excluir meta">x</button>
+        <div class="goal-card-actions">
+          <button class="secondary-button icon-text-button" type="button" data-goal-edit="${goal.id}" title="Editar meta" aria-label="Editar meta">
+            <i data-lucide="pencil" aria-hidden="true"></i>
+            <span>Editar</span>
+          </button>
+          <button class="delete-button" type="button" data-goal-delete="${goal.id}" title="Excluir meta" aria-label="Excluir meta">x</button>
+        </div>
       </header>
       <div class="savings-values">
         <div><span>Guardado</span><strong>${money(savedAmount)}</strong></div>
@@ -472,6 +518,13 @@ function render() {
   renderSavingsGoals();
   renderBreakdown();
   renderRecords();
+  refreshIcons();
+}
+
+function refreshIcons() {
+  if (window.lucide) {
+    window.lucide.createIcons();
+  }
 }
 
 function setActiveTab(tabName) {
@@ -497,7 +550,7 @@ function setTransactionType(type) {
   transactionSubmitButton.textContent = isIncome ? "Adicionar ganho" : "Adicionar despesa";
   document.querySelector("#description").placeholder = isIncome
     ? "Ex: diaria, freelance, venda"
-    : "Ex: aluguel, marmita, mercado";
+    : "Ex: aluguel, comida, mercado";
   updateCategoryOptions();
 }
 
@@ -520,8 +573,152 @@ function closeTransactionModal() {
   document.body.classList.remove("modal-open");
 }
 
+function openPdfSummaryModal() {
+  pdfMonthInput.value = monthFilter.value || monthISO();
+  pdfSummaryForm.elements.pdfMonthChoice.value = "current";
+  pdfMonthField.hidden = true;
+  pdfSummaryModal.hidden = false;
+  document.body.classList.add("modal-open");
+}
+
+function closePdfSummaryModal() {
+  pdfSummaryModal.hidden = true;
+  document.body.classList.remove("modal-open");
+}
+
+function getMonthSummary(monthValue) {
+  const monthItems = transactions.filter((item) => isInMonth(item, monthValue));
+  const income = monthItems.filter((item) => item.type === "income").reduce((sum, item) => sum + item.amount, 0);
+  const expense = monthItems.filter((item) => item.type === "expense").reduce((sum, item) => sum + item.amount, 0);
+  const categoriesTotal = monthItems
+    .filter((item) => item.type === "expense")
+    .reduce((acc, item) => {
+      acc[item.category] = (acc[item.category] || 0) + item.amount;
+      return acc;
+    }, {});
+
+  return {
+    monthItems: [...monthItems].sort((a, b) => b.date.localeCompare(a.date)),
+    income,
+    expense,
+    balance: income - expense,
+    categories: Object.entries(categoriesTotal).sort((a, b) => b[1] - a[1]),
+  };
+}
+
+function addPdfLine(doc, text, x, y, options = {}) {
+  if (y > 280) {
+    doc.addPage();
+    y = 22;
+  }
+  doc.text(text, x, y, options);
+  return y;
+}
+
+function generateMonthlyPdf(monthValue) {
+  const jsPDF = window.jspdf?.jsPDF;
+  if (!jsPDF) {
+    alert("Nao foi possivel carregar o gerador de PDF. Tente novamente com internet ativa.");
+    return;
+  }
+
+  const summary = getMonthSummary(monthValue);
+  const doc = new jsPDF({ unit: "mm", format: "a4" });
+  const title = `Resumo financeiro - ${monthName(monthValue)}`;
+  let y = 18;
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(16);
+  doc.text(title, 14, y);
+  y += 10;
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(10);
+  doc.text(`Gerado em ${new Date().toLocaleDateString("pt-BR")}`, 14, y);
+  y += 12;
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(12);
+  doc.text("Totais do mes", 14, y);
+  y += 8;
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(11);
+  [
+    `Ganhos: ${money(summary.income)}`,
+    `Despesas: ${money(summary.expense)}`,
+    `Saldo: ${money(summary.balance)}`,
+    `Registros: ${summary.monthItems.length}`,
+  ].forEach((line) => {
+    y = addPdfLine(doc, line, 14, y) + 7;
+  });
+
+  y += 4;
+  doc.setFont("helvetica", "bold");
+  doc.text("Despesas por categoria", 14, y);
+  y += 8;
+  doc.setFont("helvetica", "normal");
+
+  if (!summary.categories.length) {
+    y = addPdfLine(doc, "Nenhuma despesa registrada nesse mes.", 14, y) + 7;
+  } else {
+    summary.categories.forEach(([category, value]) => {
+      const percent = summary.expense > 0 ? ((value / summary.expense) * 100).toFixed(0) : "0";
+      y = addPdfLine(doc, `${category}: ${money(value)} (${percent}%)`, 14, y) + 7;
+    });
+  }
+
+  y += 4;
+  doc.setFont("helvetica", "bold");
+  doc.text("Registros do mes", 14, y);
+  y += 8;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+
+  if (!summary.monthItems.length) {
+    y = addPdfLine(doc, "Nenhum registro encontrado para esse mes.", 14, y) + 7;
+  } else {
+    summary.monthItems.forEach((item) => {
+      const sign = item.type === "income" ? "+" : "-";
+      const line = `${item.date.split("-").reverse().join("/")} | ${item.type === "income" ? "Ganho" : "Despesa"} | ${item.description} | ${item.category} | ${sign} ${money(item.amount)}`;
+      const lines = doc.splitTextToSize(line, 180);
+      lines.forEach((textLine) => {
+        y = addPdfLine(doc, textLine, 14, y) + 5;
+      });
+      y += 2;
+    });
+  }
+
+  doc.save(`resumo-financeiro-${monthValue}.pdf`);
+}
+
 function resetSavingsGoalForm() {
   savingsGoalForm.reset();
+  editingSavingsGoalId = null;
+  savingsGoalSubmitButton.textContent = "Criar meta";
+}
+
+function setSavingsGoalFormOpen(isOpen, goal = null) {
+  savingsGoalForm.hidden = !isOpen;
+  savingsGoalToggleButton.querySelector("span").textContent = isOpen ? "Fechar" : "Nova meta";
+  savingsGoalToggleButton.setAttribute("aria-expanded", String(isOpen));
+
+  if (!isOpen) {
+    resetSavingsGoalForm();
+    return;
+  }
+
+  if (goal) {
+    editingSavingsGoalId = goal.id;
+    document.querySelector("#savingsGoalName").value = goal.name;
+    document.querySelector("#savingsGoalTarget").value = goal.targetAmount;
+    document.querySelector("#savingsGoalNote").value = goal.note || "";
+    savingsGoalSubmitButton.textContent = "Salvar alteracoes";
+  } else {
+    resetSavingsGoalForm();
+  }
+
+  setTimeout(() => document.querySelector("#savingsGoalName").focus(), 80);
 }
 
 form.addEventListener("submit", async (event) => {
@@ -566,15 +763,28 @@ savingsGoalForm.addEventListener("submit", async (event) => {
 
   if (!name || targetAmount <= 0) return;
 
-  await createSavingsGoal({
-    id: crypto.randomUUID(),
-    name,
-    targetAmount,
-    savedAmount: 0,
-    note,
-    deposits: [],
-  });
-  resetSavingsGoalForm();
+  if (editingSavingsGoalId) {
+    await updateSavingsGoal(editingSavingsGoalId, { name, targetAmount, note });
+  } else {
+    await createSavingsGoal({
+      id: crypto.randomUUID(),
+      name,
+      targetAmount,
+      savedAmount: 0,
+      note,
+      deposits: [],
+    });
+  }
+
+  setSavingsGoalFormOpen(false);
+});
+
+savingsGoalToggleButton.addEventListener("click", () => {
+  setSavingsGoalFormOpen(savingsGoalForm.hidden);
+});
+
+savingsGoalCancelButton.addEventListener("click", () => {
+  setSavingsGoalFormOpen(false);
 });
 
 savingsGoalsList.addEventListener("submit", async (event) => {
@@ -587,6 +797,13 @@ savingsGoalsList.addEventListener("submit", async (event) => {
 });
 
 savingsGoalsList.addEventListener("click", async (event) => {
+  const editButton = event.target.closest("[data-goal-edit]");
+  if (editButton) {
+    const goal = savingsGoals.find((item) => item.id === editButton.dataset.goalEdit);
+    if (goal) setSavingsGoalFormOpen(true, goal);
+    return;
+  }
+
   const button = event.target.closest("[data-goal-delete]");
   if (!button) return;
   if (!confirm("Excluir esta meta e os depositos dela?")) return;
@@ -621,9 +838,43 @@ transactionModal.addEventListener("click", (event) => {
   }
 });
 
+pdfSummaryButton.addEventListener("click", openPdfSummaryModal);
+
+pdfSummaryForm.addEventListener("change", (event) => {
+  if (event.target.name === "pdfMonthChoice") {
+    pdfMonthField.hidden = event.target.value !== "other";
+    if (!pdfMonthField.hidden) {
+      pdfMonthInput.focus();
+    }
+  }
+});
+
+pdfSummaryForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  const choice = pdfSummaryForm.elements.pdfMonthChoice.value;
+  const selectedMonth = choice === "other" ? pdfMonthInput.value : monthISO();
+
+  if (!selectedMonth) {
+    alert("Escolha um mes para gerar o PDF.");
+    return;
+  }
+
+  generateMonthlyPdf(selectedMonth);
+  closePdfSummaryModal();
+});
+
+pdfSummaryModal.addEventListener("click", (event) => {
+  if (event.target.closest("[data-close-pdf-summary]")) {
+    closePdfSummaryModal();
+  }
+});
+
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape" && !transactionModal.hidden) {
     closeTransactionModal();
+  }
+  if (event.key === "Escape" && !pdfSummaryModal.hidden) {
+    closePdfSummaryModal();
   }
 });
 
@@ -632,9 +883,7 @@ async function start() {
   resetForm();
   await loadFromApi();
   render();
-  if (window.lucide) {
-    window.lucide.createIcons();
-  }
+  refreshIcons();
 }
 
 start();

@@ -100,6 +100,35 @@ function mapSavingsGoal(row) {
   };
 }
 
+async function findSavingsGoal(id) {
+  const result = await pool.query(
+    `SELECT
+      goal.id,
+      goal.name,
+      goal.target_amount,
+      goal.note,
+      COALESCE(SUM(deposit.amount), 0) AS saved_amount,
+      COALESCE(
+        JSON_AGG(
+          JSON_BUILD_OBJECT(
+            'id', deposit.id,
+            'amount', deposit.amount,
+            'date', deposit.date
+          )
+          ORDER BY deposit.date DESC, deposit.created_at DESC
+        ) FILTER (WHERE deposit.id IS NOT NULL),
+        '[]'
+      ) AS deposits
+    FROM savings_goals goal
+    LEFT JOIN savings_deposits deposit ON deposit.goal_id = goal.id
+    WHERE goal.id = $1
+    GROUP BY goal.id`,
+    [id],
+  );
+
+  return result.rows[0] ? mapSavingsGoal(result.rows[0]) : null;
+}
+
 app.get("/api/health", async (_request, response) => {
   if (!pool) {
     response.json({ ok: true, database: "not_configured" });
@@ -186,6 +215,31 @@ app.post("/api/savings-goals", async (request, response) => {
   );
 
   response.status(201).json(mapSavingsGoal(result.rows[0]));
+});
+
+app.put("/api/savings-goals/:id", async (request, response) => {
+  if (!requireDatabase(response)) return;
+  const { name, targetAmount, note = "" } = request.body;
+
+  if (!name || !targetAmount) {
+    response.status(400).json({ error: "Campos obrigatorios faltando" });
+    return;
+  }
+
+  const result = await pool.query(
+    `UPDATE savings_goals
+     SET name = $1, target_amount = $2, note = $3
+     WHERE id = $4
+     RETURNING id`,
+    [name, targetAmount, note, request.params.id],
+  );
+
+  if (!result.rowCount) {
+    response.status(404).json({ error: "Meta nao encontrada" });
+    return;
+  }
+
+  response.json(await findSavingsGoal(request.params.id));
 });
 
 app.post("/api/savings-goals/:id/deposits", async (request, response) => {

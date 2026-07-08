@@ -23,6 +23,10 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
+body.modal-open {
+  overflow: hidden;
+}
+
 button,
 input,
 select {
@@ -242,6 +246,18 @@ label {
   color: var(--muted);
 }
 
+.goal-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.goal-toggle svg {
+  width: 17px;
+  height: 17px;
+}
+
 .section-note {
   margin: 8px 0 0;
   color: var(--muted);
@@ -252,6 +268,13 @@ label {
   grid-template-columns: minmax(140px, 1fr) auto;
   gap: 10px;
   align-items: end;
+  padding: 14px;
+  border: 1px solid var(--line);
+  background: #fbfcfa;
+}
+
+.goal-form[hidden] {
+  display: none;
 }
 
 .primary-button.compact {
@@ -421,6 +444,7 @@ label {
   display: grid;
   width: 100%;
   max-width: none;
+  gap: 18px;
   margin: 0 auto;
 }
 
@@ -626,6 +650,161 @@ td.value {
   }
 }
 
+.register-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.register-card {
+  display: grid;
+  gap: 8px;
+  min-height: 132px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  background: #fbfcfa;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.register-card svg {
+  width: 28px;
+  height: 28px;
+}
+
+.register-card span {
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.register-card strong {
+  font-size: 1.35rem;
+}
+
+.income-card {
+  border-color: #bcd8ca;
+  background: #eef8f2;
+}
+
+.income-card svg,
+.income-card strong {
+  color: var(--green);
+}
+
+.expense-card {
+  border-color: #efc9c4;
+  background: #fff6f5;
+}
+
+.expense-card svg,
+.expense-card strong {
+  color: var(--red);
+}
+
+.chart-card {
+  display: grid;
+  grid-template-columns: minmax(180px, 0.7fr) minmax(280px, 1.3fr);
+  gap: 18px;
+  align-items: center;
+  border: 1px solid var(--line);
+  background: #fbfcfa;
+  padding: 18px;
+}
+
+.chart-card h3 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.donut-wrap {
+  display: grid;
+  grid-template-columns: auto minmax(180px, 1fr);
+  gap: 18px;
+  align-items: center;
+}
+
+.donut-chart {
+  width: 150px;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  position: relative;
+  background: #e8ece6;
+}
+
+.donut-chart::after {
+  content: "";
+  position: absolute;
+  inset: 28px;
+  border-radius: 50%;
+  background: #fbfcfa;
+}
+
+.chart-legend {
+  display: grid;
+  gap: 10px;
+}
+
+.chart-legend div {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.legend-dot {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+}
+
+.income-dot {
+  background: var(--green);
+}
+
+.expense-dot {
+  background: var(--red);
+}
+
+.transaction-modal[hidden] {
+  display: none;
+}
+
+.transaction-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+}
+
+.modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(10, 20, 16, 0.52);
+}
+
+.modal-card {
+  position: relative;
+  z-index: 1;
+  width: min(920px, 100%);
+  max-height: min(92vh, 760px);
+  overflow: auto;
+  padding: 18px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  box-shadow: 0 22px 70px rgba(10, 20, 16, 0.24);
+}
+
+.modal-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
 @media (min-width: 641px) and (max-width: 1180px) {
   .layout {
     width: calc(100vw - 20px);
@@ -640,6 +819,10 @@ td.value {
   .records-band,
   .savings-band {
     padding: 22px;
+  }
+
+  .chart-card {
+    grid-template-columns: 1fr;
   }
 
   .form-grid {
@@ -720,6 +903,9 @@ td.value {
   .form-grid,
   .goal-form,
   .quick-actions,
+  .register-actions,
+  .chart-card,
+  .donut-wrap,
   .savings-values {
     grid-template-columns: 1fr;
   }
@@ -767,6 +953,23 @@ td.value {
 
   .action-tile {
     min-height: 72px;
+  }
+
+  .register-card {
+    min-height: 104px;
+  }
+
+  .donut-wrap {
+    justify-items: center;
+  }
+
+  .chart-legend {
+    width: 100%;
+  }
+
+  .modal-card {
+    max-height: 88vh;
+    padding: 14px;
   }
 
   .savings-card header,

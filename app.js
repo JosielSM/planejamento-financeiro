@@ -34,6 +34,7 @@ const api = {
 
 const form = document.querySelector("#transactionForm");
 const goalForm = document.querySelector("#goalForm");
+const goalToggleButton = document.querySelector("#goalToggleButton");
 const savingsGoalForm = document.querySelector("#savingsGoalForm");
 const categorySelect = document.querySelector("#category");
 const monthFilter = document.querySelector("#monthFilter");
@@ -47,6 +48,11 @@ const savingsEmptyState = document.querySelector("#savingsEmptyState");
 const tabTriggers = document.querySelectorAll("[data-tab-target]");
 const tabButtons = document.querySelectorAll(".tab-button");
 const tabPanels = document.querySelectorAll("[data-tab-panel]");
+const transactionModal = document.querySelector("#transactionModal");
+const transactionTypeInput = document.querySelector("#transactionType");
+const transactionModalTitle = document.querySelector("#transactionModalTitle");
+const transactionSubmitButton = document.querySelector("#transactionSubmitButton");
+const transactionTypeButtons = document.querySelectorAll("[data-transaction-type]");
 
 let transactions = [];
 let settings = loadSettings();
@@ -311,6 +317,22 @@ function renderSummary() {
   document.querySelector("#totalExpense").textContent = money(expense);
   document.querySelector("#balance").textContent = money(balance);
   document.querySelector("#dailyAverage").textContent = money(balance / Math.max(dayCount, 1));
+  renderIncomeExpenseChart(income, expense);
+}
+
+function renderIncomeExpenseChart(income, expense) {
+  const total = income + expense;
+  const incomePercent = total > 0 ? (income / total) * 100 : 0;
+  const chart = document.querySelector("#incomeExpenseChart");
+
+  chart.style.background = total > 0
+    ? `conic-gradient(var(--green) 0 ${incomePercent}%, var(--red) ${incomePercent}% 100%)`
+    : "#e8ece6";
+  chart.setAttribute("aria-label", `Ganhos ${money(income)} e despesas ${money(expense)}`);
+  document.querySelector("#chartIncomeValue").textContent = money(income);
+  document.querySelector("#chartExpenseValue").textContent = money(expense);
+  document.querySelector("#registerIncomeValue").textContent = money(income);
+  document.querySelector("#registerExpenseValue").textContent = money(expense);
 }
 
 function renderGoal() {
@@ -328,6 +350,16 @@ function renderGoal() {
       ? `Faltam ${money(remaining)} para bater a meta de hoje.`
       : "Meta de hoje batida."
     : "Defina quanto voce quer ganhar por dia.";
+}
+
+function setGoalFormOpen(isOpen) {
+  goalForm.hidden = !isOpen;
+  goalToggleButton.querySelector("span").textContent = isOpen ? "Cancelar" : "Editar meta";
+  goalToggleButton.setAttribute("aria-expanded", String(isOpen));
+
+  if (isOpen) {
+    setTimeout(() => dailyGoalInput.focus(), 80);
+  }
 }
 
 function renderSavingsGoals() {
@@ -454,25 +486,43 @@ function setActiveTab(tabName) {
   });
 
   if (tabName === "novo") {
-    setTimeout(() => document.querySelector("#description").focus(), 80);
+    setTimeout(() => document.querySelector("[data-transaction-type='income']").focus(), 80);
   }
 }
 
-function resetForm() {
-  form.reset();
-  document.querySelector("#date").value = todayISO();
+function setTransactionType(type) {
+  transactionTypeInput.value = type;
+  const isIncome = type === "income";
+  transactionModalTitle.textContent = isIncome ? "Registrar ganho" : "Registrar despesa";
+  transactionSubmitButton.textContent = isIncome ? "Adicionar ganho" : "Adicionar despesa";
+  document.querySelector("#description").placeholder = isIncome
+    ? "Ex: diaria, freelance, venda"
+    : "Ex: aluguel, marmita, mercado";
   updateCategoryOptions();
+}
+
+function resetForm(type = transactionTypeInput.value || "income") {
+  form.reset();
+  transactionTypeInput.value = type;
+  document.querySelector("#date").value = todayISO();
+  setTransactionType(type);
+}
+
+function openTransactionModal(type) {
+  resetForm(type);
+  transactionModal.hidden = false;
+  document.body.classList.add("modal-open");
+  setTimeout(() => document.querySelector("#description").focus(), 80);
+}
+
+function closeTransactionModal() {
+  transactionModal.hidden = true;
+  document.body.classList.remove("modal-open");
 }
 
 function resetSavingsGoalForm() {
   savingsGoalForm.reset();
 }
-
-form.addEventListener("change", (event) => {
-  if (event.target.name === "type") {
-    updateCategoryOptions();
-  }
-});
 
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
@@ -494,12 +544,18 @@ form.addEventListener("submit", async (event) => {
 
   await createTransaction(transaction);
   resetForm();
+  closeTransactionModal();
 });
 
 goalForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   await saveSetting("dailyGoal", parseAmount(dailyGoalInput.value));
+  setGoalFormOpen(false);
   render();
+});
+
+goalToggleButton.addEventListener("click", () => {
+  setGoalFormOpen(goalForm.hidden);
 });
 
 savingsGoalForm.addEventListener("submit", async (event) => {
@@ -551,6 +607,24 @@ tabTriggers.forEach((button) => {
   button.addEventListener("click", () => {
     setActiveTab(button.dataset.tabTarget);
   });
+});
+
+transactionTypeButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    openTransactionModal(button.dataset.transactionType);
+  });
+});
+
+transactionModal.addEventListener("click", (event) => {
+  if (event.target.closest("[data-close-transaction-modal]")) {
+    closeTransactionModal();
+  }
+});
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && !transactionModal.hidden) {
+    closeTransactionModal();
+  }
 });
 
 async function start() {

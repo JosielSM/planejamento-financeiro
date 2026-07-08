@@ -66,8 +66,12 @@
           <div class="goal-copy">
             <h2>Meta diaria de ganhos</h2>
             <p id="goalStatus">Defina quanto voce quer ganhar por dia.</p>
+            <button class="secondary-button goal-toggle" id="goalToggleButton" type="button">
+              <i data-lucide="pencil" aria-hidden="true"></i>
+              <span>Editar meta</span>
+            </button>
           </div>
-          <form class="goal-form" id="goalForm">
+          <form class="goal-form" id="goalForm" hidden>
             <label>
               Meta
               <input id="dailyGoal" type="number" min="0" step="0.01" placeholder="Ex: 150,00" />
@@ -132,50 +136,46 @@
       </section>
 
       <section class="workspace">
-        <form class="entry-panel tab-screen" data-tab-panel="novo" id="transactionForm">
+        <section class="entry-panel tab-screen" data-tab-panel="novo" aria-label="Registrar ganho ou despesa">
           <div class="panel-heading">
-            <h2>Novo registro</h2>
-            <div class="segmented" role="group" aria-label="Tipo de registro">
-              <input id="typeIncome" name="type" type="radio" value="income" checked />
-              <label for="typeIncome">Ganho</label>
-              <input id="typeExpense" name="type" type="radio" value="expense" />
-              <label for="typeExpense">Despesa</label>
+            <h2>Registrar</h2>
+          </div>
+
+          <div class="register-actions" aria-label="Escolha o tipo de registro">
+            <button class="register-card income-card" type="button" data-transaction-type="income">
+              <i data-lucide="trending-up" aria-hidden="true"></i>
+              <span>Registrar ganho</span>
+              <strong id="registerIncomeValue">R$ 0,00</strong>
+            </button>
+            <button class="register-card expense-card" type="button" data-transaction-type="expense">
+              <i data-lucide="trending-down" aria-hidden="true"></i>
+              <span>Registrar despesa</span>
+              <strong id="registerExpenseValue">R$ 0,00</strong>
+            </button>
+          </div>
+
+          <section class="chart-card" aria-label="Grafico de ganhos e despesas">
+            <div>
+              <h3>Ganhos x despesas</h3>
+              <p class="section-note">Resumo do mes selecionado.</p>
             </div>
-          </div>
-
-          <div class="form-grid">
-            <label>
-              Descricao
-              <input id="description" type="text" placeholder="Ex: diaria, aluguel, marmita" required />
-            </label>
-            <label>
-              Valor
-              <input id="amount" type="number" min="0.01" step="0.01" placeholder="0,00" required />
-            </label>
-            <label>
-              Data
-              <input id="date" type="date" required />
-            </label>
-            <label>
-              Categoria
-              <select id="category"></select>
-            </label>
-            <label>
-              Frequencia
-              <select id="frequency">
-                <option value="daily">Do dia</option>
-                <option value="monthly">Mensal fixa</option>
-                <option value="occasional">Eventual</option>
-              </select>
-            </label>
-            <label>
-              Observacao
-              <input id="note" type="text" placeholder="Opcional" />
-            </label>
-          </div>
-
-          <button class="primary-button" type="submit">Adicionar</button>
-        </form>
+            <div class="donut-wrap">
+              <div class="donut-chart" id="incomeExpenseChart" role="img" aria-label="Grafico de ganhos e despesas"></div>
+              <div class="chart-legend">
+                <div>
+                  <span class="legend-dot income-dot"></span>
+                  <span>Ganhos</span>
+                  <strong id="chartIncomeValue">R$ 0,00</strong>
+                </div>
+                <div>
+                  <span class="legend-dot expense-dot"></span>
+                  <span>Despesas</span>
+                  <strong id="chartExpenseValue">R$ 0,00</strong>
+                </div>
+              </div>
+            </div>
+          </section>
+        </section>
 
         <aside class="insights-panel tab-screen" data-tab-panel="destino" aria-label="Resumo por categoria">
           <div class="panel-heading">
@@ -220,6 +220,50 @@
         <p id="emptyState" class="empty-state">Nenhum registro para este mes.</p>
       </section>
     </main>
+
+    <div class="transaction-modal" id="transactionModal" hidden>
+      <div class="modal-backdrop" data-close-transaction-modal></div>
+      <form class="modal-card" id="transactionForm" role="dialog" aria-modal="true" aria-labelledby="transactionModalTitle">
+        <div class="modal-heading">
+          <h2 id="transactionModalTitle">Registrar ganho</h2>
+          <button class="delete-button" type="button" data-close-transaction-modal title="Fechar" aria-label="Fechar">x</button>
+        </div>
+        <input id="transactionType" name="type" type="hidden" value="income" />
+
+        <div class="form-grid">
+          <label>
+            Descricao
+            <input id="description" type="text" placeholder="Ex: diaria, aluguel, marmita" required />
+          </label>
+          <label>
+            Valor
+            <input id="amount" type="number" min="0.01" step="0.01" placeholder="0,00" required />
+          </label>
+          <label>
+            Data
+            <input id="date" type="date" required />
+          </label>
+          <label>
+            Categoria
+            <select id="category"></select>
+          </label>
+          <label>
+            Frequencia
+            <select id="frequency">
+              <option value="daily">Do dia</option>
+              <option value="monthly">Mensal fixa</option>
+              <option value="occasional">Eventual</option>
+            </select>
+          </label>
+          <label>
+            Observacao
+            <input id="note" type="text" placeholder="Opcional" />
+          </label>
+        </div>
+
+        <button class="primary-button" id="transactionSubmitButton" type="submit">Adicionar ganho</button>
+      </form>
+    </div>
 
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
     <script src="app.js"></script>

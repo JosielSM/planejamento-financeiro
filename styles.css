@@ -407,8 +407,7 @@ label {
 }
 
 .workspace {
-  display: grid;
-  justify-items: center;
+  display: block;
   width: 100%;
 }
 
@@ -421,6 +420,7 @@ label {
 .entry-panel.tab-screen.active {
   display: grid;
   width: 100%;
+  max-width: none;
   margin: 0 auto;
 }
 
@@ -429,6 +429,7 @@ label {
 .records-band.tab-screen.active {
   display: block;
   width: 100%;
+  max-width: none;
 }
 
 .panel-heading,

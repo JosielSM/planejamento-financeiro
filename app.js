@@ -41,7 +41,6 @@ const typeFilter = document.querySelector("#typeFilter");
 const frequencyFilter = document.querySelector("#frequencyFilter");
 const recordsBody = document.querySelector("#recordsBody");
 const emptyState = document.querySelector("#emptyState");
-const importInput = document.querySelector("#importInput");
 const dailyGoalInput = document.querySelector("#dailyGoal");
 const savingsGoalsList = document.querySelector("#savingsGoalsList");
 const savingsEmptyState = document.querySelector("#savingsEmptyState");
@@ -421,15 +420,15 @@ function renderRecords() {
       ? `Desde ${item.date.split("-").reverse().join("/")}`
       : item.date.split("-").reverse().join("/");
     tr.innerHTML = `
-      <td>${dateLabel}</td>
-      <td>
+      <td data-label="Data">${dateLabel}</td>
+      <td data-label="Descricao">
         <strong>${escapeHTML(item.description)}</strong>
         ${item.note ? `<div class="muted">${escapeHTML(item.note)}</div>` : ""}
       </td>
-      <td>${escapeHTML(item.category)}</td>
-      <td><span class="pill">${frequencyLabels[item.frequency]}</span></td>
-      <td class="value ${item.type === "income" ? "positive" : "negative"}">${item.type === "income" ? "+" : "-"} ${money(item.amount)}</td>
-      <td><button class="delete-button" type="button" data-id="${item.id}" title="Excluir" aria-label="Excluir">x</button></td>
+      <td data-label="Categoria">${escapeHTML(item.category)}</td>
+      <td data-label="Frequencia"><span class="pill">${frequencyLabels[item.frequency]}</span></td>
+      <td data-label="Valor" class="value ${item.type === "income" ? "positive" : "negative"}">${item.type === "income" ? "+" : "-"} ${money(item.amount)}</td>
+      <td data-label="Acao"><button class="delete-button" type="button" data-id="${item.id}" title="Excluir" aria-label="Excluir">x</button></td>
     `;
     recordsBody.append(tr);
   });
@@ -552,43 +551,6 @@ tabTriggers.forEach((button) => {
   button.addEventListener("click", () => {
     setActiveTab(button.dataset.tabTarget);
   });
-});
-
-document.querySelector("#exportButton").addEventListener("click", () => {
-  const blob = new Blob([JSON.stringify({ transactions, settings, savingsGoals }, null, 2)], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = `planejamento-financeiro-${monthISO()}.json`;
-  link.click();
-  URL.revokeObjectURL(url);
-});
-
-importInput.addEventListener("change", async () => {
-  const file = importInput.files[0];
-  if (!file) return;
-  try {
-    const imported = JSON.parse(await file.text());
-    transactions = Array.isArray(imported) ? imported : imported.transactions || [];
-    settings = { ...settings, ...(imported.settings || {}) };
-    savingsGoals = (imported.savingsGoals || []).map(normalizeSavingsGoal);
-    saveTransactions();
-    saveSettings();
-    saveSavingsGoals();
-    render();
-  } catch {
-    alert("Nao foi possivel importar esse arquivo.");
-  }
-  importInput.value = "";
-});
-
-document.querySelector("#clearButton").addEventListener("click", () => {
-  if (!confirm("Apagar os dados salvos neste navegador? No modo online, apague item por item para remover do banco.")) return;
-  transactions = [];
-  savingsGoals = [];
-  saveTransactions();
-  saveSavingsGoals();
-  render();
 });
 
 async function start() {

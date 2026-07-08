@@ -732,7 +732,72 @@ td.value {
     grid-template-columns: 1fr;
   }
 
+  .table-wrap {
+    overflow: visible;
+  }
+
   table {
-    min-width: 680px;
+    min-width: 0;
+  }
+
+  table,
+  thead,
+  tbody,
+  tr,
+  td {
+    display: block;
+    width: 100%;
+  }
+
+  thead {
+    display: none;
+  }
+
+  tbody {
+    display: grid;
+    gap: 12px;
+  }
+
+  tr {
+    border: 1px solid var(--line);
+    background: #fbfcfa;
+    padding: 12px;
+  }
+
+  td {
+    display: grid;
+    grid-template-columns: 92px minmax(0, 1fr);
+    gap: 12px;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid #eef2ed;
+  }
+
+  td:last-child {
+    border-bottom: 0;
+  }
+
+  td::before {
+    content: attr(data-label);
+    color: var(--muted);
+    font-size: 0.76rem;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+
+  td.value {
+    justify-items: stretch;
+  }
+
+  td.value::before {
+    color: var(--muted);
+  }
+
+  td[data-label="Valor"] {
+    font-size: 1.05rem;
+  }
+
+  td[data-label="Acao"] .delete-button {
+    justify-self: start;
   }
 }

@@ -406,13 +406,21 @@ label {
 }
 
 .workspace {
-  display: block;
+  display: grid;
+  justify-items: center;
+  width: 100%;
 }
 
 .entry-panel,
 .insights-panel,
 .records-band {
   padding: 18px;
+}
+
+.entry-panel.tab-screen.active {
+  display: grid;
+  width: min(100%, 960px);
+  margin: 0 auto;
 }
 
 .panel-heading,
@@ -583,6 +591,10 @@ td.value {
     grid-template-columns: 1fr 1fr;
   }
 
+  .entry-panel.tab-screen.active {
+    width: 100%;
+  }
+
   .month-control {
     grid-column: 1 / -1;
   }
@@ -705,6 +717,10 @@ td.value {
   .insights-panel,
   .records-band {
     padding: 14px;
+  }
+
+  .entry-panel.tab-screen.active {
+    width: 100%;
   }
 
   .quick-actions {

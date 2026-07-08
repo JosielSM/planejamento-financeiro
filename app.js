@@ -45,6 +45,9 @@ const importInput = document.querySelector("#importInput");
 const dailyGoalInput = document.querySelector("#dailyGoal");
 const savingsGoalsList = document.querySelector("#savingsGoalsList");
 const savingsEmptyState = document.querySelector("#savingsEmptyState");
+const tabTriggers = document.querySelectorAll("[data-tab-target]");
+const tabButtons = document.querySelectorAll(".tab-button");
+const tabPanels = document.querySelectorAll("[data-tab-panel]");
 
 let transactions = [];
 let settings = loadSettings();
@@ -440,6 +443,22 @@ function render() {
   renderRecords();
 }
 
+function setActiveTab(tabName) {
+  tabButtons.forEach((button) => {
+    const isActive = button.dataset.tabTarget === tabName;
+    button.classList.toggle("active", isActive);
+    button.setAttribute("aria-pressed", String(isActive));
+  });
+
+  tabPanels.forEach((panel) => {
+    panel.classList.toggle("active", panel.dataset.tabPanel === tabName);
+  });
+
+  if (tabName === "novo") {
+    setTimeout(() => document.querySelector("#description").focus(), 80);
+  }
+}
+
 function resetForm() {
   form.reset();
   document.querySelector("#date").value = todayISO();
@@ -529,6 +548,12 @@ monthFilter.addEventListener("change", render);
 typeFilter.addEventListener("change", render);
 frequencyFilter.addEventListener("change", render);
 
+tabTriggers.forEach((button) => {
+  button.addEventListener("click", () => {
+    setActiveTab(button.dataset.tabTarget);
+  });
+});
+
 document.querySelector("#exportButton").addEventListener("click", () => {
   const blob = new Blob([JSON.stringify({ transactions, settings, savingsGoals }, null, 2)], { type: "application/json" });
   const url = URL.createObjectURL(blob);
@@ -571,6 +596,9 @@ async function start() {
   resetForm();
   await loadFromApi();
   render();
+  if (window.lucide) {
+    window.lucide.createIcons();
+  }
 }
 
 start();

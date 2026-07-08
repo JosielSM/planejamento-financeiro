@@ -34,6 +34,7 @@ select {
   align-items: center;
   justify-content: space-between;
   gap: 18px;
+  width: 100%;
   padding: 24px clamp(16px, 4vw, 48px);
   background: #22352d;
   color: #fff;
@@ -114,7 +115,7 @@ button:hover,
 }
 
 .layout {
-  width: min(1180px, calc(100% - 32px));
+  width: min(1180px, calc(100vw - 32px));
   margin: 24px auto 40px;
 }
 
@@ -419,8 +420,15 @@ label {
 
 .entry-panel.tab-screen.active {
   display: grid;
-  width: min(100%, 960px);
+  width: 100%;
   margin: 0 auto;
+}
+
+.insights-panel.tab-screen.active,
+.savings-band.tab-screen.active,
+.records-band.tab-screen.active {
+  display: block;
+  width: 100%;
 }
 
 .panel-heading,
@@ -584,6 +592,10 @@ td.value {
 }
 
 @media (max-width: 920px) {
+  .layout {
+    width: min(100vw - 20px, 100%);
+  }
+
   .summary-band,
   .goal-band,
   .savings-form,
@@ -610,6 +622,31 @@ td.value {
 
   .savings-list {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (min-width: 641px) and (max-width: 1180px) {
+  .layout {
+    width: calc(100vw - 20px);
+  }
+
+  .topbar {
+    padding-inline: 20px;
+  }
+
+  .entry-panel,
+  .insights-panel,
+  .records-band,
+  .savings-band {
+    padding: 22px;
+  }
+
+  .form-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .primary-button {
+    min-height: 48px;
   }
 }
 

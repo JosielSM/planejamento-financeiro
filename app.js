@@ -418,6 +418,7 @@ function renderSummary() {
   document.querySelector("#totalExpense").textContent = money(expense);
   document.querySelector("#balance").textContent = money(balance);
   document.querySelector("#dailyAverage").textContent = money(balance / Math.max(dayCount, 1));
+  document.querySelector("#incomeDailyAverage").textContent = money(income / Math.max(dayCount, 1));
   renderIncomeExpenseChart(income, expense);
 }
 

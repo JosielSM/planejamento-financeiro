@@ -278,6 +278,17 @@ label {
   font-size: 1.35rem;
 }
 
+.metric-secondary {
+  margin-top: 10px;
+  padding-top: 9px;
+  border-top: 1px solid var(--line);
+}
+
+.metric-secondary strong {
+  margin-top: 4px;
+  font-size: 1rem;
+}
+
 .positive strong {
   color: var(--green);
 }
@@ -1065,6 +1076,7 @@ td.value {
   }
 
   .summary-band {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px;
   }
 
@@ -1076,6 +1088,14 @@ td.value {
 
   .metric strong {
     font-size: 1.18rem;
+  }
+
+  .metric {
+    min-width: 0;
+  }
+
+  .metric-secondary strong {
+    font-size: 0.92rem;
   }
 
   .goal-band,

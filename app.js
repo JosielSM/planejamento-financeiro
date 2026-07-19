@@ -668,13 +668,120 @@ function getMonthSummary(monthValue) {
   };
 }
 
-function addPdfLine(doc, text, x, y, options = {}) {
-  if (y > 280) {
-    doc.addPage();
-    y = 22;
+function getReportDayCount(monthValue) {
+  return monthValue === monthISO()
+    ? new Date().getDate()
+    : new Date(Number(monthValue.slice(0, 4)), Number(monthValue.slice(5, 7)), 0).getDate();
+}
+
+function getDailyReportData(summary) {
+  const daily = summary.monthItems.reduce((acc, item) => {
+    acc[item.date] ||= { income: 0, expense: 0 };
+    acc[item.date][item.type] += item.amount;
+    return acc;
+  }, {});
+
+  return Object.entries(daily)
+    .sort(([dateA], [dateB]) => dateA.localeCompare(dateB))
+    .map(([date, totals]) => ({ date, ...totals }));
+}
+
+function createBarChartDataUrl({ title, labels, datasets, width = 1000, height = 420 }) {
+  const canvas = document.createElement("canvas");
+  const ratio = 2;
+  canvas.width = width * ratio;
+  canvas.height = height * ratio;
+  const context = canvas.getContext("2d");
+  context.scale(ratio, ratio);
+
+  const colors = { text: "#243129", muted: "#68756d", line: "#dfe7e2", surface: "#ffffff" };
+  const margin = { top: 60, right: 28, bottom: 76, left: 82 };
+  const chartWidth = width - margin.left - margin.right;
+  const chartHeight = height - margin.top - margin.bottom;
+  const maxValue = Math.max(1, ...datasets.flatMap((dataset) => dataset.values));
+
+  context.fillStyle = colors.surface;
+  context.fillRect(0, 0, width, height);
+  context.fillStyle = colors.text;
+  context.font = "bold 22px Arial";
+  context.fillText(title, margin.left, 32);
+
+  context.font = "12px Arial";
+  context.textAlign = "right";
+  context.textBaseline = "middle";
+  for (let step = 0; step <= 4; step += 1) {
+    const value = (maxValue / 4) * step;
+    const y = margin.top + chartHeight - (chartHeight * step) / 4;
+    context.strokeStyle = colors.line;
+    context.lineWidth = 1;
+    context.beginPath();
+    context.moveTo(margin.left, y);
+    context.lineTo(width - margin.right, y);
+    context.stroke();
+    context.fillStyle = colors.muted;
+    context.fillText(money(value).replace(/\s/g, " "), margin.left - 10, y);
   }
-  doc.text(text, x, y, options);
-  return y;
+
+  const groupWidth = chartWidth / Math.max(labels.length, 1);
+  const barGap = 5;
+  const barWidth = Math.max(8, Math.min(44, (groupWidth - 18) / Math.max(datasets.length, 1) - barGap));
+  labels.forEach((label, labelIndex) => {
+    const totalBarsWidth = datasets.length * (barWidth + barGap) - barGap;
+    const groupStart = margin.left + labelIndex * groupWidth + (groupWidth - totalBarsWidth) / 2;
+
+    datasets.forEach((dataset, datasetIndex) => {
+      const value = dataset.values[labelIndex] || 0;
+      const barHeight = (value / maxValue) * chartHeight;
+      const x = groupStart + datasetIndex * (barWidth + barGap);
+      const y = margin.top + chartHeight - barHeight;
+      context.fillStyle = dataset.color;
+      context.fillRect(x, y, barWidth, barHeight);
+    });
+
+    context.save();
+    context.translate(margin.left + labelIndex * groupWidth + groupWidth / 2, margin.top + chartHeight + 12);
+    context.rotate(labels.length > 8 ? -Math.PI / 4 : 0);
+    context.fillStyle = colors.muted;
+    context.font = "12px Arial";
+    context.textAlign = labels.length > 8 ? "right" : "center";
+    context.textBaseline = "top";
+    context.fillText(String(label).slice(0, 18), 0, 0);
+    context.restore();
+  });
+
+  let legendX = margin.left;
+  datasets.forEach((dataset) => {
+    context.fillStyle = dataset.color;
+    context.fillRect(legendX, height - 24, 12, 12);
+    context.fillStyle = colors.text;
+    context.font = "12px Arial";
+    context.textAlign = "left";
+    context.fillText(dataset.label, legendX + 18, height - 18);
+    legendX += context.measureText(dataset.label).width + 52;
+  });
+
+  return canvas.toDataURL("image/png");
+}
+
+function createReportCharts(summary) {
+  const daily = getDailyReportData(summary);
+  const dailyChart = createBarChartDataUrl({
+    title: "Ganhos e despesas por dia",
+    labels: daily.length ? daily.map((item) => item.date.slice(8, 10)) : ["Sem dados"],
+    datasets: [
+      { label: "Ganhos", color: "#17a65b", values: daily.length ? daily.map((item) => item.income) : [0] },
+      { label: "Despesas", color: "#d9564a", values: daily.length ? daily.map((item) => item.expense) : [0] },
+    ],
+  });
+  const categoryChart = createBarChartDataUrl({
+    title: "Despesas por categoria",
+    labels: summary.categories.length ? summary.categories.map(([category]) => category) : ["Sem despesas"],
+    datasets: [
+      { label: "Despesas", color: "#0b713f", values: summary.categories.length ? summary.categories.map(([, value]) => value) : [0] },
+    ],
+  });
+
+  return { dailyChart, categoryChart };
 }
 
 function generateMonthlyPdf(monthValue) {
@@ -685,73 +792,223 @@ function generateMonthlyPdf(monthValue) {
   }
 
   const summary = getMonthSummary(monthValue);
-  const doc = new jsPDF({ unit: "mm", format: "a4" });
-  const title = `Resumo financeiro - ${monthName(monthValue)}`;
-  let y = 18;
+  const charts = createReportCharts(summary);
+  const dayCount = getReportDayCount(monthValue);
+  const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "landscape" });
+  if (typeof doc.autoTable !== "function") {
+    alert("Nao foi possivel carregar as tabelas do PDF. Tente novamente com internet ativa.");
+    return;
+  }
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const darkGreen = [5, 71, 39];
+  const cardWidth = 62;
+  const cardGap = 6;
 
+  doc.setFillColor(...darkGreen);
+  doc.rect(0, 0, pageWidth, 24, "F");
+  doc.setTextColor(255, 255, 255);
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(16);
-  doc.text(title, 14, y);
-  y += 10;
-
-  doc.setFont("helvetica", "normal");
+  doc.setFontSize(19);
+  doc.text("Planejamento Financeiro", 14, 11);
   doc.setFontSize(10);
-  doc.text(`Gerado em ${new Date().toLocaleDateString("pt-BR")}`, 14, y);
-  y += 12;
-
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(12);
-  doc.text("Totais do mes", 14, y);
-  y += 8;
-
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(11);
-  [
-    `Ganhos: ${money(summary.income)}`,
-    `Despesas: ${money(summary.expense)}`,
-    `Saldo: ${money(summary.balance)}`,
-    `Registros: ${summary.monthItems.length}`,
-  ].forEach((line) => {
-    y = addPdfLine(doc, line, 14, y) + 7;
+  doc.text(`${monthName(monthValue)} | Gerado em ${new Date().toLocaleDateString("pt-BR")}`, 14, 18);
+
+  const cards = [
+    ["Ganhos", summary.income, [229, 247, 237]],
+    ["Despesas", summary.expense, [255, 239, 237]],
+    ["Saldo", summary.balance, [233, 241, 251]],
+    ["Lucro por dia", summary.balance / Math.max(dayCount, 1), [244, 239, 252]],
+  ];
+  cards.forEach(([label, value, color], index) => {
+    const x = 14 + index * (cardWidth + cardGap);
+    doc.setFillColor(...color);
+    doc.roundedRect(x, 31, cardWidth, 22, 2, 2, "F");
+    doc.setTextColor(75, 88, 80);
+    doc.setFontSize(9);
+    doc.text(label, x + 4, 38);
+    doc.setTextColor(20, 45, 31);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(13);
+    doc.text(money(value), x + 4, 48);
+    doc.setFont("helvetica", "normal");
   });
 
-  y += 4;
+  doc.addImage(charts.dailyChart, "PNG", 14, 60, 130, 55);
+  doc.addImage(charts.categoryChart, "PNG", 153, 60, 130, 55);
+
+  doc.setTextColor(20, 45, 31);
   doc.setFont("helvetica", "bold");
-  doc.text("Despesas por categoria", 14, y);
-  y += 8;
-  doc.setFont("helvetica", "normal");
+  doc.setFontSize(12);
+  doc.text("Movimentacoes do mes", 14, 124);
 
-  if (!summary.categories.length) {
-    y = addPdfLine(doc, "Nenhuma despesa registrada nesse mes.", 14, y) + 7;
-  } else {
-    summary.categories.forEach(([category, value]) => {
-      const percent = summary.expense > 0 ? ((value / summary.expense) * 100).toFixed(0) : "0";
-      y = addPdfLine(doc, `${category}: ${money(value)} (${percent}%)`, 14, y) + 7;
-    });
-  }
+  const rows = summary.monthItems.map((item) => [
+    item.date.split("-").reverse().join("/"),
+    item.type === "income" ? "Ganho" : "Despesa",
+    item.description,
+    item.category,
+    frequencyLabels[item.frequency],
+    `${item.type === "income" ? "+" : "-"} ${money(item.amount)}`,
+    item.note || "",
+  ]);
 
-  y += 4;
-  doc.setFont("helvetica", "bold");
-  doc.text("Registros do mes", 14, y);
-  y += 8;
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(9);
-
-  if (!summary.monthItems.length) {
-    y = addPdfLine(doc, "Nenhum registro encontrado para esse mes.", 14, y) + 7;
-  } else {
-    summary.monthItems.forEach((item) => {
-      const sign = item.type === "income" ? "+" : "-";
-      const line = `${item.date.split("-").reverse().join("/")} | ${item.type === "income" ? "Ganho" : "Despesa"} | ${item.description} | ${item.category} | ${sign} ${money(item.amount)}`;
-      const lines = doc.splitTextToSize(line, 180);
-      lines.forEach((textLine) => {
-        y = addPdfLine(doc, textLine, 14, y) + 5;
-      });
-      y += 2;
-    });
-  }
+  doc.autoTable({
+    startY: 129,
+    head: [["Data", "Tipo", "Descricao", "Categoria", "Frequencia", "Valor", "Observacao"]],
+    body: rows.length ? rows : [["-", "-", "Nenhum registro encontrado", "-", "-", "-", "-"]],
+    theme: "striped",
+    styles: { font: "helvetica", fontSize: 8, cellPadding: 2.2, textColor: [32, 48, 39] },
+    headStyles: { fillColor: darkGreen, textColor: [255, 255, 255], fontStyle: "bold" },
+    alternateRowStyles: { fillColor: [244, 247, 245] },
+    columnStyles: { 5: { halign: "right" } },
+    margin: { left: 14, right: 14, bottom: 12 },
+    didDrawPage: ({ pageNumber }) => {
+      doc.setFontSize(8);
+      doc.setTextColor(105, 117, 109);
+      doc.text(`Pagina ${pageNumber}`, pageWidth - 14, doc.internal.pageSize.getHeight() - 6, { align: "right" });
+    },
+  });
 
   doc.save(`resumo-financeiro-${monthValue}.pdf`);
+}
+
+function downloadBlob(blob, fileName) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = fileName;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+async function generateMonthlyExcel(monthValue) {
+  if (!window.ExcelJS) {
+    alert("Nao foi possivel carregar o gerador de Excel. Tente novamente com internet ativa.");
+    return;
+  }
+
+  const summary = getMonthSummary(monthValue);
+  const charts = createReportCharts(summary);
+  const workbook = new window.ExcelJS.Workbook();
+  workbook.creator = "Planejamento Financeiro";
+  workbook.created = new Date();
+
+  const dashboard = workbook.addWorksheet("Resumo", { views: [{ showGridLines: false }] });
+  const movements = workbook.addWorksheet("Movimentacoes", { views: [{ state: "frozen", ySplit: 1 }] });
+  const categoriesSheet = workbook.addWorksheet("Categorias", { views: [{ state: "frozen", ySplit: 1 }] });
+  const darkGreen = "054727";
+  const lightGreen = "E5F4EC";
+  const currencyFormat = 'R$ #,##0.00;[Red]-R$ #,##0.00';
+
+  movements.columns = [
+    { header: "Data", key: "date", width: 13 },
+    { header: "Tipo", key: "type", width: 13 },
+    { header: "Descricao", key: "description", width: 30 },
+    { header: "Categoria", key: "category", width: 20 },
+    { header: "Frequencia", key: "frequency", width: 17 },
+    { header: "Valor", key: "amount", width: 16 },
+    { header: "Observacao", key: "note", width: 32 },
+  ];
+  summary.monthItems
+    .slice()
+    .reverse()
+    .forEach((item) => movements.addRow({
+      date: new Date(`${item.date}T12:00:00`),
+      type: item.type === "income" ? "Ganho" : "Despesa",
+      description: item.description,
+      category: item.category,
+      frequency: frequencyLabels[item.frequency],
+      amount: item.amount,
+      note: item.note || "",
+    }));
+  movements.getRow(1).eachCell((cell) => {
+    cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: darkGreen } };
+    cell.font = { bold: true, color: { argb: "FFFFFF" } };
+    cell.alignment = { vertical: "middle" };
+  });
+  movements.getColumn("date").numFmt = "dd/mm/yyyy";
+  movements.getColumn("amount").numFmt = currencyFormat;
+  movements.autoFilter = { from: "A1", to: "G1" };
+  movements.eachRow((row, rowNumber) => {
+    if (rowNumber > 1 && rowNumber % 2 === 0) {
+      row.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "F3F6F4" } };
+    }
+  });
+
+  const lastMovementRow = Math.max(movements.rowCount, 2);
+  dashboard.mergeCells("A1:H2");
+  dashboard.getCell("A1").value = "PLANEJAMENTO FINANCEIRO";
+  dashboard.getCell("A1").fill = { type: "pattern", pattern: "solid", fgColor: { argb: darkGreen } };
+  dashboard.getCell("A1").font = { bold: true, size: 22, color: { argb: "FFFFFF" } };
+  dashboard.getCell("A1").alignment = { vertical: "middle", horizontal: "center" };
+  dashboard.mergeCells("A3:H3");
+  dashboard.getCell("A3").value = `Relatorio de ${monthName(monthValue)}`;
+  dashboard.getCell("A3").font = { bold: true, size: 13, color: { argb: darkGreen } };
+  dashboard.getCell("A3").alignment = { horizontal: "center" };
+
+  const dashboardItems = [
+    ["A5", "Ganhos", `=SUMIF('Movimentacoes'!$B$2:$B$${lastMovementRow},"Ganho",'Movimentacoes'!$F$2:$F$${lastMovementRow})`],
+    ["C5", "Despesas", `=SUMIF('Movimentacoes'!$B$2:$B$${lastMovementRow},"Despesa",'Movimentacoes'!$F$2:$F$${lastMovementRow})`],
+    ["E5", "Saldo", "=A6-C6"],
+    ["G5", "Lucro por dia", `=E6/${Math.max(getReportDayCount(monthValue), 1)}`],
+  ];
+  dashboardItems.forEach(([labelCell, label, formula]) => {
+    const labelColumn = dashboard.getCell(labelCell).col;
+    const valueCell = dashboard.getCell(6, labelColumn);
+    dashboard.mergeCells(5, labelColumn, 5, labelColumn + 1);
+    dashboard.getCell(labelCell).value = label;
+    dashboard.getCell(labelCell).fill = { type: "pattern", pattern: "solid", fgColor: { argb: lightGreen } };
+    dashboard.getCell(labelCell).font = { bold: true, color: { argb: darkGreen } };
+    dashboard.getCell(labelCell).alignment = { horizontal: "center" };
+    dashboard.mergeCells(6, labelColumn, 6, labelColumn + 1);
+    valueCell.value = { formula, result: label === "Ganhos" ? summary.income : label === "Despesas" ? summary.expense : label === "Saldo" ? summary.balance : summary.balance / Math.max(getReportDayCount(monthValue), 1) };
+    valueCell.numFmt = currencyFormat;
+    valueCell.font = { bold: true, size: 14, color: { argb: darkGreen } };
+    valueCell.alignment = { horizontal: "center" };
+  });
+
+  dashboard.columns = Array.from({ length: 8 }, () => ({ width: 14 }));
+  dashboard.getRow(1).height = 26;
+  dashboard.getRow(2).height = 26;
+  dashboard.getRow(6).height = 28;
+  const dailyImageId = workbook.addImage({ base64: charts.dailyChart, extension: "png" });
+  const categoryImageId = workbook.addImage({ base64: charts.categoryChart, extension: "png" });
+  dashboard.addImage(dailyImageId, { tl: { col: 0, row: 7 }, ext: { width: 500, height: 230 } });
+  dashboard.addImage(categoryImageId, { tl: { col: 4, row: 7 }, ext: { width: 500, height: 230 } });
+  dashboard.mergeCells("A22:H23");
+  dashboard.getCell("A22").value = "Os dados das abas Movimentacoes e Categorias sao editaveis. Os graficos representam o momento da exportacao.";
+  dashboard.getCell("A22").alignment = { wrapText: true, vertical: "middle" };
+  dashboard.getCell("A22").font = { italic: true, color: { argb: "68756D" } };
+
+  categoriesSheet.columns = [
+    { header: "Categoria", key: "category", width: 28 },
+    { header: "Total", key: "total", width: 18 },
+    { header: "% das despesas", key: "percent", width: 20 },
+  ];
+  summary.categories.forEach(([category, value], index) => {
+    const rowNumber = index + 2;
+    categoriesSheet.addRow({ category, total: value, percent: summary.expense > 0 ? value / summary.expense : 0 });
+    categoriesSheet.getCell(`B${rowNumber}`).value = {
+      formula: `=SUMIFS('Movimentacoes'!$F$2:$F$${lastMovementRow},'Movimentacoes'!$B$2:$B$${lastMovementRow},"Despesa",'Movimentacoes'!$D$2:$D$${lastMovementRow},A${rowNumber})`,
+      result: value,
+    };
+    categoriesSheet.getCell(`C${rowNumber}`).value = { formula: `=IFERROR(B${rowNumber}/SUM(B$2:B$${Math.max(summary.categories.length + 1, 2)}),0)`, result: summary.expense > 0 ? value / summary.expense : 0 };
+  });
+  categoriesSheet.getRow(1).eachCell((cell) => {
+    cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: darkGreen } };
+    cell.font = { bold: true, color: { argb: "FFFFFF" } };
+  });
+  categoriesSheet.getColumn("total").numFmt = currencyFormat;
+  categoriesSheet.getColumn("percent").numFmt = "0.0%";
+  categoriesSheet.autoFilter = { from: "A1", to: "C1" };
+
+  const buffer = await workbook.xlsx.writeBuffer();
+  downloadBlob(
+    new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }),
+    `planejamento-financeiro-${monthValue}.xlsx`,
+  );
 }
 
 function resetSavingsGoalForm() {
@@ -918,17 +1175,22 @@ pdfSummaryForm.addEventListener("change", (event) => {
   }
 });
 
-pdfSummaryForm.addEventListener("submit", (event) => {
+pdfSummaryForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   const choice = pdfSummaryForm.elements.pdfMonthChoice.value;
   const selectedMonth = choice === "other" ? pdfMonthInput.value : monthISO();
+  const exportFormat = event.submitter?.value || "pdf";
 
   if (!selectedMonth) {
-    alert("Escolha um mes para gerar o PDF.");
+    alert("Escolha um mes para gerar o relatorio.");
     return;
   }
 
-  generateMonthlyPdf(selectedMonth);
+  if (exportFormat === "xlsx") {
+    await generateMonthlyExcel(selectedMonth);
+  } else {
+    generateMonthlyPdf(selectedMonth);
+  }
   closePdfSummaryModal();
 });
 

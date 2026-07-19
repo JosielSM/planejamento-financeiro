@@ -272,6 +272,52 @@ label {
   margin-top: 10px;
 }
 
+.month-control .control-label,
+.metric-label,
+.metric .secondary-label,
+.heading-with-icon {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.control-label svg,
+.secondary-label svg {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+}
+
+.metric-icon {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  padding: 5px;
+  box-sizing: content-box;
+  border-radius: 9px;
+  background: #eef2ed;
+}
+
+.positive .metric-icon {
+  background: #e4f4eb;
+  color: var(--green);
+}
+
+.negative .metric-icon {
+  background: #fff0ee;
+  color: var(--red);
+}
+
+.balance .metric-icon {
+  background: #e9f1fb;
+  color: var(--blue);
+}
+
+.daily-metric .metric-icon {
+  background: #f3edff;
+  color: #7554a3;
+}
+
 .metric strong {
   display: block;
   margin-top: 10px;
@@ -287,6 +333,12 @@ label {
 .metric-secondary strong {
   margin-top: 4px;
   font-size: 1rem;
+}
+
+.heading-with-icon svg {
+  width: 21px;
+  height: 21px;
+  color: var(--green);
 }
 
 .positive strong {
@@ -401,6 +453,12 @@ label {
   text-align: left;
   box-shadow: var(--shadow);
   cursor: pointer;
+}
+
+.action-tile > svg {
+  width: 22px;
+  height: 22px;
+  color: var(--green);
 }
 
 .action-tile span {
@@ -937,6 +995,30 @@ td.value {
   margin: 0;
 }
 
+.export-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.export-actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.export-actions svg {
+  width: 18px;
+  height: 18px;
+}
+
+.excel-button {
+  border-color: #8fc3a7;
+  background: #e5f4ec;
+  color: var(--green);
+}
+
 @media (min-width: 641px) and (max-width: 1180px) {
   .layout {
     width: calc(100vw - 20px);
@@ -1116,6 +1198,10 @@ td.value {
 
   .action-tile {
     min-height: 72px;
+  }
+
+  .export-actions {
+    grid-template-columns: 1fr;
   }
 
   .register-card {

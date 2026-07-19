@@ -90,26 +90,41 @@
       <div class="tab-screen active" data-tab-panel="inicio">
         <section class="summary-band" aria-label="Resumo do mes">
           <div class="month-control">
-            <label for="monthFilter">Mes analisado</label>
+            <label class="control-label" for="monthFilter">
+              <i data-lucide="calendar-days" aria-hidden="true"></i>
+              <span>Mes analisado</span>
+            </label>
             <input id="monthFilter" type="month" />
           </div>
           <div class="metric positive">
-            <span>Ganhos</span>
+            <div class="metric-label">
+              <i class="metric-icon" data-lucide="trending-up" aria-hidden="true"></i>
+              <span>Ganhos</span>
+            </div>
             <strong id="totalIncome">R$ 0,00</strong>
           </div>
           <div class="metric negative">
-            <span>Despesas</span>
+            <div class="metric-label">
+              <i class="metric-icon" data-lucide="trending-down" aria-hidden="true"></i>
+              <span>Despesas</span>
+            </div>
             <strong id="totalExpense">R$ 0,00</strong>
           </div>
           <div class="metric balance">
-            <span>Saldo</span>
+            <div class="metric-label">
+              <i class="metric-icon" data-lucide="wallet" aria-hidden="true"></i>
+              <span>Saldo</span>
+            </div>
             <strong id="balance">R$ 0,00</strong>
           </div>
           <div class="metric daily-metric">
-            <span>Lucro por dia</span>
+            <div class="metric-label">
+              <i class="metric-icon" data-lucide="chart-line" aria-hidden="true"></i>
+              <span>Lucro por dia</span>
+            </div>
             <strong id="dailyAverage">R$ 0,00</strong>
             <div class="metric-secondary">
-              <span>Ganhos por dia</span>
+              <span class="secondary-label"><i data-lucide="coins" aria-hidden="true"></i> Ganhos por dia</span>
               <strong id="incomeDailyAverage">R$ 0,00</strong>
             </div>
           </div>
@@ -117,7 +132,7 @@
 
         <section class="goal-band" aria-label="Meta diaria">
           <div class="goal-copy">
-            <h2>Meta diaria de ganhos</h2>
+            <h2 class="heading-with-icon"><i data-lucide="target" aria-hidden="true"></i> Meta diaria de ganhos</h2>
             <p id="goalStatus">Defina quanto voce quer ganhar por dia.</p>
             <button class="secondary-button goal-toggle" id="goalToggleButton" type="button">
               <i data-lucide="pencil" aria-hidden="true"></i>
@@ -144,24 +159,29 @@
 
         <section class="quick-actions" aria-label="Acoes rapidas">
           <button class="action-tile primary-action" type="button" data-tab-target="novo">
+            <i data-lucide="circle-plus" aria-hidden="true"></i>
             <span>Registrar agora</span>
             <strong>Ganho ou despesa</strong>
           </button>
           <button class="action-tile" type="button" data-tab-target="metas">
+            <i data-lucide="piggy-bank" aria-hidden="true"></i>
             <span>Guardar dinheiro</span>
             <strong>Metas</strong>
           </button>
           <button class="action-tile" type="button" data-tab-target="destino">
+            <i data-lucide="chart-pie" aria-hidden="true"></i>
             <span>Ver gastos</span>
             <strong>Para onde vai</strong>
           </button>
           <button class="action-tile" type="button" data-tab-target="registros">
+            <i data-lucide="clipboard-list" aria-hidden="true"></i>
             <span>Consultar</span>
             <strong>Registros</strong>
           </button>
           <button class="action-tile" id="pdfSummaryButton" type="button">
+            <i data-lucide="sheet" aria-hidden="true"></i>
             <span>Baixar</span>
-            <strong>Resumo PDF</strong>
+            <strong>Relatorio PDF / Excel</strong>
           </button>
         </section>
       </div>
@@ -200,7 +220,7 @@
       <section class="workspace">
         <section class="entry-panel tab-screen" data-tab-panel="novo" aria-label="Registrar ganho ou despesa">
           <div class="panel-heading">
-            <h2>Registrar</h2>
+            <h2 class="heading-with-icon"><i data-lucide="square-pen" aria-hidden="true"></i> Registrar</h2>
           </div>
 
           <div class="register-actions" aria-label="Escolha o tipo de registro">
@@ -241,7 +261,7 @@
 
         <aside class="insights-panel tab-screen" data-tab-panel="destino" aria-label="Resumo por categoria">
           <div class="panel-heading">
-            <h2>Para onde vai</h2>
+            <h2 class="heading-with-icon"><i data-lucide="chart-pie" aria-hidden="true"></i> Para onde vai</h2>
           </div>
           <div id="categoryBreakdown" class="category-breakdown"></div>
         </aside>
@@ -249,7 +269,7 @@
 
       <section class="records-band tab-screen" data-tab-panel="registros">
         <div class="records-header">
-          <h2>Registros</h2>
+          <h2 class="heading-with-icon"><i data-lucide="clipboard-list" aria-hidden="true"></i> Registros</h2>
           <div class="filters">
             <select id="typeFilter" aria-label="Filtrar por tipo">
               <option value="all">Tudo</option>
@@ -331,7 +351,7 @@
       <div class="modal-backdrop" data-close-pdf-summary></div>
       <form class="modal-card compact-modal" id="pdfSummaryForm" role="dialog" aria-modal="true" aria-labelledby="pdfSummaryTitle">
         <div class="modal-heading">
-          <h2 id="pdfSummaryTitle">Gerar resumo PDF</h2>
+          <h2 id="pdfSummaryTitle">Exportar relatorio financeiro</h2>
           <button class="delete-button" type="button" data-close-pdf-summary title="Fechar" aria-label="Fechar">x</button>
         </div>
 
@@ -352,11 +372,22 @@
           <input id="pdfMonthInput" type="month" />
         </label>
 
-        <button class="primary-button" type="submit">Baixar PDF</button>
+        <div class="export-actions">
+          <button class="primary-button" type="submit" name="exportFormat" value="pdf">
+            <i data-lucide="file-text" aria-hidden="true"></i>
+            <span>Baixar PDF</span>
+          </button>
+          <button class="secondary-button excel-button" type="submit" name="exportFormat" value="xlsx">
+            <i data-lucide="sheet" aria-hidden="true"></i>
+            <span>Baixar Excel</span>
+          </button>
+        </div>
       </form>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
     <script src="app.js"></script>
   </body>

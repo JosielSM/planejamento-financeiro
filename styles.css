@@ -840,6 +840,128 @@ label {
   gap: 14px;
 }
 
+.category-field {
+  min-width: 0;
+}
+
+.category-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 5px;
+}
+
+.category-actions .text-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 30px;
+  padding: 2px 5px;
+  font-size: 0.78rem;
+}
+
+.category-actions svg {
+  width: 15px;
+  height: 15px;
+}
+
+.category-manager {
+  display: grid;
+  gap: 14px;
+  margin: 16px 0;
+  padding: 15px;
+  border: 1px solid #c7ddee;
+  border-radius: 13px;
+  background: linear-gradient(145deg, #fff, var(--blue-soft));
+  box-shadow: var(--soft-shadow);
+}
+
+.category-manager-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.category-manager-heading .section-note {
+  margin-bottom: 0;
+}
+
+.category-editor {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) auto auto;
+  gap: 9px;
+  align-items: end;
+}
+
+.category-editor label {
+  grid-column: 1 / -1;
+}
+
+.category-editor input {
+  margin-top: 0;
+}
+
+.custom-category-list {
+  display: grid;
+  gap: 7px;
+}
+
+.custom-category-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 44px;
+  padding: 8px 10px;
+  border: 1px solid #d8e2eb;
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.custom-category-item > span,
+.custom-category-item > div {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.custom-category-item > span svg {
+  width: 17px;
+  height: 17px;
+  color: var(--blue);
+}
+
+.category-icon-button {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  min-height: 34px;
+  padding: 0;
+  border: 1px solid #c7ddee;
+  border-radius: 8px;
+  background: #fff;
+  color: var(--blue);
+  cursor: pointer;
+}
+
+.category-icon-button.danger {
+  border-color: var(--red-line);
+  color: var(--red);
+}
+
+.category-icon-button svg {
+  width: 16px;
+  height: 16px;
+}
+
+.category-empty {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
 input,
 select {
   width: 100%;
@@ -1484,6 +1606,18 @@ td.value {
   .modal-card {
     max-height: 88vh;
     padding: 14px;
+  }
+
+  .category-editor {
+    grid-template-columns: 1fr;
+  }
+
+  .category-editor label {
+    grid-column: auto;
+  }
+
+  .category-manager-heading {
+    align-items: flex-start;
   }
 
   .savings-card header,

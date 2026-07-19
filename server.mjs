@@ -149,6 +149,16 @@ async function migrate() {
     );
   `);
 
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS custom_categories (
+      id UUID PRIMARY KEY,
+      user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      type TEXT NOT NULL CHECK (type IN ('income', 'expense')),
+      name TEXT NOT NULL CHECK (CHAR_LENGTH(name) BETWEEN 2 AND 40),
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+  `);
+
   await pool.query(`ALTER TABLE settings ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES users(id) ON DELETE CASCADE;`);
   await pool.query(`ALTER TABLE transactions ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES users(id) ON DELETE CASCADE;`);
   await pool.query(`ALTER TABLE savings_goals ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES users(id) ON DELETE CASCADE;`);
@@ -169,6 +179,7 @@ async function migrate() {
 
   await pool.query(`CREATE UNIQUE INDEX IF NOT EXISTS settings_user_key_idx ON settings(user_id, key);`);
   await pool.query(`CREATE INDEX IF NOT EXISTS transactions_user_id_idx ON transactions(user_id);`);
+  await pool.query(`CREATE UNIQUE INDEX IF NOT EXISTS custom_categories_user_type_name_idx ON custom_categories(user_id, type, LOWER(name));`);
   await pool.query(`CREATE INDEX IF NOT EXISTS savings_goals_user_id_idx ON savings_goals(user_id);`);
 }
 
@@ -354,6 +365,116 @@ app.post("/api/transactions", async (request, response) => {
   );
 
   response.status(201).json(mapTransaction(result.rows[0]));
+});
+
+app.get("/api/categories", async (request, response) => {
+  const user = await requireAuth(request, response);
+  if (!user) return;
+  const result = await pool.query(
+    "SELECT id, type, name FROM custom_categories WHERE user_id = $1 ORDER BY type, LOWER(name)",
+    [user.id],
+  );
+  response.json(result.rows);
+});
+
+app.post("/api/categories", async (request, response) => {
+  const user = await requireAuth(request, response);
+  if (!user) return;
+  const id = String(request.body.id || "");
+  const type = String(request.body.type || "");
+  const name = String(request.body.name || "").trim();
+
+  if (!id || !["income", "expense"].includes(type) || name.length < 2 || name.length > 40) {
+    response.status(400).json({ error: "Informe uma categoria entre 2 e 40 caracteres" });
+    return;
+  }
+
+  try {
+    const result = await pool.query(
+      `INSERT INTO custom_categories (id, user_id, type, name)
+       VALUES ($1, $2, $3, $4)
+       RETURNING id, type, name`,
+      [id, user.id, type, name],
+    );
+    response.status(201).json(result.rows[0]);
+  } catch (error) {
+    if (error.code === "23505") {
+      response.status(409).json({ error: "Esta categoria ja existe" });
+      return;
+    }
+    throw error;
+  }
+});
+
+app.put("/api/categories/:id", async (request, response) => {
+  const user = await requireAuth(request, response);
+  if (!user) return;
+  const name = String(request.body.name || "").trim();
+  if (name.length < 2 || name.length > 40) {
+    response.status(400).json({ error: "Informe uma categoria entre 2 e 40 caracteres" });
+    return;
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const existing = await client.query(
+      "SELECT id, type, name FROM custom_categories WHERE id = $1 AND user_id = $2 FOR UPDATE",
+      [request.params.id, user.id],
+    );
+    if (!existing.rows[0]) {
+      await client.query("ROLLBACK");
+      response.status(404).json({ error: "Categoria nao encontrada" });
+      return;
+    }
+
+    const category = existing.rows[0];
+    const updated = await client.query(
+      "UPDATE custom_categories SET name = $1 WHERE id = $2 RETURNING id, type, name",
+      [name, category.id],
+    );
+    await client.query(
+      "UPDATE transactions SET category = $1 WHERE user_id = $2 AND type = $3 AND category = $4",
+      [name, user.id, category.type, category.name],
+    );
+    await client.query("COMMIT");
+    response.json(updated.rows[0]);
+  } catch (error) {
+    await client.query("ROLLBACK");
+    if (error.code === "23505") {
+      response.status(409).json({ error: "Esta categoria ja existe" });
+      return;
+    }
+    throw error;
+  } finally {
+    client.release();
+  }
+});
+
+app.delete("/api/categories/:id", async (request, response) => {
+  const user = await requireAuth(request, response);
+  if (!user) return;
+  const categoryResult = await pool.query(
+    "SELECT id, type, name FROM custom_categories WHERE id = $1 AND user_id = $2",
+    [request.params.id, user.id],
+  );
+  const category = categoryResult.rows[0];
+  if (!category) {
+    response.status(404).json({ error: "Categoria nao encontrada" });
+    return;
+  }
+
+  const usage = await pool.query(
+    "SELECT COUNT(*)::int AS total FROM transactions WHERE user_id = $1 AND type = $2 AND category = $3",
+    [user.id, category.type, category.name],
+  );
+  if (usage.rows[0].total > 0) {
+    response.status(409).json({ error: `Esta categoria esta sendo usada em ${usage.rows[0].total} registro(s)` });
+    return;
+  }
+
+  await pool.query("DELETE FROM custom_categories WHERE id = $1 AND user_id = $2", [category.id, user.id]);
+  response.status(204).end();
 });
 
 app.delete("/api/transactions/:id", async (request, response) => {

@@ -30,6 +30,17 @@ CREATE TABLE IF NOT EXISTS transactions (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+CREATE TABLE IF NOT EXISTS custom_categories (
+  id UUID PRIMARY KEY,
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  type TEXT NOT NULL CHECK (type IN ('income', 'expense')),
+  name TEXT NOT NULL CHECK (CHAR_LENGTH(name) BETWEEN 2 AND 40),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS custom_categories_user_type_name_idx
+ON custom_categories(user_id, type, LOWER(name));
+
 CREATE TABLE IF NOT EXISTS savings_goals (
   id UUID PRIMARY KEY,
   user_id UUID REFERENCES users(id) ON DELETE CASCADE,

@@ -31,7 +31,8 @@ const api = {
 
     if (!response.ok) {
       if (response.status === 503) this.enabled = false;
-      const error = new Error(`Erro ${response.status}`);
+      const data = await response.json().catch(() => ({}));
+      const error = new Error(data.error || `Erro ${response.status}`);
       error.status = response.status;
       throw error;
     }
@@ -49,6 +50,15 @@ const savingsGoalToggleButton = document.querySelector("#savingsGoalToggleButton
 const savingsGoalSubmitButton = document.querySelector("#savingsGoalSubmitButton");
 const savingsGoalCancelButton = document.querySelector("#savingsGoalCancelButton");
 const categorySelect = document.querySelector("#category");
+const newCategoryButton = document.querySelector("#newCategoryButton");
+const manageCategoriesButton = document.querySelector("#manageCategoriesButton");
+const categoryManager = document.querySelector("#categoryManager");
+const categoryManagerTitle = document.querySelector("#categoryManagerTitle");
+const customCategoryName = document.querySelector("#customCategoryName");
+const customCategoryList = document.querySelector("#customCategoryList");
+const saveCategoryButton = document.querySelector("#saveCategoryButton");
+const cancelCategoryEditButton = document.querySelector("#cancelCategoryEditButton");
+const closeCategoryManagerButton = document.querySelector("#closeCategoryManagerButton");
 const monthFilter = document.querySelector("#monthFilter");
 const typeFilter = document.querySelector("#typeFilter");
 const frequencyFilter = document.querySelector("#frequencyFilter");
@@ -95,6 +105,8 @@ const googleSignInButtons = document.querySelectorAll("[data-google-signin]");
 let transactions = [];
 let settings = loadSettings();
 let savingsGoals = [];
+let customCategories = [];
+let editingCategoryId = null;
 let editingSavingsGoalId = null;
 let authRequired = false;
 let firebaseAuth = null;
@@ -322,10 +334,11 @@ function normalizeSavingsGoal(goal) {
 
 async function loadFromApi() {
   try {
-    const [remoteTransactions, remoteSettings, remoteSavingsGoals] = await Promise.all([
+    const [remoteTransactions, remoteSettings, remoteSavingsGoals, remoteCategories] = await Promise.all([
       api.request("/api/transactions"),
       api.request("/api/settings"),
       api.request("/api/savings-goals"),
+      api.request("/api/categories"),
     ]);
     transactions = remoteTransactions;
     settings = {
@@ -333,6 +346,7 @@ async function loadFromApi() {
       dailyGoal: parseAmount(remoteSettings.dailyGoal || 0),
     };
     savingsGoals = remoteSavingsGoals.map(normalizeSavingsGoal);
+    customCategories = remoteCategories;
     saveTransactions();
     saveSettings();
     saveSavingsGoals();
@@ -409,6 +423,35 @@ async function createSavingsGoal(goal) {
   }
 }
 
+async function createCustomCategory(type, name) {
+  const category = await api.request("/api/categories", {
+    method: "POST",
+    body: JSON.stringify({ id: crypto.randomUUID(), type, name }),
+  });
+  customCategories.push(category);
+  return category;
+}
+
+async function updateCustomCategory(id, name) {
+  const previous = customCategories.find((candidate) => candidate.id === id);
+  const category = await api.request(`/api/categories/${id}`, {
+    method: "PUT",
+    body: JSON.stringify({ name }),
+  });
+  customCategories = customCategories.map((item) => (item.id === id ? category : item));
+  transactions = transactions.map((item) => {
+    return item.type === category.type && item.category === previous?.name
+      ? { ...item, category: category.name }
+      : item;
+  });
+  return category;
+}
+
+async function deleteCustomCategory(id) {
+  await api.request(`/api/categories/${id}`, { method: "DELETE" });
+  customCategories = customCategories.filter((item) => item.id !== id);
+}
+
 async function updateSavingsGoal(id, updates) {
   savingsGoals = savingsGoals.map((goal) => (goal.id === id ? normalizeSavingsGoal({ ...goal, ...updates }) : goal));
   saveSavingsGoals();
@@ -465,15 +508,60 @@ async function deleteSavingsGoal(id) {
   }
 }
 
-function updateCategoryOptions() {
+function currentCategoryType() {
+  return transactionTypeInput.value || "income";
+}
+
+function updateCategoryOptions(selectedValue = "") {
   const type = new FormData(form).get("type");
+  const previousValue = selectedValue || categorySelect.value;
   categorySelect.innerHTML = "";
-  categories[type].forEach((category) => {
+  const availableCategories = [
+    ...categories[type],
+    ...customCategories.filter((item) => item.type === type).map((item) => item.name),
+  ];
+  availableCategories.forEach((category) => {
     const option = document.createElement("option");
     option.value = category;
     option.textContent = category;
     categorySelect.append(option);
   });
+  if (availableCategories.includes(previousValue)) categorySelect.value = previousValue;
+}
+
+function resetCategoryEditor() {
+  editingCategoryId = null;
+  customCategoryName.value = "";
+  saveCategoryButton.textContent = "Salvar categoria";
+  cancelCategoryEditButton.hidden = true;
+}
+
+function renderCategoryManager() {
+  const type = currentCategoryType();
+  const typeLabel = type === "income" ? "ganho" : "despesa";
+  categoryManagerTitle.textContent = editingCategoryId
+    ? `Editar categoria de ${typeLabel}`
+    : `Nova categoria de ${typeLabel}`;
+  const items = customCategories.filter((item) => item.type === type);
+  customCategoryList.innerHTML = items.length
+    ? items.map((item) => `
+        <div class="custom-category-item">
+          <span><i data-lucide="tag" aria-hidden="true"></i>${escapeHTML(item.name)}</span>
+          <div>
+            <button class="category-icon-button" type="button" data-category-edit="${item.id}" aria-label="Editar ${escapeHTML(item.name)}"><i data-lucide="pencil" aria-hidden="true"></i></button>
+            <button class="category-icon-button danger" type="button" data-category-delete="${item.id}" aria-label="Excluir ${escapeHTML(item.name)}"><i data-lucide="trash-2" aria-hidden="true"></i></button>
+          </div>
+        </div>
+      `).join("")
+    : '<p class="category-empty">Nenhuma categoria personalizada deste tipo.</p>';
+  refreshIcons();
+}
+
+function setCategoryManagerOpen(isOpen, focusInput = false) {
+  categoryManager.hidden = !isOpen;
+  if (!isOpen) resetCategoryEditor();
+  renderCategoryManager();
+  if (isOpen && focusInput) setTimeout(() => customCategoryName.focus(), 80);
 }
 
 function getVisibleTransactions() {
@@ -706,6 +794,10 @@ function setTransactionType(type) {
     ? "Ex: diaria, freelance, venda"
     : "Ex: aluguel, comida, mercado";
   updateCategoryOptions();
+  if (!categoryManager.hidden) {
+    resetCategoryEditor();
+    renderCategoryManager();
+  }
 }
 
 function resetForm(type = transactionTypeInput.value || "income") {
@@ -724,6 +816,7 @@ function openTransactionModal(type) {
 
 function closeTransactionModal() {
   transactionModal.hidden = true;
+  setCategoryManagerOpen(false);
   document.body.classList.remove("modal-open");
 }
 
@@ -1132,6 +1225,96 @@ function setSavingsGoalFormOpen(isOpen, goal = null) {
   setTimeout(() => document.querySelector("#savingsGoalName").focus(), 80);
 }
 
+newCategoryButton.addEventListener("click", () => {
+  resetCategoryEditor();
+  setCategoryManagerOpen(true, true);
+});
+
+manageCategoriesButton.addEventListener("click", () => {
+  setCategoryManagerOpen(categoryManager.hidden, false);
+});
+
+closeCategoryManagerButton.addEventListener("click", () => {
+  setCategoryManagerOpen(false);
+});
+
+cancelCategoryEditButton.addEventListener("click", () => {
+  resetCategoryEditor();
+  renderCategoryManager();
+  customCategoryName.focus();
+});
+
+customCategoryName.addEventListener("keydown", (event) => {
+  if (event.key !== "Enter") return;
+  event.preventDefault();
+  saveCategoryButton.click();
+});
+
+saveCategoryButton.addEventListener("click", async () => {
+  const type = currentCategoryType();
+  const name = customCategoryName.value.trim();
+  if (name.length < 2 || name.length > 40) {
+    alert("Informe um nome entre 2 e 40 caracteres.");
+    customCategoryName.focus();
+    return;
+  }
+
+  const duplicate = [
+    ...categories[type],
+    ...customCategories.filter((item) => item.type === type && item.id !== editingCategoryId).map((item) => item.name),
+  ].some((item) => item.toLocaleLowerCase("pt-BR") === name.toLocaleLowerCase("pt-BR"));
+  if (duplicate) {
+    alert("Esta categoria ja existe.");
+    customCategoryName.focus();
+    return;
+  }
+
+  saveCategoryButton.disabled = true;
+  try {
+    const saved = editingCategoryId
+      ? await updateCustomCategory(editingCategoryId, name)
+      : await createCustomCategory(type, name);
+    resetCategoryEditor();
+    updateCategoryOptions(saved.name);
+    renderCategoryManager();
+    render();
+  } catch (error) {
+    alert(error.message || "Nao foi possivel salvar a categoria.");
+  } finally {
+    saveCategoryButton.disabled = false;
+  }
+});
+
+customCategoryList.addEventListener("click", async (event) => {
+  const editButton = event.target.closest("[data-category-edit]");
+  if (editButton) {
+    const category = customCategories.find((item) => item.id === editButton.dataset.categoryEdit);
+    if (!category) return;
+    editingCategoryId = category.id;
+    customCategoryName.value = category.name;
+    saveCategoryButton.textContent = "Salvar alteracao";
+    cancelCategoryEditButton.hidden = false;
+    renderCategoryManager();
+    customCategoryName.focus();
+    return;
+  }
+
+  const deleteButton = event.target.closest("[data-category-delete]");
+  if (!deleteButton) return;
+  const category = customCategories.find((item) => item.id === deleteButton.dataset.categoryDelete);
+  if (!category) return;
+  if (!confirm(`Excluir a categoria "${category.name}"?`)) return;
+
+  try {
+    await deleteCustomCategory(category.id);
+    resetCategoryEditor();
+    updateCategoryOptions();
+    renderCategoryManager();
+  } catch (error) {
+    alert(error.message || "Nao foi possivel excluir a categoria.");
+  }
+});
+
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
   const data = new FormData(form);
@@ -1411,6 +1594,7 @@ logoutButton.addEventListener("click", async () => {
   await firebaseAuth.signOut();
   transactions = [];
   savingsGoals = [];
+  customCategories = [];
   settings = loadSettings();
   showAuth("Voce saiu da conta.");
 });

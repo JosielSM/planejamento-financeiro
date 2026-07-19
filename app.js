@@ -331,7 +331,7 @@ function hasPasswordProvider(firebaseUser) {
 
 function passwordRuleStatus(password) {
   return {
-    length: password.length >= 12,
+    length: password.length >= 10,
     lowercase: /[a-z]/.test(password),
     uppercase: /[A-Z]/.test(password),
     number: /[0-9]/.test(password),

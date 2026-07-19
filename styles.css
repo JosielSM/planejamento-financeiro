@@ -5,10 +5,19 @@
   --text: #1d2520;
   --muted: #607067;
   --green: #18794e;
+  --green-soft: #edf8f2;
+  --green-line: #b8ddc9;
   --red: #b42318;
+  --red-soft: #fff2f0;
+  --red-line: #f1c5bf;
   --blue: #2364aa;
+  --blue-soft: #eef5fd;
+  --purple: #7554a3;
+  --purple-soft: #f5f0fc;
   --amber: #9a6700;
+  --amber-soft: #fff8e8;
   --shadow: 0 16px 45px rgba(28, 39, 33, 0.08);
+  --soft-shadow: 0 8px 22px rgba(28, 39, 33, 0.07);
 }
 
 * {
@@ -22,7 +31,9 @@
 body {
   margin: 0;
   min-height: 100vh;
-  background: var(--bg);
+  background:
+    radial-gradient(circle at 8% 0%, rgba(24, 121, 78, 0.08), transparent 28rem),
+    var(--bg);
   color: var(--text);
   font-family: Arial, Helvetica, sans-serif;
 }
@@ -329,12 +340,48 @@ button:hover,
   background: var(--surface);
   border: 1px solid var(--line);
   box-shadow: var(--shadow);
+  border-radius: 14px;
 }
 
 .month-control,
 .metric {
   min-height: 94px;
   padding: 16px;
+}
+
+.month-control {
+  background: linear-gradient(145deg, #ffffff, #f2f5f1);
+}
+
+.metric {
+  position: relative;
+  overflow: hidden;
+  border-top-width: 4px;
+  box-shadow: var(--soft-shadow);
+}
+
+.metric.positive {
+  border-color: var(--green-line);
+  border-top-color: var(--green);
+  background: linear-gradient(145deg, #ffffff 10%, var(--green-soft));
+}
+
+.metric.negative {
+  border-color: var(--red-line);
+  border-top-color: var(--red);
+  background: linear-gradient(145deg, #ffffff 10%, var(--red-soft));
+}
+
+.metric.balance {
+  border-color: #c5d9f1;
+  border-top-color: var(--blue);
+  background: linear-gradient(145deg, #ffffff 10%, var(--blue-soft));
+}
+
+.metric.daily-metric {
+  border-color: #d9cbed;
+  border-top-color: var(--purple);
+  background: linear-gradient(145deg, #ffffff 10%, var(--purple-soft));
 }
 
 .month-control label,
@@ -439,6 +486,8 @@ label {
   align-items: end;
   margin-bottom: 20px;
   padding: 18px;
+  border-color: #ead8a8;
+  background: linear-gradient(120deg, #fff, var(--amber-soft));
 }
 
 .goal-copy p {
@@ -532,6 +581,14 @@ label {
   text-align: left;
   box-shadow: var(--shadow);
   cursor: pointer;
+  border-radius: 13px;
+  transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+}
+
+.action-tile:hover,
+.register-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 30px rgba(28, 39, 33, 0.12);
 }
 
 .action-tile > svg {
@@ -556,9 +613,47 @@ label {
   color: var(--green);
 }
 
+.savings-action {
+  border-color: #d8c9ed;
+  background: var(--purple-soft);
+}
+
+.savings-action > svg {
+  color: var(--purple);
+}
+
+.expenses-action {
+  border-color: var(--red-line);
+  background: var(--red-soft);
+}
+
+.expenses-action > svg {
+  color: var(--red);
+}
+
+.records-action {
+  border-color: #c5d9f1;
+  background: var(--blue-soft);
+}
+
+.records-action > svg {
+  color: var(--blue);
+}
+
+.report-action {
+  border-color: #ead8a8;
+  background: var(--amber-soft);
+}
+
+.report-action > svg {
+  color: var(--amber);
+}
+
 .savings-band {
   margin-bottom: 20px;
   padding: 18px;
+  border-color: #d8c9ed;
+  background: linear-gradient(145deg, #fff, #faf7fe);
 }
 
 .savings-form {
@@ -587,6 +682,8 @@ label {
   border: 1px solid var(--line);
   background: #fbfcfa;
   padding: 14px;
+  border-radius: 12px;
+  box-shadow: var(--soft-shadow);
 }
 
 .savings-card header,
@@ -671,6 +768,20 @@ label {
 .insights-panel,
 .records-band {
   padding: 18px;
+}
+
+.entry-panel {
+  background: linear-gradient(145deg, #fff, #f5faf7);
+}
+
+.insights-panel {
+  background: linear-gradient(145deg, #fff, var(--red-soft));
+  border-color: var(--red-line);
+}
+
+.records-band {
+  background: linear-gradient(145deg, #fff, #f6f9fc);
+  border-color: #cddbeb;
 }
 
 .entry-panel.tab-screen.active {
@@ -796,15 +907,77 @@ button:focus {
 
 table {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0 8px;
   min-width: 760px;
 }
 
 th,
 td {
   padding: 12px 10px;
-  border-bottom: 1px solid var(--line);
   text-align: left;
+}
+
+th {
+  border-bottom: 1px solid var(--line);
+}
+
+.transaction-row td {
+  border-top: 1px solid transparent;
+  border-bottom: 1px solid transparent;
+  transition: background 0.15s ease, box-shadow 0.15s ease;
+}
+
+.transaction-row td:first-child {
+  border-left: 4px solid transparent;
+  border-radius: 10px 0 0 10px;
+}
+
+.transaction-row td:last-child {
+  border-right: 1px solid transparent;
+  border-radius: 0 10px 10px 0;
+}
+
+.income-row td {
+  background: var(--green-soft);
+  border-color: var(--green-line);
+}
+
+.income-row td:first-child {
+  border-left-color: var(--green);
+}
+
+.expense-row td {
+  background: var(--red-soft);
+  border-color: var(--red-line);
+}
+
+.expense-row td:first-child {
+  border-left-color: var(--red);
+}
+
+.transaction-row:hover td {
+  box-shadow: 0 7px 18px rgba(28, 39, 33, 0.08);
+}
+
+.record-title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.record-title svg {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+}
+
+.income-row .record-title svg {
+  color: var(--green);
+}
+
+.expense-row .record-title svg {
+  color: var(--red);
 }
 
 th {
@@ -832,6 +1005,7 @@ td.value {
   background: #eef2ed;
   color: var(--muted);
   font-size: 0.82rem;
+  border-radius: 999px;
 }
 
 .delete-button {
@@ -899,6 +1073,9 @@ td.value {
   color: var(--text);
   text-align: left;
   cursor: pointer;
+  border-radius: 14px;
+  box-shadow: var(--soft-shadow);
+  transition: transform 0.16s ease, box-shadow 0.16s ease;
 }
 
 .register-card svg {
@@ -1241,6 +1418,10 @@ td.value {
     gap: 8px;
   }
 
+  .month-control {
+    grid-column: 1 / -1;
+  }
+
   .metric,
   .month-control {
     min-height: auto;
@@ -1272,7 +1453,12 @@ td.value {
   }
 
   .quick-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 10px;
+  }
+
+  .report-action {
+    grid-column: 1 / -1;
   }
 
   .action-tile {
@@ -1347,6 +1533,36 @@ td.value {
     border: 1px solid var(--line);
     background: #fbfcfa;
     padding: 12px;
+  }
+
+  .transaction-row {
+    overflow: hidden;
+    padding: 10px 12px;
+    border-width: 1px 1px 1px 4px;
+    border-radius: 12px;
+    box-shadow: var(--soft-shadow);
+  }
+
+  .transaction-row.income-row {
+    border-color: var(--green-line);
+    border-left-color: var(--green);
+    background: var(--green-soft);
+  }
+
+  .transaction-row.expense-row {
+    border-color: var(--red-line);
+    border-left-color: var(--red);
+    background: var(--red-soft);
+  }
+
+  .transaction-row td,
+  .transaction-row td:first-child,
+  .transaction-row td:last-child {
+    border-right: 0;
+    border-left: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
   }
 
   td {

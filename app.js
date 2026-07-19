@@ -647,13 +647,14 @@ function renderRecords() {
 
   rows.forEach((item) => {
     const tr = document.createElement("tr");
+    tr.className = `transaction-row ${item.type === "income" ? "income-row" : "expense-row"}`;
     const dateLabel = item.frequency === "monthly"
       ? `Desde ${item.date.split("-").reverse().join("/")}`
       : item.date.split("-").reverse().join("/");
     tr.innerHTML = `
       <td data-label="Data">${dateLabel}</td>
       <td data-label="Descricao">
-        <strong>${escapeHTML(item.description)}</strong>
+        <strong class="record-title"><i data-lucide="${item.type === "income" ? "arrow-down-left" : "arrow-up-right"}" aria-hidden="true"></i>${escapeHTML(item.description)}</strong>
         ${item.note ? `<div class="muted">${escapeHTML(item.note)}</div>` : ""}
       </td>
       <td data-label="Categoria">${escapeHTML(item.category)}</td>

@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Planejamento Financeiro</title>
-    <link rel="stylesheet" href="styles.css?v=password-visibility-1" />
+    <link rel="stylesheet" href="styles.css?v=sunday-average-setting-1" />
   </head>
   <body>
     <header class="topbar">
@@ -601,6 +601,15 @@
           </div>
           <button class="secondary-button" id="profilePasswordResetButton" type="button">Alterar senha</button>
         </div>
+        <label class="profile-preference" for="includeSundaysToggle">
+          <span class="profile-preference-icon" aria-hidden="true"><i data-lucide="calendar-days"></i></span>
+          <span class="profile-preference-copy">
+            <strong>Incluir domingos nas médias</strong>
+            <small>Ative se domingo também fizer parte da sua rotina de trabalho.</small>
+          </span>
+          <input id="includeSundaysToggle" type="checkbox" role="switch" />
+          <span class="preference-switch" aria-hidden="true"></span>
+        </label>
         <button class="profile-logout-button" id="logoutButton" type="button">
           <i data-lucide="log-out" aria-hidden="true"></i>
           <span>Sair da conta</span>
@@ -631,6 +640,6 @@
     <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
-    <script src="app.js?v=password-visibility-1"></script>
+    <script src="app.js?v=sunday-average-setting-1"></script>
   </body>
 </html>

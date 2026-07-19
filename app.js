@@ -134,6 +134,7 @@ const accountEmail = document.querySelector("#accountEmail");
 const googleLinkStatus = document.querySelector("#googleLinkStatus");
 const passwordProviderStatus = document.querySelector("#passwordProviderStatus");
 const profilePasswordResetButton = document.querySelector("#profilePasswordResetButton");
+const includeSundaysToggle = document.querySelector("#includeSundaysToggle");
 const linkGoogleButton = document.querySelector("#linkGoogleButton");
 const logoutButton = document.querySelector("#logoutButton");
 const googleSignInButtons = document.querySelectorAll("[data-google-signin]");
@@ -475,7 +476,7 @@ function saveTransactions() {
 }
 
 function loadSettings() {
-  return loadJSON(SETTINGS_KEY, { dailyGoal: 0 });
+  return { dailyGoal: 0, includeSundays: false, ...loadJSON(SETTINGS_KEY, {}) };
 }
 
 function saveSettings() {
@@ -519,6 +520,7 @@ async function loadFromApi() {
     settings = {
       ...settings,
       dailyGoal: parseAmount(remoteSettings.dailyGoal || 0),
+      includeSundays: remoteSettings.includeSundays === "true",
     };
     savingsGoals = remoteSavingsGoals.map(normalizeSavingsGoal);
     customCategories = remoteCategories;
@@ -758,7 +760,7 @@ function getTodayIncome() {
     .reduce((sum, item) => sum + item.amount, 0);
 }
 
-function getMondayToSaturdayCount(monthValue) {
+function getAverageDayCount(monthValue) {
   const year = Number(monthValue.slice(0, 4));
   const monthIndex = Number(monthValue.slice(5, 7)) - 1;
   const today = new Date();
@@ -769,7 +771,7 @@ function getMondayToSaturdayCount(monthValue) {
   let workingDayCount = 0;
 
   for (let day = 1; day <= lastDay; day += 1) {
-    if (new Date(year, monthIndex, day).getDay() !== 0) workingDayCount += 1;
+    if (settings.includeSundays || new Date(year, monthIndex, day).getDay() !== 0) workingDayCount += 1;
   }
 
   return workingDayCount;
@@ -780,7 +782,8 @@ function renderSummary() {
   const income = monthItems.filter((item) => item.type === "income").reduce((sum, item) => sum + item.amount, 0);
   const expense = monthItems.filter((item) => item.type === "expense").reduce((sum, item) => sum + item.amount, 0);
   const balance = income - expense;
-  const dayCount = getMondayToSaturdayCount(monthFilter.value);
+  const dayCount = getAverageDayCount(monthFilter.value);
+  includeSundaysToggle.checked = Boolean(settings.includeSundays);
 
   document.querySelector("#totalIncome").textContent = money(income);
   document.querySelector("#totalExpense").textContent = money(expense);
@@ -1149,7 +1152,7 @@ function getMonthSummary(monthValue) {
 }
 
 function getReportDayCount(monthValue) {
-  return getMondayToSaturdayCount(monthValue);
+  return getAverageDayCount(monthValue);
 }
 
 function getReportInsights(summary, monthValue) {
@@ -2086,6 +2089,25 @@ profileButton.addEventListener("click", openProfileModal);
 closeProfileButton.addEventListener("click", closeProfileModal);
 profileModal.addEventListener("click", (event) => {
   if (event.target.closest("[data-profile-close]")) closeProfileModal();
+});
+
+includeSundaysToggle.addEventListener("change", async () => {
+  const previousValue = Boolean(settings.includeSundays);
+  const nextValue = includeSundaysToggle.checked;
+  includeSundaysToggle.disabled = true;
+  settings.includeSundays = nextValue;
+  render();
+
+  try {
+    await saveSetting("includeSundays", nextValue);
+  } catch {
+    settings.includeSundays = previousValue;
+    includeSundaysToggle.checked = previousValue;
+    render();
+    await showNotice("Nao foi possivel salvar essa preferencia. Tente novamente.", "Preferencia nao salva", "error");
+  } finally {
+    includeSundaysToggle.disabled = false;
+  }
 });
 
 profilePasswordResetButton.addEventListener("click", async () => {

@@ -125,6 +125,8 @@ const closeProfileButton = document.querySelector("#closeProfileButton");
 const accountName = document.querySelector("#accountName");
 const accountEmail = document.querySelector("#accountEmail");
 const googleLinkStatus = document.querySelector("#googleLinkStatus");
+const passwordProviderStatus = document.querySelector("#passwordProviderStatus");
+const profilePasswordResetButton = document.querySelector("#profilePasswordResetButton");
 const linkGoogleButton = document.querySelector("#linkGoogleButton");
 const logoutButton = document.querySelector("#logoutButton");
 const googleSignInButtons = document.querySelectorAll("[data-google-signin]");
@@ -317,6 +319,10 @@ function hasGoogleProvider(firebaseUser) {
   return firebaseUser?.providerData?.some((provider) => provider.providerId === "google.com");
 }
 
+function hasPasswordProvider(firebaseUser) {
+  return firebaseUser?.providerData?.some((provider) => provider.providerId === "password");
+}
+
 function showApp(user = null) {
   appShell.hidden = false;
   authScreen.hidden = true;
@@ -324,9 +330,14 @@ function showApp(user = null) {
   accountName.textContent = user ? user.name : "";
   accountEmail.textContent = user?.email || firebaseAuth?.currentUser?.email || "";
   const googleLinked = hasGoogleProvider(firebaseAuth?.currentUser);
+  const passwordLinked = hasPasswordProvider(firebaseAuth?.currentUser);
   googleLinkStatus.textContent = googleLinked ? "Vinculada" : "Não vinculada";
   googleLinkStatus.classList.toggle("linked", googleLinked);
   linkGoogleButton.hidden = !user || googleLinked;
+  passwordProviderStatus.textContent = passwordLinked
+    ? "Receba um link seguro no seu e-mail para definir uma nova senha."
+    : "Sua senha é administrada pela Conta Google.";
+  profilePasswordResetButton.hidden = !user || !passwordLinked;
   authError.textContent = "";
 }
 
@@ -381,7 +392,7 @@ async function initializeFirebase() {
   if (!response.ok) throw new Error(config.error || "Firebase nao configurado");
   if (!window.firebase.apps.length) window.firebase.initializeApp(config);
   firebaseAuth = window.firebase.auth();
-  firebaseAuth.useDeviceLanguage();
+  firebaseAuth.languageCode = "pt-BR";
   return firebaseAuth;
 }
 
@@ -1954,6 +1965,30 @@ profileButton.addEventListener("click", openProfileModal);
 closeProfileButton.addEventListener("click", closeProfileModal);
 profileModal.addEventListener("click", (event) => {
   if (event.target.closest("[data-profile-close]")) closeProfileModal();
+});
+
+profilePasswordResetButton.addEventListener("click", async () => {
+  const currentUser = firebaseAuth?.currentUser;
+  if (!currentUser?.email || !hasPasswordProvider(currentUser)) {
+    await showNotice("Esta conta usa o acesso pelo Google. A senha deve ser alterada na sua Conta Google.", "Senha administrada pelo Google", "info");
+    return;
+  }
+
+  profilePasswordResetButton.disabled = true;
+  profilePasswordResetButton.textContent = "Enviando...";
+  try {
+    await firebaseAuth.sendPasswordResetEmail(currentUser.email);
+    await showNotice(
+      `Enviamos um link seguro para ${currentUser.email}. Abra o e-mail e siga as instruções para definir uma nova senha.`,
+      "Confira seu e-mail",
+      "success",
+    );
+  } catch (error) {
+    await showNotice(firebaseErrorMessage(error), "Não foi possível enviar o link", "error");
+  } finally {
+    profilePasswordResetButton.disabled = false;
+    profilePasswordResetButton.textContent = "Alterar senha";
+  }
 });
 
 linkGoogleButton.addEventListener("click", async () => {

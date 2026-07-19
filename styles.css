@@ -1867,6 +1867,51 @@ td.value {
   background: var(--surface);
 }
 
+.profile-security {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 11px;
+  padding: 13px 14px;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  background: var(--blue-soft);
+}
+
+.profile-security > div:nth-child(2) {
+  display: grid;
+  gap: 3px;
+}
+
+.profile-security small {
+  color: var(--muted);
+  line-height: 1.35;
+}
+
+.profile-security-icon {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 11px;
+  background: var(--surface);
+  color: var(--blue);
+}
+
+.profile-security-icon svg {
+  width: 19px;
+  height: 19px;
+}
+
+#profilePasswordResetButton {
+  white-space: nowrap;
+}
+
+#profilePasswordResetButton:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
 .provider-copy {
   display: flex;
   align-items: center;
@@ -2752,4 +2797,13 @@ td.value {
 @media (max-width: 600px) {
   .theme-toggle,
   .profile-toggle { width: 40px; padding: 8px; }
+
+  .profile-security {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  #profilePasswordResetButton {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
 }

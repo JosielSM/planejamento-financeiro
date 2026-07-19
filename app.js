@@ -758,15 +758,29 @@ function getTodayIncome() {
     .reduce((sum, item) => sum + item.amount, 0);
 }
 
+function getMondayToSaturdayCount(monthValue) {
+  const year = Number(monthValue.slice(0, 4));
+  const monthIndex = Number(monthValue.slice(5, 7)) - 1;
+  const today = new Date();
+  const isCurrentMonth = monthValue === monthISO();
+  const lastDay = isCurrentMonth
+    ? today.getDate()
+    : new Date(year, monthIndex + 1, 0).getDate();
+  let workingDayCount = 0;
+
+  for (let day = 1; day <= lastDay; day += 1) {
+    if (new Date(year, monthIndex, day).getDay() !== 0) workingDayCount += 1;
+  }
+
+  return workingDayCount;
+}
+
 function renderSummary() {
   const monthItems = getMonthTransactions();
   const income = monthItems.filter((item) => item.type === "income").reduce((sum, item) => sum + item.amount, 0);
   const expense = monthItems.filter((item) => item.type === "expense").reduce((sum, item) => sum + item.amount, 0);
   const balance = income - expense;
-  const currentMonth = monthISO();
-  const dayCount = monthFilter.value === currentMonth
-    ? new Date().getDate()
-    : new Date(Number(monthFilter.value.slice(0, 4)), Number(monthFilter.value.slice(5, 7)), 0).getDate();
+  const dayCount = getMondayToSaturdayCount(monthFilter.value);
 
   document.querySelector("#totalIncome").textContent = money(income);
   document.querySelector("#totalExpense").textContent = money(expense);
@@ -1135,9 +1149,7 @@ function getMonthSummary(monthValue) {
 }
 
 function getReportDayCount(monthValue) {
-  return monthValue === monthISO()
-    ? new Date().getDate()
-    : new Date(Number(monthValue.slice(0, 4)), Number(monthValue.slice(5, 7)), 0).getDate();
+  return getMondayToSaturdayCount(monthValue);
 }
 
 function getReportInsights(summary, monthValue) {

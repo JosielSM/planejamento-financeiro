@@ -1315,6 +1315,11 @@ googleSignInButtons.forEach((button) => {
       const credential = await firebaseAuth.signInWithPopup(provider);
       await loadAuthenticatedUser(credential.user);
     } catch (error) {
+      if (error.code === "auth/internal-error") {
+        sessionStorage.setItem("googleAuthAction", "signin");
+        await firebaseAuth.signInWithRedirect(provider);
+        return;
+      }
       authError.textContent = firebaseErrorMessage(error);
     } finally {
       googleSignInButtons.forEach((item) => { item.disabled = false; });
@@ -1417,10 +1422,8 @@ linkGoogleButton.addEventListener("click", async () => {
   try {
     const provider = new window.firebase.auth.GoogleAuthProvider();
     provider.setCustomParameters({ prompt: "select_account" });
-    await currentUser.linkWithPopup(provider);
-    await currentUser.reload();
-    linkGoogleButton.hidden = true;
-    alert("Conta Google vinculada. Agora voce pode entrar com Google ou com sua senha.");
+    sessionStorage.setItem("googleAuthAction", "link");
+    await currentUser.linkWithRedirect(provider);
   } catch (error) {
     if (error.code === "auth/provider-already-linked") {
       linkGoogleButton.hidden = true;
@@ -1458,6 +1461,17 @@ async function start() {
     if (!authRequired) throw new Error("Banco de dados ou Firebase ainda nao configurado");
 
     await initializeFirebase();
+    const googleAuthAction = sessionStorage.getItem("googleAuthAction");
+    let redirectResult = null;
+    try {
+      redirectResult = await firebaseAuth.getRedirectResult();
+      sessionStorage.removeItem("googleAuthAction");
+    } catch (error) {
+      sessionStorage.removeItem("googleAuthAction");
+      showAuth(firebaseErrorMessage(error));
+      refreshIcons();
+      return;
+    }
     const initialUser = await new Promise((resolve, reject) => {
       const unsubscribe = firebaseAuth.onAuthStateChanged(
         (user) => {
@@ -1467,7 +1481,10 @@ async function start() {
         reject,
       );
     });
-    await loadAuthenticatedUser(initialUser);
+    const loaded = await loadAuthenticatedUser(redirectResult?.user || initialUser);
+    if (loaded && googleAuthAction === "link") {
+      alert("Conta Google vinculada. Agora voce pode entrar com Google ou com sua senha.");
+    }
   } catch (error) {
     showAuth(`Autenticacao indisponivel: ${error.message}`);
     refreshIcons();

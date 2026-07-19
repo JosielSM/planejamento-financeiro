@@ -108,6 +108,12 @@ const authScreen = document.querySelector("#authScreen");
 const authError = document.querySelector("#authError");
 const loginForm = document.querySelector("#loginForm");
 const signupForm = document.querySelector("#signupForm");
+const signupPassword = document.querySelector("#signupPassword");
+const signupPasswordConfirmation = document.querySelector("#signupPasswordConfirmation");
+const passwordStrengthLabel = document.querySelector("#passwordStrengthLabel");
+const passwordStrengthBar = document.querySelector("#passwordStrengthBar");
+const passwordMatchStatus = document.querySelector("#passwordMatchStatus");
+const passwordRuleItems = document.querySelectorAll("[data-password-rule]");
 const authTitle = document.querySelector("#authTitle");
 const showSignupButton = document.querySelector("#showSignupButton");
 const showLoginButton = document.querySelector("#showLoginButton");
@@ -323,6 +329,48 @@ function hasPasswordProvider(firebaseUser) {
   return firebaseUser?.providerData?.some((provider) => provider.providerId === "password");
 }
 
+function passwordRuleStatus(password) {
+  return {
+    length: password.length >= 12,
+    lowercase: /[a-z]/.test(password),
+    uppercase: /[A-Z]/.test(password),
+    number: /[0-9]/.test(password),
+    symbol: /[^A-Za-z0-9\s]/.test(password),
+  };
+}
+
+function isStrongPassword(password) {
+  return Object.values(passwordRuleStatus(password)).every(Boolean);
+}
+
+function updatePasswordGuidance() {
+  const password = signupPassword.value;
+  const confirmation = signupPasswordConfirmation.value;
+  const rules = passwordRuleStatus(password);
+  const score = Object.values(rules).filter(Boolean).length;
+  const strengthLabels = ["Muito fraca", "Muito fraca", "Fraca", "Razoável", "Boa", "Forte"];
+
+  passwordRuleItems.forEach((item) => {
+    const met = rules[item.dataset.passwordRule];
+    item.classList.toggle("met", Boolean(met));
+  });
+  passwordStrengthLabel.textContent = strengthLabels[score];
+  passwordStrengthLabel.className = `strength-${score}`;
+  passwordStrengthBar.style.width = `${(score / 5) * 100}%`;
+  passwordStrengthBar.className = `strength-${score}`;
+
+  if (!confirmation) {
+    passwordMatchStatus.textContent = "Digite novamente a mesma senha.";
+    passwordMatchStatus.className = "password-match-status";
+  } else if (password === confirmation) {
+    passwordMatchStatus.textContent = "As senhas são iguais.";
+    passwordMatchStatus.className = "password-match-status matched";
+  } else {
+    passwordMatchStatus.textContent = "As senhas ainda não são iguais.";
+    passwordMatchStatus.className = "password-match-status mismatch";
+  }
+}
+
 function showApp(user = null) {
   appShell.hidden = false;
   authScreen.hidden = true;
@@ -348,7 +396,7 @@ function firebaseErrorMessage(error) {
     "auth/invalid-email": "Informe um email valido.",
     "auth/missing-password": "Informe sua senha.",
     "auth/too-many-requests": "Muitas tentativas. Aguarde alguns minutos e tente novamente.",
-    "auth/weak-password": "Use uma senha mais forte, com pelo menos 10 caracteres.",
+    "auth/weak-password": "A senha não atende à política de segurança. Complete todos os requisitos indicados.",
     "auth/network-request-failed": "Nao foi possivel conectar ao servico de autenticacao.",
     "auth/operation-not-allowed": "O login por email e senha ainda nao foi ativado no Firebase.",
     "auth/popup-closed-by-user": "A janela do Google foi fechada antes da conclusao.",
@@ -1867,12 +1915,20 @@ pdfSummaryModal.addEventListener("click", (event) => {
 loginForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   authError.textContent = "";
+  const enteredPassword = document.querySelector("#loginPassword").value;
   try {
     const credential = await firebaseAuth.signInWithEmailAndPassword(
       document.querySelector("#loginEmail").value.trim(),
-      document.querySelector("#loginPassword").value,
+      enteredPassword,
     );
-    await loadAuthenticatedUser(credential.user);
+    const loaded = await loadAuthenticatedUser(credential.user);
+    if (loaded && !isStrongPassword(enteredPassword)) {
+      await showNotice(
+        "Sua senha atual não atende aos novos requisitos de segurança. Você ainda pode usar o sistema, mas recomendamos alterá-la agora em Perfil > Alterar senha.",
+        "Atualize sua senha",
+        "warning",
+      );
+    }
   } catch (error) {
     authError.textContent = firebaseErrorMessage(error);
   }
@@ -1905,10 +1961,17 @@ signupForm.addEventListener("submit", async (event) => {
   authError.textContent = "";
   const name = document.querySelector("#signupName").value.trim();
   const email = document.querySelector("#signupEmail").value.trim();
-  const password = document.querySelector("#signupPassword").value;
+  const password = signupPassword.value;
+  const confirmation = signupPasswordConfirmation.value;
 
-  if (password.length < 10) {
-    authError.textContent = "Use uma senha com pelo menos 10 caracteres.";
+  if (!isStrongPassword(password)) {
+    authError.textContent = "Complete todos os requisitos de segurança da senha.";
+    signupPassword.focus();
+    return;
+  }
+  if (password !== confirmation) {
+    authError.textContent = "A confirmação precisa ser igual à senha.";
+    signupPasswordConfirmation.focus();
     return;
   }
 
@@ -1921,6 +1984,9 @@ signupForm.addEventListener("submit", async (event) => {
     authError.textContent = firebaseErrorMessage(error);
   }
 });
+
+signupPassword.addEventListener("input", updatePasswordGuidance);
+signupPasswordConfirmation.addEventListener("input", updatePasswordGuidance);
 
 forgotPasswordForm.addEventListener("submit", async (event) => {
   event.preventDefault();

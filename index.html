@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Planejamento Financeiro</title>
-    <link rel="stylesheet" href="styles.css?v=register-overview-1" />
+    <link rel="stylesheet" href="styles.css?v=password-rules-1" />
   </head>
   <body>
     <header class="topbar">
@@ -79,8 +79,27 @@
           </label>
           <label>
             Senha
-            <input id="signupPassword" type="password" autocomplete="new-password" minlength="10" maxlength="128" required />
+            <input id="signupPassword" type="password" autocomplete="new-password" minlength="12" maxlength="128" aria-describedby="passwordRequirements" required />
           </label>
+          <div class="password-guidance" id="passwordRequirements">
+            <div class="password-strength-heading">
+              <span>Segurança da senha</span>
+              <strong id="passwordStrengthLabel" aria-live="polite">Muito fraca</strong>
+            </div>
+            <div class="password-strength-track" aria-hidden="true"><span id="passwordStrengthBar"></span></div>
+            <ul>
+              <li data-password-rule="length">Pelo menos 12 caracteres</li>
+              <li data-password-rule="lowercase">Uma letra minúscula</li>
+              <li data-password-rule="uppercase">Uma letra maiúscula</li>
+              <li data-password-rule="number">Um número</li>
+              <li data-password-rule="symbol">Um caractere especial</li>
+            </ul>
+          </div>
+          <label>
+            Confirmar senha
+            <input id="signupPasswordConfirmation" type="password" autocomplete="new-password" minlength="12" maxlength="128" required />
+          </label>
+          <p class="password-match-status" id="passwordMatchStatus" aria-live="polite">Digite novamente a mesma senha.</p>
           <button class="primary-button" type="submit">Criar conta</button>
           <button class="secondary-button" id="showLoginButton" type="button">Voltar para login</button>
         </form>
@@ -603,6 +622,6 @@
     <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
-    <script src="app.js?v=register-overview-1"></script>
+    <script src="app.js?v=password-rules-1"></script>
   </body>
 </html>

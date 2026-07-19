@@ -231,6 +231,119 @@ button:hover,
   margin: 0;
 }
 
+.password-guidance {
+  display: grid;
+  gap: 9px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: var(--bg);
+}
+
+.password-strength-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.password-strength-heading strong {
+  color: var(--red);
+}
+
+.password-strength-heading .strength-3 { color: var(--amber); }
+.password-strength-heading .strength-4 { color: var(--blue); }
+.password-strength-heading .strength-5 { color: var(--green); }
+
+.password-strength-track {
+  height: 7px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--line);
+}
+
+.password-strength-track span {
+  display: block;
+  width: 0;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--red);
+  transition: width 0.2s ease, background 0.2s ease;
+}
+
+.password-strength-track .strength-3 { background: var(--amber); }
+.password-strength-track .strength-4 { background: var(--blue); }
+.password-strength-track .strength-5 { background: var(--green); }
+
+.password-guidance ul {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.password-guidance li {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--muted);
+  font-size: 0.76rem;
+  transition: color 0.18s ease;
+}
+
+.password-guidance li::before {
+  content: "";
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+  border: 1.5px solid #9aaba1;
+  border-radius: 50%;
+}
+
+.password-guidance li.met {
+  color: var(--green);
+  font-weight: 700;
+}
+
+.password-guidance li.met::before {
+  content: "✓";
+  display: grid;
+  place-items: center;
+  border-color: var(--green);
+  background: var(--green);
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 900;
+}
+
+.password-match-status {
+  min-height: 18px;
+  margin: -4px 0 0;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.password-match-status.matched {
+  color: var(--green);
+  font-weight: 700;
+}
+
+.password-match-status.mismatch {
+  color: var(--red);
+  font-weight: 700;
+}
+
+@media (max-width: 520px) {
+  .password-guidance ul {
+    grid-template-columns: 1fr;
+  }
+}
+
 .google-auth-button {
   display: flex;
   align-items: center;

@@ -17,9 +17,16 @@ const api = {
   enabled: true,
   async request(path, options = {}) {
     if (!this.enabled) throw new Error("API desativada");
+    const idToken = firebaseAuth?.currentUser
+      ? await firebaseAuth.currentUser.getIdToken()
+      : null;
     const response = await fetch(path, {
-      headers: { "Content-Type": "application/json", ...(options.headers || {}) },
       ...options,
+      headers: {
+        "Content-Type": "application/json",
+        ...(idToken ? { Authorization: `Bearer ${idToken}` } : {}),
+        ...(options.headers || {}),
+      },
     });
 
     if (!response.ok) {
@@ -71,15 +78,25 @@ const signupForm = document.querySelector("#signupForm");
 const authTitle = document.querySelector("#authTitle");
 const showSignupButton = document.querySelector("#showSignupButton");
 const showLoginButton = document.querySelector("#showLoginButton");
+const showForgotPasswordButton = document.querySelector("#showForgotPasswordButton");
+const forgotPasswordForm = document.querySelector("#forgotPasswordForm");
+const backToLoginButton = document.querySelector("#backToLoginButton");
+const verificationPanel = document.querySelector("#verificationPanel");
+const verificationMessage = document.querySelector("#verificationMessage");
+const checkVerificationButton = document.querySelector("#checkVerificationButton");
+const resendVerificationButton = document.querySelector("#resendVerificationButton");
+const verificationLogoutButton = document.querySelector("#verificationLogoutButton");
 const accountBox = document.querySelector("#accountBox");
 const accountName = document.querySelector("#accountName");
 const logoutButton = document.querySelector("#logoutButton");
+const googleSignInButtons = document.querySelectorAll("[data-google-signin]");
 
 let transactions = [];
 let settings = loadSettings();
 let savingsGoals = [];
 let editingSavingsGoalId = null;
 let authRequired = false;
+let firebaseAuth = null;
 
 function todayISO() {
   const date = new Date();
@@ -154,8 +171,22 @@ function showAuth(message = "") {
   appShell.hidden = true;
   authScreen.hidden = false;
   accountBox.hidden = true;
-  authError.textContent = message;
   setAuthMode("login");
+  authError.textContent = message;
+}
+
+function showVerification(user, message = "") {
+  appShell.hidden = true;
+  authScreen.hidden = false;
+  accountBox.hidden = true;
+  loginForm.classList.remove("active");
+  signupForm.classList.remove("active");
+  forgotPasswordForm.classList.remove("active");
+  verificationPanel.hidden = false;
+  verificationPanel.classList.add("active");
+  authTitle.textContent = "Verifique seu email";
+  verificationMessage.textContent = message || `Enviamos um link de confirmacao para ${user.email}.`;
+  authError.textContent = "";
 }
 
 function showApp(user = null) {
@@ -166,29 +197,75 @@ function showApp(user = null) {
   authError.textContent = "";
 }
 
-async function submitAuth(path, body) {
-  const response = await fetch(path, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-  const data = response.status === 204 ? null : await response.json().catch(() => ({}));
-  if (!response.ok) {
-    throw new Error(data.error || "Nao foi possivel autenticar");
-  }
-  return data;
+function firebaseErrorMessage(error) {
+  const messages = {
+    "auth/email-already-in-use": "Este email ja esta cadastrado.",
+    "auth/invalid-credential": "Email ou senha invalidos.",
+    "auth/invalid-email": "Informe um email valido.",
+    "auth/missing-password": "Informe sua senha.",
+    "auth/too-many-requests": "Muitas tentativas. Aguarde alguns minutos e tente novamente.",
+    "auth/weak-password": "Use uma senha mais forte, com pelo menos 10 caracteres.",
+    "auth/network-request-failed": "Nao foi possivel conectar ao servico de autenticacao.",
+    "auth/operation-not-allowed": "O login por email e senha ainda nao foi ativado no Firebase.",
+    "auth/popup-closed-by-user": "A janela do Google foi fechada antes da conclusao.",
+    "auth/popup-blocked": "O navegador bloqueou a janela do Google. Libere pop-ups e tente novamente.",
+    "auth/cancelled-popup-request": "A tentativa anterior foi cancelada. Tente novamente.",
+    "auth/account-exists-with-different-credential": "Este email ja usa outro modo de acesso. Entre com sua senha primeiro para preservar a mesma conta.",
+  };
+  return messages[error?.code] || "Nao foi possivel concluir a autenticacao.";
 }
 
 function setAuthMode(mode) {
   const isSignup = mode === "signup";
-  loginForm.classList.toggle("active", !isSignup);
+  const isForgotPassword = mode === "forgot";
+  loginForm.classList.toggle("active", mode === "login");
   signupForm.classList.toggle("active", isSignup);
-  authTitle.textContent = isSignup ? "Criar cadastro" : "Entrar na conta";
+  forgotPasswordForm.classList.toggle("active", isForgotPassword);
+  verificationPanel.classList.remove("active");
+  verificationPanel.hidden = true;
+  authTitle.textContent = isSignup
+    ? "Criar cadastro"
+    : isForgotPassword
+      ? "Recuperar senha"
+      : "Entrar na conta";
   authError.textContent = "";
 
   setTimeout(() => {
-    document.querySelector(isSignup ? "#signupName" : "#loginEmail").focus();
+    document.querySelector(
+      isSignup ? "#signupName" : isForgotPassword ? "#forgotPasswordEmail" : "#loginEmail",
+    ).focus();
   }, 80);
+}
+
+async function initializeFirebase() {
+  if (!window.firebase?.initializeApp) throw new Error("Biblioteca do Firebase nao carregada");
+  const response = await fetch("/api/config/firebase", { headers: { Accept: "application/json" } });
+  const config = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(config.error || "Firebase nao configurado");
+  if (!window.firebase.apps.length) window.firebase.initializeApp(config);
+  firebaseAuth = window.firebase.auth();
+  firebaseAuth.useDeviceLanguage();
+  return firebaseAuth;
+}
+
+async function loadAuthenticatedUser(firebaseUser) {
+  if (!firebaseUser) {
+    showAuth("Entre ou crie um cadastro para acessar seus dados.");
+    return false;
+  }
+  await firebaseUser.reload();
+  if (!firebaseUser.emailVerified) {
+    showVerification(firebaseUser);
+    return false;
+  }
+
+  await firebaseUser.getIdToken(true);
+  const data = await api.request("/api/auth/me");
+  showApp(data.user);
+  await loadFromApi();
+  render();
+  refreshIcons();
+  return true;
 }
 
 function loadTransactions() {
@@ -196,6 +273,7 @@ function loadTransactions() {
 }
 
 function saveTransactions() {
+  if (authRequired) return;
   localStorage.setItem(TRANSACTIONS_KEY, JSON.stringify(transactions));
 }
 
@@ -204,6 +282,7 @@ function loadSettings() {
 }
 
 function saveSettings() {
+  if (authRequired) return;
   localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
 }
 
@@ -212,6 +291,7 @@ function loadSavingsGoals() {
 }
 
 function saveSavingsGoals() {
+  if (authRequired) return;
   localStorage.setItem(SAVINGS_GOALS_KEY, JSON.stringify(savingsGoals));
 }
 
@@ -251,6 +331,7 @@ async function loadFromApi() {
       showAuth("Entre ou crie um cadastro para acessar seus dados.");
       return false;
     }
+    if (authRequired) throw error;
     transactions = loadTransactions();
     savingsGoals = loadSavingsGoals().map(normalizeSavingsGoal);
   }
@@ -1204,33 +1285,69 @@ loginForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   authError.textContent = "";
   try {
-    const data = await submitAuth("/api/auth/login", {
-      email: document.querySelector("#loginEmail").value,
-      password: document.querySelector("#loginPassword").value,
-    });
-    showApp(data.user);
-    await loadFromApi();
-    render();
+    const credential = await firebaseAuth.signInWithEmailAndPassword(
+      document.querySelector("#loginEmail").value.trim(),
+      document.querySelector("#loginPassword").value,
+    );
+    await loadAuthenticatedUser(credential.user);
   } catch (error) {
-    authError.textContent = error.message;
+    authError.textContent = firebaseErrorMessage(error);
   }
+});
+
+googleSignInButtons.forEach((button) => {
+  button.addEventListener("click", async () => {
+    authError.textContent = "";
+    googleSignInButtons.forEach((item) => { item.disabled = true; });
+    try {
+      const provider = new window.firebase.auth.GoogleAuthProvider();
+      provider.setCustomParameters({ prompt: "select_account" });
+      const credential = await firebaseAuth.signInWithPopup(provider);
+      await loadAuthenticatedUser(credential.user);
+    } catch (error) {
+      authError.textContent = firebaseErrorMessage(error);
+    } finally {
+      googleSignInButtons.forEach((item) => { item.disabled = false; });
+    }
+  });
 });
 
 signupForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   authError.textContent = "";
-  try {
-    const data = await submitAuth("/api/auth/signup", {
-      name: document.querySelector("#signupName").value,
-      email: document.querySelector("#signupEmail").value,
-      password: document.querySelector("#signupPassword").value,
-    });
-    showApp(data.user);
-    await loadFromApi();
-    render();
-  } catch (error) {
-    authError.textContent = error.message;
+  const name = document.querySelector("#signupName").value.trim();
+  const email = document.querySelector("#signupEmail").value.trim();
+  const password = document.querySelector("#signupPassword").value;
+
+  if (password.length < 10) {
+    authError.textContent = "Use uma senha com pelo menos 10 caracteres.";
+    return;
   }
+
+  try {
+    const credential = await firebaseAuth.createUserWithEmailAndPassword(email, password);
+    await credential.user.updateProfile({ displayName: name });
+    await credential.user.sendEmailVerification();
+    showVerification(credential.user);
+  } catch (error) {
+    authError.textContent = firebaseErrorMessage(error);
+  }
+});
+
+forgotPasswordForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  authError.textContent = "";
+  const email = document.querySelector("#forgotPasswordEmail").value.trim();
+  try {
+    await firebaseAuth.sendPasswordResetEmail(email);
+  } catch (error) {
+    if (error.code !== "auth/user-not-found") {
+      authError.textContent = firebaseErrorMessage(error);
+      return;
+    }
+  }
+  setAuthMode("login");
+  authError.textContent = "Se existir uma conta com esse email, enviaremos o link de recuperacao.";
 });
 
 showSignupButton.addEventListener("click", () => {
@@ -1241,8 +1358,41 @@ showLoginButton.addEventListener("click", () => {
   setAuthMode("login");
 });
 
+showForgotPasswordButton.addEventListener("click", () => {
+  document.querySelector("#forgotPasswordEmail").value = document.querySelector("#loginEmail").value;
+  setAuthMode("forgot");
+});
+
+backToLoginButton.addEventListener("click", () => {
+  setAuthMode("login");
+});
+
+checkVerificationButton.addEventListener("click", async () => {
+  authError.textContent = "";
+  try {
+    await loadAuthenticatedUser(firebaseAuth.currentUser);
+  } catch (error) {
+    authError.textContent = error.message || "Nao foi possivel confirmar seu email.";
+  }
+});
+
+resendVerificationButton.addEventListener("click", async () => {
+  authError.textContent = "";
+  try {
+    await firebaseAuth.currentUser?.sendEmailVerification();
+    verificationMessage.textContent = `Enviamos um novo link de confirmacao para ${firebaseAuth.currentUser?.email}.`;
+  } catch (error) {
+    authError.textContent = firebaseErrorMessage(error);
+  }
+});
+
+verificationLogoutButton.addEventListener("click", async () => {
+  await firebaseAuth.signOut();
+  showAuth("Entre com outra conta.");
+});
+
 logoutButton.addEventListener("click", async () => {
-  await fetch("/api/auth/logout", { method: "POST" });
+  await firebaseAuth.signOut();
   transactions = [];
   savingsGoals = [];
   settings = loadSettings();
@@ -1264,29 +1414,28 @@ async function start() {
   pdfMonthInput.value = monthISO();
 
   try {
-    const health = await fetch("/api/health").then((response) => response.json());
-    authRequired = health.database === "connected";
-  } catch {
-    authRequired = false;
-  }
-
-  if (authRequired) {
-    try {
-      const data = await api.request("/api/auth/me");
-      showApp(data.user);
-      await loadFromApi();
-    } catch (error) {
-      showAuth("Entre ou crie um cadastro para acessar seus dados.");
-      refreshIcons();
-      return;
+    if (window.location.protocol === "file:") {
+      throw new Error("Abra o sistema pelo endereco online ou pelo servidor local, nao diretamente pelo arquivo index.html");
     }
-  } else {
-    showApp(null);
-    await loadFromApi();
-  }
+    const health = await fetch("/api/health").then((response) => response.json());
+    authRequired = health.database === "connected" && health.firebase === "configured";
+    if (!authRequired) throw new Error("Banco de dados ou Firebase ainda nao configurado");
 
-  render();
-  refreshIcons();
+    await initializeFirebase();
+    const initialUser = await new Promise((resolve, reject) => {
+      const unsubscribe = firebaseAuth.onAuthStateChanged(
+        (user) => {
+          unsubscribe();
+          resolve(user);
+        },
+        reject,
+      );
+    });
+    await loadAuthenticatedUser(initialUser);
+  } catch (error) {
+    showAuth(`Autenticacao indisponivel: ${error.message}`);
+    refreshIcons();
+  }
 }
 
 start();

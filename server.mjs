@@ -1,17 +1,42 @@
 import express from "express";
-import bcrypt from "bcryptjs";
+import rateLimit from "express-rate-limit";
+import { applicationDefault, cert, getApps, initializeApp } from "firebase-admin/app";
+import { getAuth } from "firebase-admin/auth";
+import helmet from "helmet";
 import pg from "pg";
-import crypto from "node:crypto";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const { Pool } = pg;
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const app = express();
+if (process.env.NODE_ENV === "production") app.set("trust proxy", 1);
 const port = Number(process.env.PORT || 5500);
 const databaseUrl = process.env.DATABASE_URL;
-const sessionSecret = process.env.SESSION_SECRET || "planejamento-financeiro-dev-secret";
-const sessionCookieName = "pf_session";
+const firebaseProjectId = process.env.FIREBASE_PROJECT_ID;
+const firebaseClientConfig = {
+  apiKey: process.env.FIREBASE_API_KEY,
+  authDomain: process.env.FIREBASE_AUTH_DOMAIN,
+  projectId: firebaseProjectId,
+  appId: process.env.FIREBASE_APP_ID,
+};
+const firebaseClientConfigured = Object.values(firebaseClientConfig).every(Boolean);
+
+function initializeFirebaseAdmin() {
+  if (!firebaseProjectId) return null;
+  if (getApps().length) return getAuth();
+
+  const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
+  const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n");
+  const credential = clientEmail && privateKey
+    ? cert({ projectId: firebaseProjectId, clientEmail, privateKey })
+    : applicationDefault();
+
+  initializeApp({ credential, projectId: firebaseProjectId });
+  return getAuth();
+}
+
+const firebaseAdminAuth = initializeFirebaseAdmin();
 
 const pool = databaseUrl
   ? new Pool({
@@ -20,70 +45,40 @@ const pool = databaseUrl
     })
   : null;
 
-app.use(express.json());
+app.disable("x-powered-by");
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      "default-src": ["'self'"],
+      "script-src": ["'self'", "https://www.gstatic.com", "https://cdn.jsdelivr.net", "https://unpkg.com"],
+      "style-src": ["'self'", "'unsafe-inline'"],
+      "img-src": ["'self'", "data:", "blob:"],
+      "connect-src": ["'self'", "https://*.googleapis.com", "https://securetoken.googleapis.com", "https://identitytoolkit.googleapis.com"],
+      "frame-src": ["'self'", "https://*.firebaseapp.com"],
+      "font-src": ["'self'", "data:"],
+      "object-src": ["'none'"],
+      "base-uri": ["'self'"],
+      "form-action": ["'self'"],
+      "frame-ancestors": ["'none'"],
+    },
+  },
+  frameguard: { action: "deny" },
+  referrerPolicy: { policy: "no-referrer" },
+}));
+app.use(express.json({ limit: "100kb" }));
+app.use("/api", rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 600,
+  standardHeaders: "draft-7",
+  legacyHeaders: false,
+  message: { error: "Muitas solicitacoes. Aguarde alguns minutos e tente novamente." },
+}));
 app.use(express.static(__dirname, {
   extensions: ["html"],
   setHeaders(response) {
     response.setHeader("Cache-Control", "no-store");
   },
 }));
-
-function base64url(value) {
-  return Buffer.from(value).toString("base64url");
-}
-
-function sign(value) {
-  return crypto.createHmac("sha256", sessionSecret).update(value).digest("base64url");
-}
-
-function createSessionToken(user) {
-  const payload = base64url(JSON.stringify({
-    id: user.id,
-    email: user.email,
-    exp: Date.now() + 1000 * 60 * 60 * 24 * 30,
-  }));
-  return `${payload}.${sign(payload)}`;
-}
-
-function parseCookies(request) {
-  return Object.fromEntries(
-    String(request.headers.cookie || "")
-      .split(";")
-      .map((item) => item.trim())
-      .filter(Boolean)
-      .map((item) => {
-        const index = item.indexOf("=");
-        return [item.slice(0, index), decodeURIComponent(item.slice(index + 1))];
-      }),
-  );
-}
-
-function readSession(request) {
-  const token = parseCookies(request)[sessionCookieName];
-  if (!token) return null;
-  const [payload, signature] = token.split(".");
-  if (!payload || !signature || sign(payload) !== signature) return null;
-
-  try {
-    const session = JSON.parse(Buffer.from(payload, "base64url").toString("utf8"));
-    if (!session.id || Date.now() > session.exp) return null;
-    return session;
-  } catch {
-    return null;
-  }
-}
-
-function setSessionCookie(response, user) {
-  const secure = process.env.NODE_ENV === "production" ? "; Secure" : "";
-  response.setHeader(
-    "Set-Cookie",
-    `${sessionCookieName}=${encodeURIComponent(createSessionToken(user))}; HttpOnly; SameSite=Lax; Path=/; Max-Age=${60 * 60 * 24 * 30}${secure}`,
-  );
-}
-
-function clearSessionCookie(response) {
-  response.setHeader("Set-Cookie", `${sessionCookieName}=; HttpOnly; SameSite=Lax; Path=/; Max-Age=0`);
-}
 
 function requireDatabase(response) {
   if (pool) return true;
@@ -99,12 +94,17 @@ async function migrate() {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS users (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      firebase_uid TEXT UNIQUE,
       name TEXT NOT NULL,
       email TEXT NOT NULL UNIQUE,
-      password_hash TEXT NOT NULL,
+      password_hash TEXT,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
   `);
+
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS firebase_uid TEXT;`);
+  await pool.query(`ALTER TABLE users ALTER COLUMN password_hash DROP NOT NULL;`);
+  await pool.query(`CREATE UNIQUE INDEX IF NOT EXISTS users_firebase_uid_idx ON users(firebase_uid) WHERE firebase_uid IS NOT NULL;`);
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS settings (
@@ -192,16 +192,6 @@ function mapUser(row) {
   };
 }
 
-function normalizeEmail(email) {
-  return String(email || "").trim().toLowerCase();
-}
-
-async function claimLegacyData(userId) {
-  await pool.query("UPDATE transactions SET user_id = $1 WHERE user_id IS NULL", [userId]);
-  await pool.query("UPDATE savings_goals SET user_id = $1 WHERE user_id IS NULL", [userId]);
-  await pool.query("UPDATE settings SET user_id = $1 WHERE user_id IS NULL", [userId]);
-}
-
 function mapSavingsGoal(row) {
   return {
     id: row.id,
@@ -215,19 +205,74 @@ function mapSavingsGoal(row) {
 
 async function requireAuth(request, response) {
   if (!requireDatabase(response)) return null;
-  const session = readSession(request);
-  if (!session) {
+  if (!firebaseAdminAuth) {
+    response.status(503).json({ error: "Firebase Admin nao configurado" });
+    return null;
+  }
+
+  const authorization = String(request.headers.authorization || "");
+  const idToken = authorization.startsWith("Bearer ") ? authorization.slice(7) : "";
+  if (!idToken) {
     response.status(401).json({ error: "Login necessario" });
     return null;
   }
 
-  const result = await pool.query("SELECT id, name, email FROM users WHERE id = $1", [session.id]);
-  if (!result.rows[0]) {
-    clearSessionCookie(response);
+  let firebaseUser;
+  try {
+    firebaseUser = await firebaseAdminAuth.verifyIdToken(idToken);
+  } catch {
     response.status(401).json({ error: "Login necessario" });
     return null;
   }
-  return result.rows[0];
+
+  if (!firebaseUser.email || !firebaseUser.email_verified) {
+    response.status(403).json({ error: "Confirme seu email antes de acessar seus dados" });
+    return null;
+  }
+
+  const email = firebaseUser.email.trim().toLowerCase();
+  const existingByFirebase = await pool.query(
+    "SELECT id, name, email, firebase_uid FROM users WHERE firebase_uid = $1",
+    [firebaseUser.uid],
+  );
+  if (existingByFirebase.rows[0]) return existingByFirebase.rows[0];
+
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const existingByEmail = await client.query(
+      "SELECT id, name, email FROM users WHERE LOWER(email) = $1 FOR UPDATE",
+      [email],
+    );
+
+    let user;
+    if (existingByEmail.rows[0]) {
+      const linked = await client.query(
+        `UPDATE users
+         SET firebase_uid = $1, name = COALESCE(NULLIF($2, ''), name), email = $3
+         WHERE id = $4
+         RETURNING id, name, email, firebase_uid`,
+        [firebaseUser.uid, firebaseUser.name || "", email, existingByEmail.rows[0].id],
+      );
+      user = linked.rows[0];
+    } else {
+      const created = await client.query(
+        `INSERT INTO users (firebase_uid, name, email, password_hash)
+         VALUES ($1, $2, $3, NULL)
+         RETURNING id, name, email, firebase_uid`,
+        [firebaseUser.uid, firebaseUser.name || email.split("@")[0], email],
+      );
+      user = created.rows[0];
+    }
+
+    await client.query("COMMIT");
+    return user;
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
 }
 
 async function findSavingsGoal(id, userId) {
@@ -261,74 +306,26 @@ async function findSavingsGoal(id, userId) {
 
 app.get("/api/health", async (_request, response) => {
   if (!pool) {
-    response.json({ ok: true, database: "not_configured" });
+    response.json({ ok: true, database: "not_configured", firebase: firebaseAdminAuth ? "configured" : "not_configured" });
     return;
   }
 
   await pool.query("SELECT 1");
-  response.json({ ok: true, database: "connected" });
+  response.json({ ok: true, database: "connected", firebase: firebaseAdminAuth ? "configured" : "not_configured" });
+});
+
+app.get("/api/config/firebase", (_request, response) => {
+  if (!firebaseClientConfigured) {
+    response.status(503).json({ error: "Firebase Web nao configurado" });
+    return;
+  }
+  response.json(firebaseClientConfig);
 });
 
 app.get("/api/auth/me", async (request, response) => {
   const user = await requireAuth(request, response);
   if (!user) return;
   response.json({ user: mapUser(user) });
-});
-
-app.post("/api/auth/signup", async (request, response) => {
-  if (!requireDatabase(response)) return;
-  const name = String(request.body.name || "").trim();
-  const email = normalizeEmail(request.body.email);
-  const password = String(request.body.password || "");
-
-  if (!name || !email || password.length < 6) {
-    response.status(400).json({ error: "Informe nome, email e uma senha com pelo menos 6 caracteres" });
-    return;
-  }
-
-  try {
-    const passwordHash = await bcrypt.hash(password, 12);
-    const result = await pool.query(
-      `INSERT INTO users (name, email, password_hash)
-       VALUES ($1, $2, $3)
-       RETURNING id, name, email`,
-      [name, email, passwordHash],
-    );
-    const user = result.rows[0];
-    const count = await pool.query("SELECT COUNT(*)::int AS count FROM users");
-    if (count.rows[0].count === 1) {
-      await claimLegacyData(user.id);
-    }
-    setSessionCookie(response, user);
-    response.status(201).json({ user: mapUser(user) });
-  } catch (error) {
-    if (error.code === "23505") {
-      response.status(409).json({ error: "Esse email ja esta cadastrado" });
-      return;
-    }
-    throw error;
-  }
-});
-
-app.post("/api/auth/login", async (request, response) => {
-  if (!requireDatabase(response)) return;
-  const email = normalizeEmail(request.body.email);
-  const password = String(request.body.password || "");
-  const result = await pool.query("SELECT id, name, email, password_hash FROM users WHERE email = $1", [email]);
-  const user = result.rows[0];
-
-  if (!user || !(await bcrypt.compare(password, user.password_hash))) {
-    response.status(401).json({ error: "Email ou senha invalidos" });
-    return;
-  }
-
-  setSessionCookie(response, user);
-  response.json({ user: mapUser(user) });
-});
-
-app.post("/api/auth/logout", (_request, response) => {
-  clearSessionCookie(response);
-  response.status(204).end();
 });
 
 app.get("/api/transactions", async (request, response) => {

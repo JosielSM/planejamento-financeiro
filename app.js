@@ -875,6 +875,13 @@ savingsGoalsList.addEventListener("click", async (event) => {
 recordsBody.addEventListener("click", async (event) => {
   const button = event.target.closest("[data-id]");
   if (!button) return;
+
+  const transaction = transactions.find((item) => item.id === button.dataset.id);
+  const transactionLabel = transaction
+    ? `\"${transaction.description}\" no valor de ${money(transaction.amount)}`
+    : "este registro";
+
+  if (!confirm(`Tem certeza de que deseja excluir ${transactionLabel}?\n\nEssa acao nao pode ser desfeita.`)) return;
   await deleteTransaction(button.dataset.id);
 });
 

@@ -217,8 +217,12 @@ function firebaseErrorMessage(error) {
     "auth/popup-blocked": "O navegador bloqueou a janela do Google. Libere pop-ups e tente novamente.",
     "auth/cancelled-popup-request": "A tentativa anterior foi cancelada. Tente novamente.",
     "auth/account-exists-with-different-credential": "Este email ja usa outro modo de acesso. Entre com sua senha primeiro para preservar a mesma conta.",
+    "auth/unauthorized-domain": "Este endereco ainda nao esta autorizado no Firebase.",
+    "auth/web-storage-unsupported": "O navegador esta bloqueando o armazenamento necessario para o login.",
+    "auth/internal-error": "O Firebase encontrou um erro interno ao concluir o login.",
   };
-  return messages[error?.code] || "Nao foi possivel concluir a autenticacao.";
+  return messages[error?.code]
+    || `Nao foi possivel concluir a autenticacao. Codigo: ${error?.code || "desconhecido"}.`;
 }
 
 function setAuthMode(mode) {

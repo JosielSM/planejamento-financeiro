@@ -2283,6 +2283,8 @@ td.value {
 :root[data-theme="dark"] .summary-band,
 :root[data-theme="dark"] .goal-band,
 :root[data-theme="dark"] .savings-band,
+:root[data-theme="dark"] .entry-panel,
+:root[data-theme="dark"] .insights-panel,
 :root[data-theme="dark"] .form-band,
 :root[data-theme="dark"] .chart-band,
 :root[data-theme="dark"] .records-band,
@@ -2296,6 +2298,33 @@ td.value {
   background: var(--surface);
   border-color: var(--line);
   color: var(--text);
+}
+
+:root[data-theme="dark"] .entry-panel {
+  background: linear-gradient(145deg, var(--surface), #16271f);
+  border-color: var(--green-line);
+}
+
+:root[data-theme="dark"] .insights-panel {
+  background: linear-gradient(145deg, var(--surface), #271c1a);
+  border-color: var(--red-line);
+}
+
+:root[data-theme="dark"] .entry-panel .panel-heading,
+:root[data-theme="dark"] .insights-panel .panel-heading,
+:root[data-theme="dark"] .entry-panel h2,
+:root[data-theme="dark"] .insights-panel h2,
+:root[data-theme="dark"] .category-row header {
+  color: var(--text);
+}
+
+:root[data-theme="dark"] .bar {
+  background: #314139;
+  box-shadow: inset 0 0 0 1px #405349;
+}
+
+:root[data-theme="dark"] .bar span {
+  background: #e0aa3e;
 }
 
 :root[data-theme="dark"] .auth-form {

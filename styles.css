@@ -1655,6 +1655,190 @@ td.value {
   gap: 14px;
 }
 
+.register-eyebrow {
+  color: var(--green);
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+
+.register-context {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.register-context article {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 4px 9px;
+  align-items: center;
+  min-width: 0;
+  padding: 13px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+}
+
+.register-context svg {
+  grid-row: 1 / span 2;
+  width: 21px;
+  height: 21px;
+  color: var(--green);
+}
+
+.register-context article:nth-child(2) svg { color: var(--blue); }
+.register-context article:nth-child(3) svg { color: var(--purple); }
+
+.register-context span {
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.register-context strong {
+  overflow-wrap: anywhere;
+  font-size: 1rem;
+}
+
+.register-support-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(310px, 0.65fr);
+  gap: 14px;
+}
+
+.register-support-grid .chart-card {
+  height: 100%;
+}
+
+.recent-registers {
+  padding: 17px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface);
+  box-shadow: var(--soft-shadow);
+}
+
+.recent-registers-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.recent-registers-heading h3 {
+  margin: 0 0 4px;
+  font-size: 1rem;
+}
+
+.recent-registers-heading p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.recent-registers-list {
+  display: grid;
+  gap: 8px;
+}
+
+.recent-register-item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 9px;
+  align-items: center;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: var(--green-soft);
+}
+
+.recent-register-item.expense {
+  background: var(--red-soft);
+  border-color: var(--red-line);
+}
+
+.recent-register-icon {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--green);
+}
+
+.recent-register-item.expense .recent-register-icon {
+  color: var(--red);
+}
+
+.recent-register-icon svg {
+  width: 17px;
+  height: 17px;
+}
+
+.recent-register-item > div:nth-child(2) {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.recent-register-item > div:nth-child(2) strong,
+.recent-register-item > div:nth-child(2) span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.recent-register-item > div:nth-child(2) span {
+  color: var(--muted);
+  font-size: 0.74rem;
+}
+
+.recent-register-value {
+  color: var(--green);
+  font-size: 0.84rem;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.recent-register-item.expense .recent-register-value {
+  color: var(--red);
+}
+
+.recent-registers-empty {
+  margin: 14px 0 0;
+  color: var(--muted);
+  font-size: 0.84rem;
+}
+
+.register-tip {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 13px 15px;
+  border: 1px solid #ead8a8;
+  border-radius: 12px;
+  background: var(--amber-soft);
+  color: var(--amber);
+}
+
+.register-tip svg {
+  width: 22px;
+  height: 22px;
+  flex: 0 0 auto;
+}
+
+.register-tip div {
+  display: grid;
+  gap: 3px;
+}
+
+.register-tip span {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
 .register-card {
   display: grid;
   gap: 8px;
@@ -2805,5 +2989,38 @@ td.value {
   #profilePasswordResetButton {
     grid-column: 1 / -1;
     width: 100%;
+  }
+}
+
+@media (max-width: 980px) {
+  .register-support-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .register-context {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .register-context article:last-child {
+    grid-column: 1 / -1;
+  }
+
+  .recent-registers-heading {
+    align-items: center;
+  }
+
+  .recent-register-item {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .recent-register-value {
+    grid-column: 2;
+    text-align: left;
+  }
+
+  .register-tip {
+    align-items: flex-start;
   }
 }

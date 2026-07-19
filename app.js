@@ -725,6 +725,7 @@ function renderSummary() {
   document.querySelector("#dailyAverage").textContent = money(balance / Math.max(dayCount, 1));
   document.querySelector("#incomeDailyAverage").textContent = money(income / Math.max(dayCount, 1));
   renderIncomeExpenseChart(income, expense);
+  renderRegisterOverview(monthItems, income, expense);
 }
 
 function renderIncomeExpenseChart(income, expense) {
@@ -734,12 +735,39 @@ function renderIncomeExpenseChart(income, expense) {
 
   chart.style.background = total > 0
     ? `conic-gradient(var(--green) 0 ${incomePercent}%, var(--red) ${incomePercent}% 100%)`
-    : "#e8ece6";
+    : "var(--line)";
   chart.setAttribute("aria-label", `Ganhos ${money(income)} e despesas ${money(expense)}`);
   document.querySelector("#chartIncomeValue").textContent = money(income);
   document.querySelector("#chartExpenseValue").textContent = money(expense);
   document.querySelector("#registerIncomeValue").textContent = money(income);
   document.querySelector("#registerExpenseValue").textContent = money(expense);
+}
+
+function renderRegisterOverview(monthItems, income, expense) {
+  const recentItems = [...monthItems]
+    .sort((a, b) => b.date.localeCompare(a.date))
+    .slice(0, 3);
+  const lastItem = recentItems[0];
+  const recentList = document.querySelector("#recentRegistersList");
+  const recentEmpty = document.querySelector("#recentRegistersEmpty");
+
+  document.querySelector("#registerBalanceValue").textContent = money(income - expense);
+  document.querySelector("#registerCountValue").textContent = String(monthItems.length);
+  document.querySelector("#registerLastDate").textContent = lastItem
+    ? lastItem.date.split("-").reverse().slice(0, 2).join("/")
+    : "Nenhuma";
+
+  recentList.innerHTML = recentItems.map((item) => `
+    <article class="recent-register-item ${item.type}">
+      <div class="recent-register-icon"><i data-lucide="${item.type === "income" ? "arrow-down-left" : "arrow-up-right"}" aria-hidden="true"></i></div>
+      <div>
+        <strong>${escapeHTML(item.description)}</strong>
+        <span>${escapeHTML(item.category)} · ${item.date.split("-").reverse().join("/")}</span>
+      </div>
+      <strong class="recent-register-value">${item.type === "income" ? "+" : "-"} ${money(item.amount)}</strong>
+    </article>
+  `).join("");
+  recentEmpty.hidden = recentItems.length > 0;
 }
 
 function renderGoal() {

@@ -12,12 +12,18 @@
         <p class="eyebrow">Controle pessoal</p>
         <h1>Planejamento Financeiro</h1>
       </div>
-      <div class="account-box" id="accountBox" hidden>
-        <span id="accountName"></span>
-        <button class="secondary-button account-button" id="linkGoogleButton" type="button" hidden>
-          Vincular Google
+      <div class="topbar-actions">
+        <button class="theme-toggle" id="themeToggleButton" type="button" aria-label="Ativar modo escuro" aria-pressed="false">
+          <i data-lucide="moon" aria-hidden="true"></i>
+          <span id="themeToggleText">Modo escuro</span>
         </button>
-        <button class="secondary-button account-button" id="logoutButton" type="button">Sair</button>
+        <div class="account-box" id="accountBox" hidden>
+          <span id="accountName"></span>
+          <button class="secondary-button account-button" id="linkGoogleButton" type="button" hidden>
+            Vincular Google
+          </button>
+          <button class="secondary-button account-button" id="logoutButton" type="button">Sair</button>
+        </div>
       </div>
     </header>
 

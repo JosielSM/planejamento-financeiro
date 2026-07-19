@@ -20,6 +20,29 @@
   --soft-shadow: 0 8px 22px rgba(28, 39, 33, 0.07);
 }
 
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #101713;
+  --surface: #19231e;
+  --line: #34463c;
+  --text: #edf5f0;
+  --muted: #a9bbb0;
+  --green: #5fd49a;
+  --green-soft: #173529;
+  --green-line: #2d694d;
+  --red: #ff887e;
+  --red-soft: #3b201e;
+  --red-line: #70403b;
+  --blue: #7cb8f5;
+  --blue-soft: #192f45;
+  --purple: #c1a3ed;
+  --purple-soft: #302642;
+  --amber: #f3c75f;
+  --amber-soft: #3a301c;
+  --shadow: 0 16px 45px rgba(0, 0, 0, 0.28);
+  --soft-shadow: 0 8px 22px rgba(0, 0, 0, 0.22);
+}
+
 * {
   box-sizing: border-box;
 }
@@ -76,6 +99,33 @@ select {
   background: rgba(255, 255, 255, 0.1);
   border-color: rgba(255, 255, 255, 0.25);
   color: #fff;
+}
+
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 8px 13px;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
+}
+
+.theme-toggle:hover {
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.45);
+  transform: translateY(-1px);
+}
+
+.theme-toggle svg {
+  width: 18px;
+  height: 18px;
 }
 
 .eyebrow {
@@ -2075,5 +2125,117 @@ td.value {
 
   td[data-label="Acao"] .delete-button {
     justify-self: start;
+  }
+}
+
+/* Tema escuro: mantém as cores semânticas e reduz o brilho das superfícies. */
+:root[data-theme="dark"] body {
+  background: radial-gradient(circle at 8% 0%, rgba(95, 212, 154, 0.1), transparent 28rem), var(--bg);
+}
+
+:root[data-theme="dark"] .topbar { background: #0d241a; }
+
+:root[data-theme="dark"] .auth-panel,
+:root[data-theme="dark"] .app-tabs,
+:root[data-theme="dark"] .summary-band,
+:root[data-theme="dark"] .goal-band,
+:root[data-theme="dark"] .savings-band,
+:root[data-theme="dark"] .form-band,
+:root[data-theme="dark"] .chart-band,
+:root[data-theme="dark"] .records-band,
+:root[data-theme="dark"] .export-band,
+:root[data-theme="dark"] .modal-card,
+:root[data-theme="dark"] .system-dialog-card,
+:root[data-theme="dark"] .category-manager,
+:root[data-theme="dark"] .savings-overview,
+:root[data-theme="dark"] .category-row,
+:root[data-theme="dark"] .empty-state {
+  background: var(--surface);
+  border-color: var(--line);
+  color: var(--text);
+}
+
+:root[data-theme="dark"] input,
+:root[data-theme="dark"] select,
+:root[data-theme="dark"] textarea,
+:root[data-theme="dark"] .secondary-button,
+:root[data-theme="dark"] .google-auth-button,
+:root[data-theme="dark"] .reserve-metric,
+:root[data-theme="dark"] .record-card,
+:root[data-theme="dark"] .pdf-option-card {
+  background: #202d26;
+  border-color: var(--line);
+  color: var(--text);
+}
+
+:root[data-theme="dark"] input::placeholder,
+:root[data-theme="dark"] textarea::placeholder { color: #82958a; }
+
+:root[data-theme="dark"] .metric,
+:root[data-theme="dark"] .goal-summary,
+:root[data-theme="dark"] .chart-card,
+:root[data-theme="dark"] .report-summary-card,
+:root[data-theme="dark"] .report-chart-card,
+:root[data-theme="dark"] .report-table-card {
+  background: #202d26;
+  border-color: var(--line);
+}
+
+:root[data-theme="dark"] .metric.positive,
+:root[data-theme="dark"] .available-reserve-metric,
+:root[data-theme="dark"] .record-card.income {
+  background: linear-gradient(145deg, #202d26, var(--green-soft));
+}
+
+:root[data-theme="dark"] .metric.negative,
+:root[data-theme="dark"] .record-card.expense {
+  background: linear-gradient(145deg, #202d26, var(--red-soft));
+}
+
+:root[data-theme="dark"] .metric.balance,
+:root[data-theme="dark"] .balance-reserve-metric {
+  background: linear-gradient(145deg, #202d26, var(--blue-soft));
+}
+
+:root[data-theme="dark"] .metric.average,
+:root[data-theme="dark"] .saved-reserve-metric,
+:root[data-theme="dark"] .savings-card {
+  background: linear-gradient(145deg, #202d26, var(--purple-soft));
+  border-color: var(--line);
+}
+
+:root[data-theme="dark"] .reserve-chart::after { background: var(--surface); }
+:root[data-theme="dark"] .reserve-chart { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08); }
+
+:root[data-theme="dark"] table,
+:root[data-theme="dark"] thead,
+:root[data-theme="dark"] tbody,
+:root[data-theme="dark"] tr,
+:root[data-theme="dark"] th,
+:root[data-theme="dark"] td { border-color: var(--line); }
+
+:root[data-theme="dark"] th { background: #22342a; color: #dcebe2; }
+:root[data-theme="dark"] tbody tr:hover { background: rgba(95, 212, 154, 0.07); }
+:root[data-theme="dark"] .tab-button { color: var(--muted); }
+:root[data-theme="dark"] .tab-button.active { background: var(--green-soft); color: var(--green); }
+
+:root[data-theme="dark"] .modal-backdrop,
+:root[data-theme="dark"] .system-dialog-backdrop { background: rgba(2, 8, 5, 0.76); }
+
+:root[data-theme="dark"] .auth-divider::before,
+:root[data-theme="dark"] .auth-divider::after,
+:root[data-theme="dark"] .progress-track { background: var(--line); }
+
+:root[data-theme="dark"] .auth-divider span { background: var(--surface); }
+:root[data-theme="dark"] .account-box span { color: #dce9e1; }
+
+@media (max-width: 600px) {
+  .theme-toggle { width: 40px; padding: 8px; }
+  .theme-toggle span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
   }
 }

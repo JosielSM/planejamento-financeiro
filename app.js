@@ -1,6 +1,15 @@
 const TRANSACTIONS_KEY = "planejamento-financeiro-v1";
 const SETTINGS_KEY = "planejamento-financeiro-settings-v1";
 const SAVINGS_GOALS_KEY = "planejamento-financeiro-savings-goals-v1";
+const THEME_KEY = "planejamento-financeiro-theme-v1";
+
+function preferredTheme() {
+  const savedTheme = localStorage.getItem(THEME_KEY);
+  if (savedTheme === "light" || savedTheme === "dark") return savedTheme;
+  return window.matchMedia?.("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+}
+
+document.documentElement.dataset.theme = preferredTheme();
 
 const categories = {
   income: ["Trabalho", "Freelance", "Venda", "Extra", "Outro ganho"],
@@ -115,6 +124,8 @@ const accountName = document.querySelector("#accountName");
 const linkGoogleButton = document.querySelector("#linkGoogleButton");
 const logoutButton = document.querySelector("#logoutButton");
 const googleSignInButtons = document.querySelectorAll("[data-google-signin]");
+const themeToggleButton = document.querySelector("#themeToggleButton");
+const themeToggleText = document.querySelector("#themeToggleText");
 
 let transactions = [];
 let settings = loadSettings();
@@ -126,6 +137,17 @@ let systemDialogLastFocus = null;
 let editingSavingsGoalId = null;
 let authRequired = false;
 let firebaseAuth = null;
+
+function applyTheme(theme, savePreference = false) {
+  const isDark = theme === "dark";
+  document.documentElement.dataset.theme = isDark ? "dark" : "light";
+  themeToggleButton.setAttribute("aria-pressed", String(isDark));
+  themeToggleButton.setAttribute("aria-label", isDark ? "Ativar modo claro" : "Ativar modo escuro");
+  themeToggleText.textContent = isDark ? "Modo claro" : "Modo escuro";
+  themeToggleButton.querySelector("[data-lucide]")?.setAttribute("data-lucide", isDark ? "sun" : "moon");
+  if (savePreference) localStorage.setItem(THEME_KEY, isDark ? "dark" : "light");
+  refreshIcons();
+}
 
 function todayISO() {
   const date = new Date();
@@ -1765,7 +1787,13 @@ document.addEventListener("keydown", (event) => {
   }
 });
 
+themeToggleButton.addEventListener("click", () => {
+  const nextTheme = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
+  applyTheme(nextTheme, true);
+});
+
 async function start() {
+  applyTheme(preferredTheme());
   monthFilter.value = monthISO();
   resetForm();
   pdfMonthInput.value = monthISO();

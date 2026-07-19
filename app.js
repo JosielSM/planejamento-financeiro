@@ -119,8 +119,12 @@ const verificationMessage = document.querySelector("#verificationMessage");
 const checkVerificationButton = document.querySelector("#checkVerificationButton");
 const resendVerificationButton = document.querySelector("#resendVerificationButton");
 const verificationLogoutButton = document.querySelector("#verificationLogoutButton");
-const accountBox = document.querySelector("#accountBox");
+const profileButton = document.querySelector("#profileButton");
+const profileModal = document.querySelector("#profileModal");
+const closeProfileButton = document.querySelector("#closeProfileButton");
 const accountName = document.querySelector("#accountName");
+const accountEmail = document.querySelector("#accountEmail");
+const googleLinkStatus = document.querySelector("#googleLinkStatus");
 const linkGoogleButton = document.querySelector("#linkGoogleButton");
 const logoutButton = document.querySelector("#logoutButton");
 const googleSignInButtons = document.querySelectorAll("[data-google-signin]");
@@ -137,6 +141,7 @@ let systemDialogLastFocus = null;
 let editingSavingsGoalId = null;
 let authRequired = false;
 let firebaseAuth = null;
+let profileLastFocus = null;
 
 function applyTheme(theme, savePreference = false) {
   const isDark = theme === "dark";
@@ -217,10 +222,33 @@ function loadJSON(key, fallback) {
   }
 }
 
+function syncModalOpenState() {
+  document.body.classList.toggle(
+    "modal-open",
+    !transactionModal.hidden || !pdfSummaryModal.hidden || !profileModal.hidden || !systemDialog.hidden,
+  );
+}
+
+function openProfileModal() {
+  profileLastFocus = document.activeElement;
+  profileModal.hidden = false;
+  syncModalOpenState();
+  refreshIcons();
+  setTimeout(() => closeProfileButton.focus(), 40);
+}
+
+function closeProfileModal() {
+  if (profileModal.hidden) return;
+  profileModal.hidden = true;
+  syncModalOpenState();
+  profileLastFocus?.focus?.();
+  profileLastFocus = null;
+}
+
 function closeSystemDialog(result = false) {
   if (systemDialog.hidden) return;
   systemDialog.hidden = true;
-  document.body.classList.toggle("modal-open", !transactionModal.hidden || !pdfSummaryModal.hidden);
+  syncModalOpenState();
   const resolve = systemDialogResolver;
   systemDialogResolver = null;
   resolve?.(result);
@@ -264,7 +292,8 @@ function showAuth(message = "") {
   authRequired = true;
   appShell.hidden = true;
   authScreen.hidden = false;
-  accountBox.hidden = true;
+  profileButton.hidden = true;
+  closeProfileModal();
   setAuthMode("login");
   authError.textContent = message;
 }
@@ -272,7 +301,8 @@ function showAuth(message = "") {
 function showVerification(user, message = "") {
   appShell.hidden = true;
   authScreen.hidden = false;
-  accountBox.hidden = true;
+  profileButton.hidden = true;
+  closeProfileModal();
   loginForm.classList.remove("active");
   signupForm.classList.remove("active");
   forgotPasswordForm.classList.remove("active");
@@ -290,9 +320,13 @@ function hasGoogleProvider(firebaseUser) {
 function showApp(user = null) {
   appShell.hidden = false;
   authScreen.hidden = true;
-  accountBox.hidden = !user;
+  profileButton.hidden = !user;
   accountName.textContent = user ? user.name : "";
-  linkGoogleButton.hidden = !user || hasGoogleProvider(firebaseAuth?.currentUser);
+  accountEmail.textContent = user?.email || firebaseAuth?.currentUser?.email || "";
+  const googleLinked = hasGoogleProvider(firebaseAuth?.currentUser);
+  googleLinkStatus.textContent = googleLinked ? "Vinculada" : "Não vinculada";
+  googleLinkStatus.classList.toggle("linked", googleLinked);
+  linkGoogleButton.hidden = !user || googleLinked;
   authError.textContent = "";
 }
 
@@ -743,7 +777,7 @@ function renderSavingsOverview() {
   reserveChartPercent.textContent = `${Math.round(freePercent)}%`;
   reserveChart.style.background = monthBalance > 0
     ? `conic-gradient(var(--green) 0 ${freePercent}%, var(--purple) ${freePercent}% 100%)`
-    : "#e2e7e3";
+    : "var(--line)";
   reserveChart.setAttribute(
     "aria-label",
     `Saldo livre estimado ${money(availableBalance)} e dinheiro reservado ${money(totalReserved)}`,
@@ -941,7 +975,7 @@ function openTransactionModal(type) {
 function closeTransactionModal() {
   transactionModal.hidden = true;
   setCategoryManagerOpen(false);
-  document.body.classList.remove("modal-open");
+  syncModalOpenState();
 }
 
 function openPdfSummaryModal() {
@@ -954,7 +988,7 @@ function openPdfSummaryModal() {
 
 function closePdfSummaryModal() {
   pdfSummaryModal.hidden = true;
-  document.body.classList.remove("modal-open");
+  syncModalOpenState();
 }
 
 function getMonthSummary(monthValue) {
@@ -1730,12 +1764,19 @@ verificationLogoutButton.addEventListener("click", async () => {
 });
 
 logoutButton.addEventListener("click", async () => {
+  closeProfileModal();
   await firebaseAuth.signOut();
   transactions = [];
   savingsGoals = [];
   customCategories = [];
   settings = loadSettings();
   showAuth("Voce saiu da conta.");
+});
+
+profileButton.addEventListener("click", openProfileModal);
+closeProfileButton.addEventListener("click", closeProfileModal);
+profileModal.addEventListener("click", (event) => {
+  if (event.target.closest("[data-profile-close]")) closeProfileModal();
 });
 
 linkGoogleButton.addEventListener("click", async () => {
@@ -1751,6 +1792,8 @@ linkGoogleButton.addEventListener("click", async () => {
   } catch (error) {
     if (error.code === "auth/provider-already-linked") {
       linkGoogleButton.hidden = true;
+      googleLinkStatus.textContent = "Vinculada";
+      googleLinkStatus.classList.add("linked");
       await showNotice("Sua conta Google ja esta vinculada.", "Google vinculado", "success");
     } else if (error.code === "auth/credential-already-in-use") {
       await showNotice("Esta conta Google ja esta vinculada a outro usuario.", "Conta em uso", "error");
@@ -1777,6 +1820,10 @@ systemDialog.addEventListener("click", (event) => {
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape" && !systemDialog.hidden) {
     closeSystemDialog(false);
+    return;
+  }
+  if (event.key === "Escape" && !profileModal.hidden) {
+    closeProfileModal();
     return;
   }
   if (event.key === "Escape" && !transactionModal.hidden) {

@@ -67,6 +67,15 @@ const emptyState = document.querySelector("#emptyState");
 const dailyGoalInput = document.querySelector("#dailyGoal");
 const savingsGoalsList = document.querySelector("#savingsGoalsList");
 const savingsEmptyState = document.querySelector("#savingsEmptyState");
+const reserveChart = document.querySelector("#reserveChart");
+const reserveChartPercent = document.querySelector("#reserveChartPercent");
+const reserveChartMessage = document.querySelector("#reserveChartMessage");
+const goalsMonthBalance = document.querySelector("#goalsMonthBalance");
+const goalsReservedAmount = document.querySelector("#goalsReservedAmount");
+const goalsAvailableBalance = document.querySelector("#goalsAvailableBalance");
+const overallGoalsPercent = document.querySelector("#overallGoalsPercent");
+const overallGoalsProgressBar = document.querySelector("#overallGoalsProgressBar");
+const overallGoalsCaption = document.querySelector("#overallGoalsCaption");
 const tabTriggers = document.querySelectorAll("[data-tab-target]");
 const tabButtons = document.querySelectorAll(".tab-button");
 const tabPanels = document.querySelectorAll("[data-tab-panel]");
@@ -693,7 +702,50 @@ function setGoalFormOpen(isOpen) {
   }
 }
 
+function renderSavingsOverview() {
+  const monthItems = getMonthTransactions();
+  const income = monthItems.filter((item) => item.type === "income").reduce((sum, item) => sum + item.amount, 0);
+  const expenses = monthItems.filter((item) => item.type === "expense").reduce((sum, item) => sum + item.amount, 0);
+  const monthBalance = income - expenses;
+  const totalReserved = savingsGoals.reduce((sum, goal) => sum + Number(goal.savedAmount || 0), 0);
+  const totalTargets = savingsGoals.reduce((sum, goal) => sum + Number(goal.targetAmount || 0), 0);
+  const availableBalance = monthBalance - totalReserved;
+  const reservedPercentOfBalance = monthBalance > 0 ? Math.min((totalReserved / monthBalance) * 100, 100) : 0;
+  const freePercent = monthBalance > 0 ? Math.max(100 - reservedPercentOfBalance, 0) : 0;
+  const overallPercent = totalTargets > 0 ? Math.min((totalReserved / totalTargets) * 100, 100) : 0;
+
+  goalsMonthBalance.textContent = money(monthBalance);
+  goalsReservedAmount.textContent = money(totalReserved);
+  goalsAvailableBalance.textContent = money(availableBalance);
+  goalsAvailableBalance.classList.toggle("negative-value", availableBalance < 0);
+  reserveChartPercent.textContent = `${Math.round(freePercent)}%`;
+  reserveChart.style.background = monthBalance > 0
+    ? `conic-gradient(var(--green) 0 ${freePercent}%, var(--purple) ${freePercent}% 100%)`
+    : "#e2e7e3";
+  reserveChart.setAttribute(
+    "aria-label",
+    `Saldo livre estimado ${money(availableBalance)} e dinheiro reservado ${money(totalReserved)}`,
+  );
+
+  if (!savingsGoals.length) {
+    reserveChartMessage.textContent = "Crie um objetivo e registre depositos para acompanhar seu dinheiro reservado.";
+  } else if (monthBalance <= 0) {
+    reserveChartMessage.textContent = "O saldo do mes nao esta positivo. Revise ganhos e despesas antes de aumentar as reservas.";
+  } else if (availableBalance < 0) {
+    reserveChartMessage.textContent = "O valor reservado esta acima do saldo deste mes. Isso pode incluir dinheiro guardado em meses anteriores.";
+  } else {
+    reserveChartMessage.textContent = `${money(totalReserved)} estao separados para seus objetivos e ${money(availableBalance)} permanecem livres.`;
+  }
+
+  overallGoalsPercent.textContent = `${Math.round(overallPercent)}%`;
+  overallGoalsProgressBar.style.width = `${overallPercent}%`;
+  overallGoalsCaption.textContent = totalTargets > 0
+    ? `${money(totalReserved)} guardados de ${money(totalTargets)} planejados.`
+    : "Nenhum objetivo criado.";
+}
+
 function renderSavingsGoals() {
+  renderSavingsOverview();
   savingsGoalsList.innerHTML = "";
   savingsEmptyState.style.display = savingsGoals.length ? "none" : "block";
 

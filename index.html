@@ -229,21 +229,65 @@
         </section>
       </div>
 
-      <section class="savings-band tab-screen" data-tab-panel="metas" aria-label="Metas para comprar ou realizar">
+      <section class="savings-band tab-screen" data-tab-panel="metas" aria-label="Objetivos e reservas financeiras">
         <div class="records-header">
           <div>
-            <h2>Metas para comprar ou realizar</h2>
-            <p class="section-note">Acompanhe o progresso do que voce quer conquistar.</p>
+            <p class="eyebrow savings-eyebrow">Planejamento do seu dinheiro</p>
+            <h2 class="heading-with-icon"><i data-lucide="goal" aria-hidden="true"></i> Objetivos e reservas</h2>
+            <p class="section-note">Separe dinheiro para compras, contas, projetos ou qualquer objetivo importante.</p>
           </div>
           <button class="secondary-button goal-toggle" id="savingsGoalToggleButton" type="button">
             <i data-lucide="circle-plus" aria-hidden="true"></i>
             <span>Nova meta</span>
           </button>
         </div>
+        <section class="savings-overview" aria-label="Resumo das reservas">
+          <div class="reserve-chart-wrap">
+            <div class="reserve-chart" id="reserveChart" role="img" aria-label="Distribuicao entre saldo livre e dinheiro reservado">
+              <div>
+                <span>Livre</span>
+                <strong id="reserveChartPercent">0%</strong>
+              </div>
+            </div>
+            <div>
+              <h3>Como suas reservas afetam o saldo</h3>
+              <p id="reserveChartMessage">Crie uma meta e registre depositos para acompanhar seu dinheiro reservado.</p>
+              <div class="reserve-legend" aria-label="Legenda do grafico">
+                <span><i class="free-dot" aria-hidden="true"></i> Saldo livre</span>
+                <span><i class="reserved-dot" aria-hidden="true"></i> Reservado</span>
+              </div>
+            </div>
+          </div>
+          <div class="reserve-metrics">
+            <article class="reserve-metric balance-reserve-metric">
+              <i data-lucide="wallet-cards" aria-hidden="true"></i>
+              <span>Saldo do mes</span>
+              <strong id="goalsMonthBalance">R$ 0,00</strong>
+            </article>
+            <article class="reserve-metric saved-reserve-metric">
+              <i data-lucide="piggy-bank" aria-hidden="true"></i>
+              <span>Reservado nas metas</span>
+              <strong id="goalsReservedAmount">R$ 0,00</strong>
+            </article>
+            <article class="reserve-metric available-reserve-metric">
+              <i data-lucide="badge-dollar-sign" aria-hidden="true"></i>
+              <span>Saldo livre estimado</span>
+              <strong id="goalsAvailableBalance">R$ 0,00</strong>
+            </article>
+          </div>
+          <div class="overall-goal-progress">
+            <div>
+              <span>Progresso de todos os objetivos</span>
+              <strong id="overallGoalsPercent">0%</strong>
+            </div>
+            <div class="progress-track"><span id="overallGoalsProgressBar"></span></div>
+            <small id="overallGoalsCaption">Nenhum objetivo criado.</small>
+          </div>
+        </section>
         <form class="savings-form" id="savingsGoalForm" hidden>
           <label>
-            O que voce quer?
-            <input id="savingsGoalName" type="text" placeholder="Ex: TV, celular, viagem" required />
+            Nome do objetivo
+            <input id="savingsGoalName" type="text" placeholder="Ex: Conta de luz, viagem, celular" required />
           </label>
           <label>
             Valor total

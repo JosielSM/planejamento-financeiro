@@ -114,6 +114,7 @@ const passwordStrengthLabel = document.querySelector("#passwordStrengthLabel");
 const passwordStrengthBar = document.querySelector("#passwordStrengthBar");
 const passwordMatchStatus = document.querySelector("#passwordMatchStatus");
 const passwordRuleItems = document.querySelectorAll("[data-password-rule]");
+const passwordVisibilityButtons = document.querySelectorAll("[data-password-toggle]");
 const authTitle = document.querySelector("#authTitle");
 const showSignupButton = document.querySelector("#showSignupButton");
 const showLoginButton = document.querySelector("#showLoginButton");
@@ -1987,6 +1988,20 @@ signupForm.addEventListener("submit", async (event) => {
 
 signupPassword.addEventListener("input", updatePasswordGuidance);
 signupPasswordConfirmation.addEventListener("input", updatePasswordGuidance);
+
+passwordVisibilityButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    const input = document.getElementById(button.dataset.passwordToggle);
+    if (!input) return;
+    const willShow = input.type === "password";
+    input.type = willShow ? "text" : "password";
+    button.setAttribute("aria-pressed", String(willShow));
+    button.setAttribute("aria-label", willShow ? "Ocultar senha" : "Mostrar senha");
+    button.querySelector("[data-lucide]")?.setAttribute("data-lucide", willShow ? "eye-off" : "eye");
+    refreshIcons();
+    input.focus();
+  });
+});
 
 forgotPasswordForm.addEventListener("submit", async (event) => {
   event.preventDefault();

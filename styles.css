@@ -231,6 +231,48 @@ button:hover,
   margin: 0;
 }
 
+.password-input-wrap {
+  position: relative;
+  display: block;
+}
+
+.password-field {
+  display: grid;
+  gap: 0;
+}
+
+.password-input-wrap input {
+  padding-right: 48px;
+}
+
+.password-visibility-button {
+  position: absolute;
+  top: calc(50% + 3px);
+  right: 7px;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  min-height: 34px;
+  padding: 0;
+  transform: translateY(-50%);
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.password-visibility-button:hover {
+  transform: translateY(-50%);
+  background: var(--green-soft);
+  color: var(--green);
+}
+
+.password-visibility-button svg {
+  width: 18px;
+  height: 18px;
+}
+
 .password-guidance {
   display: grid;
   gap: 9px;

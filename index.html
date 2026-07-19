@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Planejamento Financeiro</title>
-    <link rel="stylesheet" href="styles.css?v=password-rules-2" />
+    <link rel="stylesheet" href="styles.css?v=password-visibility-1" />
   </head>
   <body>
     <header class="topbar">
@@ -47,10 +47,13 @@
             Email
             <input id="loginEmail" type="email" autocomplete="email" required />
           </label>
-          <label>
-            Senha
-            <input id="loginPassword" type="password" autocomplete="current-password" required />
-          </label>
+          <div class="password-field">
+            <label for="loginPassword">Senha</label>
+            <span class="password-input-wrap">
+              <input id="loginPassword" type="password" autocomplete="current-password" required />
+              <button class="password-visibility-button" type="button" data-password-toggle="loginPassword" aria-label="Mostrar senha" aria-pressed="false"><i data-lucide="eye" aria-hidden="true"></i></button>
+            </span>
+          </div>
           <button class="primary-button" type="submit">Entrar</button>
           <button class="text-button" id="showForgotPasswordButton" type="button">Esqueci minha senha</button>
           <button class="secondary-button" id="showSignupButton" type="button">Cadastrar</button>
@@ -77,10 +80,13 @@
             Email
             <input id="signupEmail" type="email" autocomplete="email" required />
           </label>
-          <label>
-            Senha
-            <input id="signupPassword" type="password" autocomplete="new-password" minlength="10" maxlength="128" aria-describedby="passwordRequirements" required />
-          </label>
+          <div class="password-field">
+            <label for="signupPassword">Senha</label>
+            <span class="password-input-wrap">
+              <input id="signupPassword" type="password" autocomplete="new-password" minlength="10" maxlength="128" aria-describedby="passwordRequirements" required />
+              <button class="password-visibility-button" type="button" data-password-toggle="signupPassword" aria-label="Mostrar senha" aria-pressed="false"><i data-lucide="eye" aria-hidden="true"></i></button>
+            </span>
+          </div>
           <div class="password-guidance" id="passwordRequirements">
             <div class="password-strength-heading">
               <span>Segurança da senha</span>
@@ -95,10 +101,13 @@
               <li data-password-rule="symbol">Um caractere especial</li>
             </ul>
           </div>
-          <label>
-            Confirmar senha
-            <input id="signupPasswordConfirmation" type="password" autocomplete="new-password" minlength="10" maxlength="128" required />
-          </label>
+          <div class="password-field">
+            <label for="signupPasswordConfirmation">Confirmar senha</label>
+            <span class="password-input-wrap">
+              <input id="signupPasswordConfirmation" type="password" autocomplete="new-password" minlength="10" maxlength="128" required />
+              <button class="password-visibility-button" type="button" data-password-toggle="signupPasswordConfirmation" aria-label="Mostrar confirmação da senha" aria-pressed="false"><i data-lucide="eye" aria-hidden="true"></i></button>
+            </span>
+          </div>
           <p class="password-match-status" id="passwordMatchStatus" aria-live="polite">Digite novamente a mesma senha.</p>
           <button class="primary-button" type="submit">Criar conta</button>
           <button class="secondary-button" id="showLoginButton" type="button">Voltar para login</button>
@@ -622,6 +631,6 @@
     <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
-    <script src="app.js?v=password-rules-2"></script>
+    <script src="app.js?v=password-visibility-1"></script>
   </body>
 </html>

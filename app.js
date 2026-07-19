@@ -88,6 +88,7 @@ const resendVerificationButton = document.querySelector("#resendVerificationButt
 const verificationLogoutButton = document.querySelector("#verificationLogoutButton");
 const accountBox = document.querySelector("#accountBox");
 const accountName = document.querySelector("#accountName");
+const linkGoogleButton = document.querySelector("#linkGoogleButton");
 const logoutButton = document.querySelector("#logoutButton");
 const googleSignInButtons = document.querySelectorAll("[data-google-signin]");
 
@@ -189,11 +190,16 @@ function showVerification(user, message = "") {
   authError.textContent = "";
 }
 
+function hasGoogleProvider(firebaseUser) {
+  return firebaseUser?.providerData?.some((provider) => provider.providerId === "google.com");
+}
+
 function showApp(user = null) {
   appShell.hidden = false;
   authScreen.hidden = true;
   accountBox.hidden = !user;
   accountName.textContent = user ? user.name : "";
+  linkGoogleButton.hidden = !user || hasGoogleProvider(firebaseAuth?.currentUser);
   authError.textContent = "";
 }
 
@@ -1397,6 +1403,32 @@ logoutButton.addEventListener("click", async () => {
   savingsGoals = [];
   settings = loadSettings();
   showAuth("Voce saiu da conta.");
+});
+
+linkGoogleButton.addEventListener("click", async () => {
+  const currentUser = firebaseAuth.currentUser;
+  if (!currentUser) return;
+
+  linkGoogleButton.disabled = true;
+  try {
+    const provider = new window.firebase.auth.GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: "select_account" });
+    await currentUser.linkWithPopup(provider);
+    await currentUser.reload();
+    linkGoogleButton.hidden = true;
+    alert("Conta Google vinculada. Agora voce pode entrar com Google ou com sua senha.");
+  } catch (error) {
+    if (error.code === "auth/provider-already-linked") {
+      linkGoogleButton.hidden = true;
+      alert("Sua conta Google ja esta vinculada.");
+    } else if (error.code === "auth/credential-already-in-use") {
+      alert("Esta conta Google ja esta vinculada a outro usuario.");
+    } else {
+      alert(firebaseErrorMessage(error));
+    }
+  } finally {
+    linkGoogleButton.disabled = false;
+  }
 });
 
 document.addEventListener("keydown", (event) => {

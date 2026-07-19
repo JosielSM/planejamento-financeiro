@@ -47,6 +47,7 @@ const pool = databaseUrl
 
 app.disable("x-powered-by");
 app.use(helmet({
+  crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" },
   contentSecurityPolicy: {
     directives: {
       "default-src": ["'self'"],

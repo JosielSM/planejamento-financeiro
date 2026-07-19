@@ -17,7 +17,7 @@ const categories = {
 };
 
 const frequencyLabels = {
-  daily: "Do dia",
+  daily: "Diário",
   monthly: "Mensal fixa",
   occasional: "Eventual",
 };
@@ -860,9 +860,26 @@ function renderBreakdown() {
 
   const rows = Object.entries(grouped).sort((a, b) => b[1] - a[1]);
   const target = document.querySelector("#categoryBreakdown");
+  const pieChart = document.querySelector("#destinationPieChart");
+  const pieTotal = document.querySelector("#destinationPieTotal");
+  const legend = document.querySelector("#destinationLegend");
+  const totalExpense = document.querySelector("#destinationTotalExpense");
+  const topCategory = document.querySelector("#destinationTopCategory");
+  const topValue = document.querySelector("#destinationTopValue");
+  const categoryCount = document.querySelector("#destinationCategoryCount");
+  const palette = ["#38b978", "#ef725f", "#e6ad3c", "#5b91d8", "#9b74cf", "#35aeb5", "#dd7fab", "#8da346"];
   target.innerHTML = "";
+  legend.innerHTML = "";
+  pieTotal.textContent = money(total);
+  totalExpense.textContent = money(total);
+  topCategory.textContent = rows[0]?.[0] || "Sem dados";
+  topValue.textContent = rows[0] ? money(rows[0][1]) : money(0);
+  categoryCount.textContent = String(rows.length);
 
   if (!rows.length) {
+    pieChart.style.background = "var(--line)";
+    pieChart.setAttribute("aria-label", "Nenhuma despesa cadastrada no mês");
+    legend.innerHTML = '<p class="destination-empty">As categorias aparecerão aqui quando você registrar despesas.</p>';
     const empty = document.createElement("p");
     empty.className = "empty-state";
     empty.style.display = "block";
@@ -871,16 +888,34 @@ function renderBreakdown() {
     return;
   }
 
-  rows.forEach(([category, value]) => {
+  let accumulated = 0;
+  const slices = rows.map(([, value], index) => {
+    const start = accumulated;
+    accumulated += (value / total) * 100;
+    return `${palette[index % palette.length]} ${start}% ${accumulated}%`;
+  });
+  pieChart.style.background = `conic-gradient(${slices.join(", ")})`;
+  pieChart.setAttribute("aria-label", `Gráfico com ${rows.length} categorias e total de ${money(total)}`);
+
+  rows.forEach(([category, value], index) => {
     const percent = total > 0 ? (value / total) * 100 : 0;
+    const color = palette[index % palette.length];
+    const legendItem = document.createElement("div");
+    legendItem.className = "destination-legend-item";
+    legendItem.innerHTML = `
+      <i style="--category-color: ${color}" aria-hidden="true"></i>
+      <span>${escapeHTML(category)}</span>
+      <strong>${percent.toFixed(0)}%</strong>
+    `;
+    legend.append(legendItem);
     const row = document.createElement("div");
     row.className = "category-row";
     row.innerHTML = `
       <header>
-        <strong>${escapeHTML(category)}</strong>
-        <span>${money(value)} (${percent.toFixed(0)}%)</span>
+        <span><i style="--category-color: ${color}" aria-hidden="true"></i><strong>${escapeHTML(category)}</strong></span>
+        <strong>${money(value)} <small>${percent.toFixed(0)}%</small></strong>
       </header>
-      <div class="bar"><span style="width: ${percent}%"></span></div>
+      <div class="bar" aria-label="${escapeHTML(category)} representa ${percent.toFixed(0)} por cento"><span style="width: ${percent}%; --category-color: ${color}"></span></div>
     `;
     target.append(row);
   });
@@ -1017,6 +1052,23 @@ function getReportDayCount(monthValue) {
     : new Date(Number(monthValue.slice(0, 4)), Number(monthValue.slice(5, 7)), 0).getDate();
 }
 
+function getReportInsights(summary, monthValue) {
+  const dayCount = Math.max(getReportDayCount(monthValue), 1);
+  const topCategory = summary.categories[0] || ["Sem despesas", 0];
+  return {
+    dayCount,
+    dailyIncome: summary.income / dayCount,
+    dailyExpense: summary.expense / dayCount,
+    dailyBalance: summary.balance / dayCount,
+    savingsRate: summary.income > 0 ? summary.balance / summary.income : 0,
+    expenseRate: summary.income > 0 ? summary.expense / summary.income : 0,
+    topCategoryName: topCategory[0],
+    topCategoryValue: topCategory[1],
+    topCategoryPercent: summary.expense > 0 ? topCategory[1] / summary.expense : 0,
+    transactionCount: summary.monthItems.length,
+  };
+}
+
 function getDailyReportData(summary) {
   const daily = summary.monthItems.reduce((acc, item) => {
     acc[item.date] ||= { income: 0, expense: 0 };
@@ -1136,54 +1188,83 @@ function generateMonthlyPdf(monthValue) {
 
   const summary = getMonthSummary(monthValue);
   const charts = createReportCharts(summary);
-  const dayCount = getReportDayCount(monthValue);
+  const insights = getReportInsights(summary, monthValue);
   const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "landscape" });
   if (typeof doc.autoTable !== "function") {
     showNotice("Nao foi possivel carregar as tabelas do PDF. Tente novamente com internet ativa.", "PDF indisponivel", "error");
     return;
   }
   const pageWidth = doc.internal.pageSize.getWidth();
-  const darkGreen = [5, 71, 39];
+  const darkGreen = [8, 67, 40];
+  const mediumGreen = [35, 125, 86];
+  const muted = [91, 108, 98];
   const cardWidth = 62;
   const cardGap = 6;
+  const totalPagesToken = "{total_pages_count_string}";
+
+  doc.setProperties({
+    title: `Relatorio financeiro - ${monthName(monthValue)}`,
+    subject: "Resumo mensal de ganhos, despesas, saldo e categorias",
+    author: "Planejamento Financeiro",
+    creator: "Planejamento Financeiro",
+  });
 
   doc.setFillColor(...darkGreen);
-  doc.rect(0, 0, pageWidth, 24, "F");
+  doc.rect(0, 0, pageWidth, 27, "F");
+  doc.setFillColor(...mediumGreen);
+  doc.rect(0, 27, pageWidth, 2, "F");
   doc.setTextColor(255, 255, 255);
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(19);
-  doc.text("Planejamento Financeiro", 14, 11);
-  doc.setFontSize(10);
+  doc.setFontSize(18);
+  doc.text("PLANEJAMENTO FINANCEIRO", 14, 11);
+  doc.setFontSize(11);
   doc.setFont("helvetica", "normal");
-  doc.text(`${monthName(monthValue)} | Gerado em ${new Date().toLocaleDateString("pt-BR")}`, 14, 18);
+  doc.text(`Relatorio mensal | ${monthName(monthValue)}`, 14, 19);
+  doc.setFontSize(8.5);
+  doc.text(`Gerado em ${new Date().toLocaleDateString("pt-BR")} as ${new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`, pageWidth - 14, 11, { align: "right" });
+  doc.text(`${insights.transactionCount} movimentacoes analisadas`, pageWidth - 14, 18, { align: "right" });
 
   const cards = [
     ["Ganhos", summary.income, [229, 247, 237]],
     ["Despesas", summary.expense, [255, 239, 237]],
     ["Saldo", summary.balance, [233, 241, 251]],
-    ["Lucro por dia", summary.balance / Math.max(dayCount, 1), [244, 239, 252]],
+    ["Saldo medio diario", insights.dailyBalance, [244, 239, 252]],
   ];
   cards.forEach(([label, value, color], index) => {
     const x = 14 + index * (cardWidth + cardGap);
     doc.setFillColor(...color);
-    doc.roundedRect(x, 31, cardWidth, 22, 2, 2, "F");
+    doc.roundedRect(x, 35, cardWidth, 22, 2.5, 2.5, "F");
+    doc.setDrawColor(218, 226, 221);
+    doc.roundedRect(x, 35, cardWidth, 22, 2.5, 2.5, "S");
     doc.setTextColor(75, 88, 80);
     doc.setFontSize(9);
-    doc.text(label, x + 4, 38);
+    doc.text(label, x + 4, 42);
     doc.setTextColor(20, 45, 31);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(13);
-    doc.text(money(value), x + 4, 48);
+    doc.text(money(value), x + 4, 52);
     doc.setFont("helvetica", "normal");
   });
 
-  doc.addImage(charts.dailyChart, "PNG", 14, 60, 130, 55);
-  doc.addImage(charts.categoryChart, "PNG", 153, 60, 130, 55);
+  doc.setFillColor(247, 249, 248);
+  doc.roundedRect(14, 63, pageWidth - 28, 13, 2, 2, "F");
+  doc.setTextColor(...muted);
+  doc.setFontSize(8.5);
+  doc.text(`Taxa de economia: ${(insights.savingsRate * 100).toFixed(1)}%`, 19, 71);
+  doc.text(`Comprometimento da renda: ${(insights.expenseRate * 100).toFixed(1)}%`, 82, 71);
+  doc.text(`Maior categoria: ${insights.topCategoryName} (${money(insights.topCategoryValue)} | ${(insights.topCategoryPercent * 100).toFixed(0)}%)`, 167, 71);
+
+  doc.addImage(charts.dailyChart, "PNG", 14, 81, 130, 51);
+  doc.addImage(charts.categoryChart, "PNG", 153, 81, 130, 51);
 
   doc.setTextColor(20, 45, 31);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(12);
-  doc.text("Movimentacoes do mes", 14, 124);
+  doc.text("Movimentacoes do mes", 14, 140);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8.5);
+  doc.setTextColor(...muted);
+  doc.text("Historico completo utilizado nos indicadores e graficos acima.", 14, 145);
 
   const rows = summary.monthItems.map((item) => [
     item.date.split("-").reverse().join("/"),
@@ -1196,23 +1277,43 @@ function generateMonthlyPdf(monthValue) {
   ]);
 
   doc.autoTable({
-    startY: 129,
+    startY: 149,
     head: [["Data", "Tipo", "Descricao", "Categoria", "Frequencia", "Valor", "Observacao"]],
     body: rows.length ? rows : [["-", "-", "Nenhum registro encontrado", "-", "-", "-", "-"]],
     theme: "striped",
-    styles: { font: "helvetica", fontSize: 8, cellPadding: 2.2, textColor: [32, 48, 39] },
+    styles: { font: "helvetica", fontSize: 7.7, cellPadding: 2.1, textColor: [32, 48, 39], lineColor: [224, 230, 226], lineWidth: 0.1 },
     headStyles: { fillColor: darkGreen, textColor: [255, 255, 255], fontStyle: "bold" },
     alternateRowStyles: { fillColor: [244, 247, 245] },
-    columnStyles: { 5: { halign: "right" } },
-    margin: { left: 14, right: 14, bottom: 12 },
+    columnStyles: { 0: { cellWidth: 20 }, 1: { cellWidth: 20 }, 4: { cellWidth: 25 }, 5: { halign: "right", cellWidth: 28 } },
+    margin: { left: 14, right: 14, top: 18, bottom: 13 },
+    didParseCell: (data) => {
+      if (data.section !== "body" || !data.row.raw) return;
+      if (data.column.index === 1 || data.column.index === 5) {
+        data.cell.styles.textColor = data.row.raw[1] === "Ganho" ? [24, 121, 78] : [180, 35, 24];
+        data.cell.styles.fontStyle = "bold";
+      }
+    },
     didDrawPage: ({ pageNumber }) => {
+      const pageHeight = doc.internal.pageSize.getHeight();
+      if (pageNumber > 1) {
+        doc.setFillColor(...darkGreen);
+        doc.rect(0, 0, pageWidth, 11, "F");
+        doc.setTextColor(255, 255, 255);
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(8.5);
+        doc.text(`PLANEJAMENTO FINANCEIRO | ${monthName(monthValue)}`, 14, 7);
+      }
       doc.setFontSize(8);
-      doc.setTextColor(105, 117, 109);
-      doc.text(`Pagina ${pageNumber}`, pageWidth - 14, doc.internal.pageSize.getHeight() - 6, { align: "right" });
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(...muted);
+      doc.text("Relatorio gerado pelo Planejamento Financeiro", 14, pageHeight - 6);
+      doc.text(`Pagina ${pageNumber} de ${totalPagesToken}`, pageWidth - 14, pageHeight - 6, { align: "right" });
     },
   });
 
-  doc.save(`resumo-financeiro-${monthValue}.pdf`);
+  if (typeof doc.putTotalPages === "function") doc.putTotalPages(totalPagesToken);
+
+  doc.save(`relatorio-financeiro-${monthValue}.pdf`);
 }
 
 function downloadBlob(blob, fileName) {
@@ -1234,15 +1335,27 @@ async function generateMonthlyExcel(monthValue) {
 
   const summary = getMonthSummary(monthValue);
   const charts = createReportCharts(summary);
+  const insights = getReportInsights(summary, monthValue);
   const workbook = new window.ExcelJS.Workbook();
   workbook.creator = "Planejamento Financeiro";
+  workbook.lastModifiedBy = "Planejamento Financeiro";
+  workbook.title = `Relatorio financeiro - ${monthName(monthValue)}`;
+  workbook.subject = "Resumo mensal de ganhos, despesas, saldo e categorias";
+  workbook.description = "Relatorio financeiro editavel com painel executivo e movimentacoes detalhadas.";
   workbook.created = new Date();
+  workbook.calcProperties.fullCalcOnLoad = true;
 
-  const dashboard = workbook.addWorksheet("Resumo", { views: [{ showGridLines: false }] });
-  const movements = workbook.addWorksheet("Movimentacoes", { views: [{ state: "frozen", ySplit: 1 }] });
-  const categoriesSheet = workbook.addWorksheet("Categorias", { views: [{ state: "frozen", ySplit: 1 }] });
+  const dashboard = workbook.addWorksheet("Resumo", { views: [{ showGridLines: false, zoomScale: 85 }] });
+  const movements = workbook.addWorksheet("Movimentacoes", { views: [{ state: "frozen", ySplit: 1, showGridLines: false }] });
+  const categoriesSheet = workbook.addWorksheet("Categorias", { views: [{ state: "frozen", ySplit: 1, showGridLines: false }] });
   const darkGreen = "054727";
+  const mediumGreen = "237D56";
   const lightGreen = "E5F4EC";
+  const lightRed = "FFF0EE";
+  const lightBlue = "E9F1FB";
+  const lightPurple = "F3EDFF";
+  const lightAmber = "FFF5D9";
+  const borderColor = "D9E2DC";
   const currencyFormat = 'R$ #,##0.00;[Red]-R$ #,##0.00';
 
   movements.columns = [
@@ -1253,19 +1366,24 @@ async function generateMonthlyExcel(monthValue) {
     { header: "Frequencia", key: "frequency", width: 17 },
     { header: "Valor", key: "amount", width: 16 },
     { header: "Observacao", key: "note", width: 32 },
+    { header: "Impacto no saldo", key: "impact", width: 19 },
   ];
   summary.monthItems
     .slice()
     .reverse()
-    .forEach((item) => movements.addRow({
-      date: new Date(`${item.date}T12:00:00`),
-      type: item.type === "income" ? "Ganho" : "Despesa",
-      description: item.description,
-      category: item.category,
-      frequency: frequencyLabels[item.frequency],
-      amount: item.amount,
-      note: item.note || "",
-    }));
+    .forEach((item) => {
+      const row = movements.addRow({
+        date: new Date(`${item.date}T12:00:00`),
+        type: item.type === "income" ? "Ganho" : "Despesa",
+        description: item.description,
+        category: item.category,
+        frequency: frequencyLabels[item.frequency],
+        amount: item.amount,
+        note: item.note || "",
+        impact: item.type === "income" ? item.amount : -item.amount,
+      });
+      row.getCell(8).value = { formula: `=IF(B${row.number}="Ganho",F${row.number},-F${row.number})`, result: item.type === "income" ? item.amount : -item.amount };
+    });
   movements.getRow(1).eachCell((cell) => {
     cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: darkGreen } };
     cell.font = { bold: true, color: { argb: "FFFFFF" } };
@@ -1273,12 +1391,22 @@ async function generateMonthlyExcel(monthValue) {
   });
   movements.getColumn("date").numFmt = "dd/mm/yyyy";
   movements.getColumn("amount").numFmt = currencyFormat;
-  movements.autoFilter = { from: "A1", to: "G1" };
+  movements.getColumn("impact").numFmt = currencyFormat;
+  movements.autoFilter = { from: "A1", to: "H1" };
+  movements.getRow(1).height = 24;
   movements.eachRow((row, rowNumber) => {
-    if (rowNumber > 1 && rowNumber % 2 === 0) {
-      row.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "F3F6F4" } };
+    if (rowNumber > 1) {
+      const isIncome = row.getCell(2).value === "Ganho";
+      row.fill = { type: "pattern", pattern: "solid", fgColor: { argb: rowNumber % 2 === 0 ? "F6F8F7" : "FFFFFF" } };
+      row.getCell(2).font = { bold: true, color: { argb: isIncome ? mediumGreen : "B42318" } };
+      row.getCell(8).font = { bold: true, color: { argb: isIncome ? mediumGreen : "B42318" } };
+      row.alignment = { vertical: "middle" };
+      row.height = 21;
     }
   });
+
+  movements.pageSetup = { orientation: "landscape", fitToPage: true, fitToWidth: 1, fitToHeight: 0, margins: { left: 0.3, right: 0.3, top: 0.5, bottom: 0.5, header: 0.2, footer: 0.2 } };
+  movements.headerFooter.oddFooter = "Planejamento Financeiro | &D | Pagina &P de &N";
 
   const lastMovementRow = Math.max(movements.rowCount, 2);
   dashboard.mergeCells("A1:H2");
@@ -1291,53 +1419,91 @@ async function generateMonthlyExcel(monthValue) {
   dashboard.getCell("A3").font = { bold: true, size: 13, color: { argb: darkGreen } };
   dashboard.getCell("A3").alignment = { horizontal: "center" };
 
+  dashboard.mergeCells("A4:H4");
+  dashboard.getCell("A4").value = `Atualizado em ${new Date().toLocaleDateString("pt-BR")} | ${insights.transactionCount} movimentacoes analisadas`;
+  dashboard.getCell("A4").font = { size: 9, color: { argb: "68756D" } };
+  dashboard.getCell("A4").alignment = { horizontal: "center" };
+
   const dashboardItems = [
-    ["A5", "Ganhos", `=SUMIF('Movimentacoes'!$B$2:$B$${lastMovementRow},"Ganho",'Movimentacoes'!$F$2:$F$${lastMovementRow})`],
-    ["C5", "Despesas", `=SUMIF('Movimentacoes'!$B$2:$B$${lastMovementRow},"Despesa",'Movimentacoes'!$F$2:$F$${lastMovementRow})`],
-    ["E5", "Saldo", "=A6-C6"],
-    ["G5", "Lucro por dia", `=E6/${Math.max(getReportDayCount(monthValue), 1)}`],
+    ["A5", "Ganhos", `=SUMIF('Movimentacoes'!$B$2:$B$${lastMovementRow},"Ganho",'Movimentacoes'!$F$2:$F$${lastMovementRow})`, lightGreen],
+    ["C5", "Despesas", `=SUMIF('Movimentacoes'!$B$2:$B$${lastMovementRow},"Despesa",'Movimentacoes'!$F$2:$F$${lastMovementRow})`, lightRed],
+    ["E5", "Saldo", "=A6-C6", lightBlue],
+    ["G5", "Saldo medio diario", `=E6/${insights.dayCount}`, lightPurple],
   ];
-  dashboardItems.forEach(([labelCell, label, formula]) => {
+  dashboardItems.forEach(([labelCell, label, formula, fillColor]) => {
     const labelColumn = dashboard.getCell(labelCell).col;
     const valueCell = dashboard.getCell(6, labelColumn);
     dashboard.mergeCells(5, labelColumn, 5, labelColumn + 1);
     dashboard.getCell(labelCell).value = label;
-    dashboard.getCell(labelCell).fill = { type: "pattern", pattern: "solid", fgColor: { argb: lightGreen } };
+    dashboard.getCell(labelCell).fill = { type: "pattern", pattern: "solid", fgColor: { argb: fillColor } };
     dashboard.getCell(labelCell).font = { bold: true, color: { argb: darkGreen } };
+    dashboard.getCell(labelCell).border = { top: { style: "thin", color: { argb: borderColor } }, left: { style: "thin", color: { argb: borderColor } }, right: { style: "thin", color: { argb: borderColor } } };
     dashboard.getCell(labelCell).alignment = { horizontal: "center" };
     dashboard.mergeCells(6, labelColumn, 6, labelColumn + 1);
-    valueCell.value = { formula, result: label === "Ganhos" ? summary.income : label === "Despesas" ? summary.expense : label === "Saldo" ? summary.balance : summary.balance / Math.max(getReportDayCount(monthValue), 1) };
+    valueCell.value = { formula, result: label === "Ganhos" ? summary.income : label === "Despesas" ? summary.expense : label === "Saldo" ? summary.balance : insights.dailyBalance };
+    valueCell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: fillColor } };
+    valueCell.border = { bottom: { style: "thin", color: { argb: borderColor } }, left: { style: "thin", color: { argb: borderColor } }, right: { style: "thin", color: { argb: borderColor } } };
     valueCell.numFmt = currencyFormat;
     valueCell.font = { bold: true, size: 14, color: { argb: darkGreen } };
     valueCell.alignment = { horizontal: "center" };
+  });
+
+  const executiveItems = [
+    ["A8:B8", "Taxa de economia", "A9:B9", { formula: "=IFERROR(E6/A6,0)", result: insights.savingsRate }, "0.0%", lightGreen],
+    ["C8:D8", "Maior categoria", "C9:D9", insights.topCategoryName, "@", lightAmber],
+    ["E8:F8", "Valor da maior categoria", "E9:F9", insights.topCategoryValue, currencyFormat, lightRed],
+    ["G8:H8", "Quantidade de registros", "G9:H9", insights.transactionCount, "0", lightBlue],
+  ];
+  executiveItems.forEach(([labelRange, label, valueRange, value, numberFormat, fillColor]) => {
+    dashboard.mergeCells(labelRange);
+    dashboard.mergeCells(valueRange);
+    const labelCell = dashboard.getCell(labelRange.split(":")[0]);
+    const valueCell = dashboard.getCell(valueRange.split(":")[0]);
+    labelCell.value = label;
+    valueCell.value = value;
+    labelCell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: fillColor } };
+    valueCell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: fillColor } };
+    labelCell.font = { bold: true, size: 9, color: { argb: "526158" } };
+    valueCell.font = { bold: true, size: 12, color: { argb: darkGreen } };
+    labelCell.border = { top: { style: "thin", color: { argb: borderColor } }, left: { style: "thin", color: { argb: borderColor } }, right: { style: "thin", color: { argb: borderColor } } };
+    valueCell.border = { bottom: { style: "thin", color: { argb: borderColor } }, left: { style: "thin", color: { argb: borderColor } }, right: { style: "thin", color: { argb: borderColor } } };
+    labelCell.alignment = { horizontal: "center", vertical: "middle" };
+    valueCell.alignment = { horizontal: "center", vertical: "middle" };
+    valueCell.numFmt = numberFormat;
   });
 
   dashboard.columns = Array.from({ length: 8 }, () => ({ width: 14 }));
   dashboard.getRow(1).height = 26;
   dashboard.getRow(2).height = 26;
   dashboard.getRow(6).height = 28;
+  dashboard.getRow(8).height = 22;
+  dashboard.getRow(9).height = 27;
   const dailyImageId = workbook.addImage({ base64: charts.dailyChart, extension: "png" });
   const categoryImageId = workbook.addImage({ base64: charts.categoryChart, extension: "png" });
-  dashboard.addImage(dailyImageId, { tl: { col: 0, row: 7 }, ext: { width: 500, height: 230 } });
-  dashboard.addImage(categoryImageId, { tl: { col: 4, row: 7 }, ext: { width: 500, height: 230 } });
-  dashboard.mergeCells("A22:H23");
-  dashboard.getCell("A22").value = "Os dados das abas Movimentacoes e Categorias sao editaveis. Os graficos representam o momento da exportacao.";
-  dashboard.getCell("A22").alignment = { wrapText: true, vertical: "middle" };
-  dashboard.getCell("A22").font = { italic: true, color: { argb: "68756D" } };
+  dashboard.addImage(dailyImageId, { tl: { col: 0, row: 10 }, ext: { width: 500, height: 230 } });
+  dashboard.addImage(categoryImageId, { tl: { col: 4, row: 10 }, ext: { width: 500, height: 230 } });
+  dashboard.mergeCells("A25:H26");
+  dashboard.getCell("A25").value = "Leitura do relatorio: acompanhe a taxa de economia, identifique a categoria de maior peso e consulte as abas Movimentacoes e Categorias para auditar os valores. Os dados tabulares sao editaveis; os graficos registram o momento da exportacao.";
+  dashboard.getCell("A25").alignment = { wrapText: true, vertical: "middle" };
+  dashboard.getCell("A25").font = { italic: true, color: { argb: "68756D" } };
+  dashboard.getCell("A25").fill = { type: "pattern", pattern: "solid", fgColor: { argb: "F3F6F4" } };
+  dashboard.pageSetup = { orientation: "landscape", fitToPage: true, fitToWidth: 1, fitToHeight: 1, margins: { left: 0.25, right: 0.25, top: 0.4, bottom: 0.4, header: 0.2, footer: 0.2 } };
+  dashboard.headerFooter.oddFooter = "Planejamento Financeiro | &D | Pagina &P de &N";
 
   categoriesSheet.columns = [
-    { header: "Categoria", key: "category", width: 28 },
+    { header: "Posicao", key: "rank", width: 11 },
+    { header: "Categoria", key: "category", width: 30 },
     { header: "Total", key: "total", width: 18 },
     { header: "% das despesas", key: "percent", width: 20 },
   ];
   summary.categories.forEach(([category, value], index) => {
     const rowNumber = index + 2;
-    categoriesSheet.addRow({ category, total: value, percent: summary.expense > 0 ? value / summary.expense : 0 });
-    categoriesSheet.getCell(`B${rowNumber}`).value = {
-      formula: `=SUMIFS('Movimentacoes'!$F$2:$F$${lastMovementRow},'Movimentacoes'!$B$2:$B$${lastMovementRow},"Despesa",'Movimentacoes'!$D$2:$D$${lastMovementRow},A${rowNumber})`,
+    categoriesSheet.addRow({ rank: index + 1, category, total: value, percent: summary.expense > 0 ? value / summary.expense : 0 });
+    categoriesSheet.getCell(`C${rowNumber}`).value = {
+      formula: `=SUMIFS('Movimentacoes'!$F$2:$F$${lastMovementRow},'Movimentacoes'!$B$2:$B$${lastMovementRow},"Despesa",'Movimentacoes'!$D$2:$D$${lastMovementRow},B${rowNumber})`,
       result: value,
     };
-    categoriesSheet.getCell(`C${rowNumber}`).value = { formula: `=IFERROR(B${rowNumber}/SUM(B$2:B$${Math.max(summary.categories.length + 1, 2)}),0)`, result: summary.expense > 0 ? value / summary.expense : 0 };
+    categoriesSheet.getCell(`D${rowNumber}`).value = { formula: `=IFERROR(C${rowNumber}/SUM(C$2:C$${Math.max(summary.categories.length + 1, 2)}),0)`, result: summary.expense > 0 ? value / summary.expense : 0 };
   });
   categoriesSheet.getRow(1).eachCell((cell) => {
     cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: darkGreen } };
@@ -1345,7 +1511,18 @@ async function generateMonthlyExcel(monthValue) {
   });
   categoriesSheet.getColumn("total").numFmt = currencyFormat;
   categoriesSheet.getColumn("percent").numFmt = "0.0%";
-  categoriesSheet.autoFilter = { from: "A1", to: "C1" };
+  categoriesSheet.autoFilter = { from: "A1", to: "D1" };
+  categoriesSheet.getRow(1).height = 24;
+  categoriesSheet.eachRow((row, rowNumber) => {
+    if (rowNumber <= 1) return;
+    row.fill = { type: "pattern", pattern: "solid", fgColor: { argb: rowNumber % 2 === 0 ? "F6F8F7" : "FFFFFF" } };
+    row.getCell(1).font = { bold: true, color: { argb: mediumGreen } };
+    row.getCell(3).font = { bold: true, color: { argb: darkGreen } };
+    row.alignment = { vertical: "middle" };
+    row.height = 21;
+  });
+  categoriesSheet.pageSetup = { orientation: "portrait", fitToPage: true, fitToWidth: 1, fitToHeight: 0, margins: { left: 0.4, right: 0.4, top: 0.5, bottom: 0.5, header: 0.2, footer: 0.2 } };
+  categoriesSheet.headerFooter.oddFooter = "Planejamento Financeiro | &D | Pagina &P de &N";
 
   const buffer = await workbook.xlsx.writeBuffer();
   downloadBlob(

@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Planejamento Financeiro</title>
-    <link rel="stylesheet" href="styles.css?v=dark-theme-fix-1" />
+    <link rel="stylesheet" href="styles.css?v=professional-report-1" />
   </head>
   <body>
     <header class="topbar">
@@ -350,9 +350,32 @@
 
         <aside class="insights-panel tab-screen" data-tab-panel="destino" aria-label="Resumo por categoria">
           <div class="panel-heading">
-            <h2 class="heading-with-icon"><i data-lucide="chart-pie" aria-hidden="true"></i> Para onde vai</h2>
+            <div>
+              <p class="eyebrow destination-eyebrow">Análise das despesas</p>
+              <h2 class="heading-with-icon"><i data-lucide="chart-pie" aria-hidden="true"></i> Para onde vai seu dinheiro</h2>
+              <p class="section-note">Veja como as despesas do mês estão distribuídas entre suas categorias.</p>
+            </div>
           </div>
-          <div id="categoryBreakdown" class="category-breakdown"></div>
+          <section class="destination-overview" aria-label="Visão geral das despesas por categoria">
+            <div class="destination-pie-area">
+              <div class="destination-pie" id="destinationPieChart" role="img" aria-label="Gráfico de despesas por categoria">
+                <div><span>Total gasto</span><strong id="destinationPieTotal">R$ 0,00</strong></div>
+              </div>
+              <div class="destination-legend" id="destinationLegend"></div>
+            </div>
+            <div class="destination-summary">
+              <article><i data-lucide="circle-dollar-sign" aria-hidden="true"></i><span>Despesas do mês</span><strong id="destinationTotalExpense">R$ 0,00</strong></article>
+              <article><i data-lucide="badge-alert" aria-hidden="true"></i><span>Maior categoria</span><strong id="destinationTopCategory">Sem dados</strong><small id="destinationTopValue">R$ 0,00</small></article>
+              <article><i data-lucide="tags" aria-hidden="true"></i><span>Categorias utilizadas</span><strong id="destinationCategoryCount">0</strong></article>
+            </div>
+          </section>
+          <section class="category-details" aria-labelledby="categoryDetailsTitle">
+            <div class="category-details-heading">
+              <h3 id="categoryDetailsTitle">Detalhamento por categoria</h3>
+              <p>Valores, participação no total e comparação visual.</p>
+            </div>
+            <div id="categoryBreakdown" class="category-breakdown"></div>
+          </section>
         </aside>
       </section>
 
@@ -367,7 +390,7 @@
             </select>
             <select id="frequencyFilter" aria-label="Filtrar por frequencia">
               <option value="all">Todas frequencias</option>
-              <option value="daily">Do dia</option>
+              <option value="daily">Diários</option>
               <option value="monthly">Mensais fixas</option>
               <option value="occasional">Eventuais</option>
             </select>
@@ -433,7 +456,7 @@
           <label>
             Frequencia
             <select id="frequency">
-              <option value="daily">Do dia</option>
+              <option value="daily">Diário</option>
               <option value="monthly">Mensal fixa</option>
               <option value="occasional">Eventual</option>
             </select>
@@ -558,6 +581,6 @@
     <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
-    <script src="app.js?v=dark-theme-fix-1"></script>
+    <script src="app.js?v=professional-report-1"></script>
   </body>
 </html>

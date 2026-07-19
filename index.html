@@ -457,6 +457,23 @@
       </form>
     </div>
 
+    <div class="system-dialog" id="systemDialog" hidden>
+      <div class="system-dialog-backdrop" data-system-dialog-cancel></div>
+      <section class="system-dialog-card" role="alertdialog" aria-modal="true" aria-labelledby="systemDialogTitle" aria-describedby="systemDialogMessage">
+        <div class="system-dialog-icon" aria-hidden="true">
+          <i data-lucide="circle-alert"></i>
+        </div>
+        <div>
+          <h2 id="systemDialogTitle">Confirmar acao</h2>
+          <p id="systemDialogMessage"></p>
+        </div>
+        <div class="system-dialog-actions">
+          <button class="secondary-button" id="systemDialogCancelButton" type="button">Cancelar</button>
+          <button class="danger-confirm-button" id="systemDialogConfirmButton" type="button">Confirmar</button>
+        </div>
+      </section>
+    </div>
+
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-auth-compat.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>

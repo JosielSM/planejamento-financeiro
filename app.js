@@ -80,6 +80,11 @@ const pdfSummaryModal = document.querySelector("#pdfSummaryModal");
 const pdfSummaryForm = document.querySelector("#pdfSummaryForm");
 const pdfMonthField = document.querySelector("#pdfMonthField");
 const pdfMonthInput = document.querySelector("#pdfMonthInput");
+const systemDialog = document.querySelector("#systemDialog");
+const systemDialogTitle = document.querySelector("#systemDialogTitle");
+const systemDialogMessage = document.querySelector("#systemDialogMessage");
+const systemDialogConfirmButton = document.querySelector("#systemDialogConfirmButton");
+const systemDialogCancelButton = document.querySelector("#systemDialogCancelButton");
 const appShell = document.querySelector("#appShell");
 const authScreen = document.querySelector("#authScreen");
 const authError = document.querySelector("#authError");
@@ -107,6 +112,8 @@ let settings = loadSettings();
 let savingsGoals = [];
 let customCategories = [];
 let editingCategoryId = null;
+let systemDialogResolver = null;
+let systemDialogLastFocus = null;
 let editingSavingsGoalId = null;
 let authRequired = false;
 let firebaseAuth = null;
@@ -177,6 +184,49 @@ function loadJSON(key, fallback) {
   } catch {
     return fallback;
   }
+}
+
+function closeSystemDialog(result = false) {
+  if (systemDialog.hidden) return;
+  systemDialog.hidden = true;
+  document.body.classList.toggle("modal-open", !transactionModal.hidden || !pdfSummaryModal.hidden);
+  const resolve = systemDialogResolver;
+  systemDialogResolver = null;
+  resolve?.(result);
+  systemDialogLastFocus?.focus?.();
+  systemDialogLastFocus = null;
+}
+
+function showSystemDialog({
+  title,
+  message,
+  confirmLabel = "Entendi",
+  cancelLabel = "",
+  tone = "info",
+}) {
+  if (systemDialogResolver) closeSystemDialog(false);
+  systemDialogLastFocus = document.activeElement;
+  systemDialogTitle.textContent = title;
+  systemDialogMessage.textContent = message;
+  systemDialogConfirmButton.textContent = confirmLabel;
+  systemDialogCancelButton.textContent = cancelLabel || "Cancelar";
+  systemDialogCancelButton.hidden = !cancelLabel;
+  systemDialog.className = `system-dialog ${tone}`;
+  systemDialog.hidden = false;
+  document.body.classList.add("modal-open");
+  refreshIcons();
+  setTimeout(() => (cancelLabel ? systemDialogCancelButton : systemDialogConfirmButton).focus(), 40);
+  return new Promise((resolve) => {
+    systemDialogResolver = resolve;
+  });
+}
+
+function showNotice(message, title = "Aviso", tone = "info") {
+  return showSystemDialog({ title, message, confirmLabel: "Entendi", tone });
+}
+
+function askConfirmation({ title, message, confirmLabel = "Confirmar", tone = "danger" }) {
+  return showSystemDialog({ title, message, confirmLabel, cancelLabel: "Cancelar", tone });
 }
 
 function showAuth(message = "") {
@@ -972,7 +1022,7 @@ function createReportCharts(summary) {
 function generateMonthlyPdf(monthValue) {
   const jsPDF = window.jspdf?.jsPDF;
   if (!jsPDF) {
-    alert("Nao foi possivel carregar o gerador de PDF. Tente novamente com internet ativa.");
+    showNotice("Nao foi possivel carregar o gerador de PDF. Tente novamente com internet ativa.", "PDF indisponivel", "error");
     return;
   }
 
@@ -981,7 +1031,7 @@ function generateMonthlyPdf(monthValue) {
   const dayCount = getReportDayCount(monthValue);
   const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "landscape" });
   if (typeof doc.autoTable !== "function") {
-    alert("Nao foi possivel carregar as tabelas do PDF. Tente novamente com internet ativa.");
+    showNotice("Nao foi possivel carregar as tabelas do PDF. Tente novamente com internet ativa.", "PDF indisponivel", "error");
     return;
   }
   const pageWidth = doc.internal.pageSize.getWidth();
@@ -1070,7 +1120,7 @@ function downloadBlob(blob, fileName) {
 
 async function generateMonthlyExcel(monthValue) {
   if (!window.ExcelJS) {
-    alert("Nao foi possivel carregar o gerador de Excel. Tente novamente com internet ativa.");
+    showNotice("Nao foi possivel carregar o gerador de Excel. Tente novamente com internet ativa.", "Excel indisponivel", "error");
     return;
   }
 
@@ -1254,7 +1304,7 @@ saveCategoryButton.addEventListener("click", async () => {
   const type = currentCategoryType();
   const name = customCategoryName.value.trim();
   if (name.length < 2 || name.length > 40) {
-    alert("Informe um nome entre 2 e 40 caracteres.");
+    await showNotice("Informe um nome entre 2 e 40 caracteres.", "Nome da categoria", "warning");
     customCategoryName.focus();
     return;
   }
@@ -1264,7 +1314,7 @@ saveCategoryButton.addEventListener("click", async () => {
     ...customCategories.filter((item) => item.type === type && item.id !== editingCategoryId).map((item) => item.name),
   ].some((item) => item.toLocaleLowerCase("pt-BR") === name.toLocaleLowerCase("pt-BR"));
   if (duplicate) {
-    alert("Esta categoria ja existe.");
+    await showNotice("Esta categoria ja existe.", "Categoria duplicada", "warning");
     customCategoryName.focus();
     return;
   }
@@ -1279,7 +1329,7 @@ saveCategoryButton.addEventListener("click", async () => {
     renderCategoryManager();
     render();
   } catch (error) {
-    alert(error.message || "Nao foi possivel salvar a categoria.");
+    await showNotice(error.message || "Nao foi possivel salvar a categoria.", "Erro ao salvar", "error");
   } finally {
     saveCategoryButton.disabled = false;
   }
@@ -1303,7 +1353,12 @@ customCategoryList.addEventListener("click", async (event) => {
   if (!deleteButton) return;
   const category = customCategories.find((item) => item.id === deleteButton.dataset.categoryDelete);
   if (!category) return;
-  if (!confirm(`Excluir a categoria "${category.name}"?`)) return;
+  const confirmed = await askConfirmation({
+    title: "Excluir categoria?",
+    message: `A categoria "${category.name}" sera removida. Esta acao nao pode ser desfeita.`,
+    confirmLabel: "Excluir categoria",
+  });
+  if (!confirmed) return;
 
   try {
     await deleteCustomCategory(category.id);
@@ -1311,7 +1366,7 @@ customCategoryList.addEventListener("click", async (event) => {
     updateCategoryOptions();
     renderCategoryManager();
   } catch (error) {
-    alert(error.message || "Nao foi possivel excluir a categoria.");
+    await showNotice(error.message || "Nao foi possivel excluir a categoria.", "Categoria nao excluida", "error");
   }
 });
 
@@ -1400,7 +1455,12 @@ savingsGoalsList.addEventListener("click", async (event) => {
 
   const button = event.target.closest("[data-goal-delete]");
   if (!button) return;
-  if (!confirm("Excluir esta meta e os depositos dela?")) return;
+  const confirmed = await askConfirmation({
+    title: "Excluir meta?",
+    message: "A meta e todo o historico de depositos dela serao removidos. Esta acao nao pode ser desfeita.",
+    confirmLabel: "Excluir meta",
+  });
+  if (!confirmed) return;
   await deleteSavingsGoal(button.dataset.goalDelete);
 });
 
@@ -1413,7 +1473,12 @@ recordsBody.addEventListener("click", async (event) => {
     ? `\"${transaction.description}\" no valor de ${money(transaction.amount)}`
     : "este registro";
 
-  if (!confirm(`Tem certeza de que deseja excluir ${transactionLabel}?\n\nEssa acao nao pode ser desfeita.`)) return;
+  const confirmed = await askConfirmation({
+    title: "Excluir registro?",
+    message: `Voce esta prestes a excluir ${transactionLabel}. Esta acao nao pode ser desfeita.`,
+    confirmLabel: "Excluir registro",
+  });
+  if (!confirmed) return;
   await deleteTransaction(button.dataset.id);
 });
 
@@ -1457,7 +1522,7 @@ pdfSummaryForm.addEventListener("submit", async (event) => {
   const exportFormat = event.submitter?.value || "pdf";
 
   if (!selectedMonth) {
-    alert("Escolha um mes para gerar o relatorio.");
+    await showNotice("Escolha um mes para gerar o relatorio.", "Periodo obrigatorio", "warning");
     return;
   }
 
@@ -1612,18 +1677,34 @@ linkGoogleButton.addEventListener("click", async () => {
   } catch (error) {
     if (error.code === "auth/provider-already-linked") {
       linkGoogleButton.hidden = true;
-      alert("Sua conta Google ja esta vinculada.");
+      await showNotice("Sua conta Google ja esta vinculada.", "Google vinculado", "success");
     } else if (error.code === "auth/credential-already-in-use") {
-      alert("Esta conta Google ja esta vinculada a outro usuario.");
+      await showNotice("Esta conta Google ja esta vinculada a outro usuario.", "Conta em uso", "error");
     } else {
-      alert(firebaseErrorMessage(error));
+      await showNotice(firebaseErrorMessage(error), "Erro no Google", "error");
     }
   } finally {
     linkGoogleButton.disabled = false;
   }
 });
 
+systemDialogConfirmButton.addEventListener("click", () => {
+  closeSystemDialog(true);
+});
+
+systemDialogCancelButton.addEventListener("click", () => {
+  closeSystemDialog(false);
+});
+
+systemDialog.addEventListener("click", (event) => {
+  if (event.target.closest("[data-system-dialog-cancel]")) closeSystemDialog(false);
+});
+
 document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && !systemDialog.hidden) {
+    closeSystemDialog(false);
+    return;
+  }
   if (event.key === "Escape" && !transactionModal.hidden) {
     closeTransactionModal();
   }
@@ -1668,7 +1749,7 @@ async function start() {
     });
     const loaded = await loadAuthenticatedUser(redirectResult?.user || initialUser);
     if (loaded && googleAuthAction === "link") {
-      alert("Conta Google vinculada. Agora voce pode entrar com Google ou com sua senha.");
+      await showNotice("Conta Google vinculada. Agora voce pode entrar com Google ou com sua senha.", "Google vinculado", "success");
     }
   } catch (error) {
     showAuth(`Autenticacao indisponivel: ${error.message}`);

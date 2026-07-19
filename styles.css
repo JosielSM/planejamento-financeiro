@@ -1302,6 +1302,116 @@ td.value {
   display: none;
 }
 
+.system-dialog[hidden] {
+  display: none;
+}
+
+.system-dialog {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+}
+
+.system-dialog-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(12, 23, 18, 0.58);
+  backdrop-filter: blur(4px);
+}
+
+.system-dialog-card {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 14px;
+  width: min(440px, 100%);
+  padding: 22px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 28px 80px rgba(10, 20, 16, 0.3);
+  animation: system-dialog-in 0.18s ease-out;
+}
+
+@keyframes system-dialog-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.system-dialog-icon {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: var(--blue-soft);
+  color: var(--blue);
+}
+
+.system-dialog-icon svg {
+  width: 24px;
+  height: 24px;
+}
+
+.system-dialog h2 {
+  margin: 1px 0 7px;
+  font-size: 1.14rem;
+}
+
+.system-dialog p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.5;
+  white-space: pre-line;
+}
+
+.system-dialog-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: flex-end;
+  gap: 9px;
+  margin-top: 6px;
+}
+
+.danger-confirm-button {
+  min-height: 42px;
+  padding: 0 16px;
+  border: 1px solid #9f1f16;
+  border-radius: 9px;
+  background: var(--red);
+  color: #fff;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.system-dialog.warning .system-dialog-icon {
+  background: var(--amber-soft);
+  color: var(--amber);
+}
+
+.system-dialog.error .system-dialog-icon,
+.system-dialog.danger .system-dialog-icon {
+  background: var(--red-soft);
+  color: var(--red);
+}
+
+.system-dialog.success .system-dialog-icon {
+  background: var(--green-soft);
+  color: var(--green);
+}
+
+.system-dialog.info .danger-confirm-button,
+.system-dialog.warning .danger-confirm-button,
+.system-dialog.success .danger-confirm-button,
+.system-dialog.error .danger-confirm-button {
+  border-color: #12613f;
+  background: var(--green);
+}
+
 .transaction-modal {
   position: fixed;
   inset: 0;
@@ -1606,6 +1716,20 @@ td.value {
   .modal-card {
     max-height: 88vh;
     padding: 14px;
+  }
+
+  .system-dialog-card {
+    grid-template-columns: 1fr;
+    padding: 18px;
+  }
+
+  .system-dialog-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  #systemDialogCancelButton[hidden] + #systemDialogConfirmButton {
+    grid-column: 1 / -1;
   }
 
   .category-editor {

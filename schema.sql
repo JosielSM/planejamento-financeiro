@@ -47,6 +47,7 @@ CREATE TABLE IF NOT EXISTS savings_goals (
   name TEXT NOT NULL,
   target_amount NUMERIC(12, 2) NOT NULL CHECK (target_amount > 0),
   note TEXT NOT NULL DEFAULT '',
+  completed_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 

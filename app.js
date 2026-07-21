@@ -78,6 +78,9 @@ const emptyState = document.querySelector("#emptyState");
 const dailyGoalInput = document.querySelector("#dailyGoal");
 const savingsGoalsList = document.querySelector("#savingsGoalsList");
 const savingsEmptyState = document.querySelector("#savingsEmptyState");
+const completedGoalsSection = document.querySelector("#completedGoalsSection");
+const completedGoalsList = document.querySelector("#completedGoalsList");
+const completedGoalsCount = document.querySelector("#completedGoalsCount");
 const reserveChart = document.querySelector("#reserveChart");
 const reserveChartPercent = document.querySelector("#reserveChartPercent");
 const reserveChartMessage = document.querySelector("#reserveChartMessage");
@@ -502,6 +505,7 @@ function normalizeSavingsGoal(goal) {
     targetAmount: Number(goal.targetAmount),
     savedAmount: Number(goal.savedAmount || 0),
     note: goal.note || "",
+    completedAt: goal.completedAt || null,
     deposits: (goal.deposits || []).map((deposit) => ({
       id: deposit.id,
       amount: Number(deposit.amount),
@@ -691,6 +695,22 @@ function currentCategoryType() {
   return transactionTypeInput.value || "income";
 }
 
+async function completeSavingsGoal(id) {
+  const completedAt = new Date().toISOString();
+  savingsGoals = savingsGoals.map((goal) => (goal.id === id ? { ...goal, completedAt } : goal));
+  saveSavingsGoals();
+  render();
+
+  try {
+    const saved = await api.request(`/api/savings-goals/${id}/complete`, { method: "POST" });
+    savingsGoals = savingsGoals.map((goal) => (goal.id === id ? normalizeSavingsGoal(saved) : goal));
+    saveSavingsGoals();
+    render();
+  } catch {
+    api.enabled = false;
+  }
+}
+
 function updateCategoryOptions(selectedValue = "") {
   const type = new FormData(form).get("type");
   const previousValue = selectedValue || categorySelect.value;
@@ -866,12 +886,13 @@ function setGoalFormOpen(isOpen) {
 }
 
 function renderSavingsOverview() {
+  const activeGoals = savingsGoals.filter((goal) => !goal.completedAt);
   const monthItems = getMonthTransactions();
   const income = monthItems.filter((item) => item.type === "income").reduce((sum, item) => sum + item.amount, 0);
   const expenses = monthItems.filter((item) => item.type === "expense").reduce((sum, item) => sum + item.amount, 0);
   const monthBalance = income - expenses;
-  const totalReserved = savingsGoals.reduce((sum, goal) => sum + Number(goal.savedAmount || 0), 0);
-  const totalTargets = savingsGoals.reduce((sum, goal) => sum + Number(goal.targetAmount || 0), 0);
+  const totalReserved = activeGoals.reduce((sum, goal) => sum + Number(goal.savedAmount || 0), 0);
+  const totalTargets = activeGoals.reduce((sum, goal) => sum + Number(goal.targetAmount || 0), 0);
   const availableBalance = monthBalance - totalReserved;
   const reservedPercentOfBalance = monthBalance > 0 ? Math.min((totalReserved / monthBalance) * 100, 100) : 0;
   const freePercent = monthBalance > 0 ? Math.max(100 - reservedPercentOfBalance, 0) : 0;
@@ -890,7 +911,7 @@ function renderSavingsOverview() {
     `Saldo livre estimado ${money(availableBalance)} e dinheiro reservado ${money(totalReserved)}`,
   );
 
-  if (!savingsGoals.length) {
+  if (!activeGoals.length) {
     reserveChartMessage.textContent = "Crie um objetivo e registre depositos para acompanhar seu dinheiro reservado.";
   } else if (monthBalance <= 0) {
     reserveChartMessage.textContent = "O saldo do mes nao esta positivo. Revise ganhos e despesas antes de aumentar as reservas.";
@@ -910,9 +931,17 @@ function renderSavingsOverview() {
 function renderSavingsGoals() {
   renderSavingsOverview();
   savingsGoalsList.innerHTML = "";
-  savingsEmptyState.style.display = savingsGoals.length ? "none" : "block";
+  completedGoalsList.innerHTML = "";
+  const activeGoals = savingsGoals.filter((goal) => !goal.completedAt);
+  const completedGoals = savingsGoals.filter((goal) => goal.completedAt);
+  savingsEmptyState.style.display = activeGoals.length ? "none" : "block";
+  savingsEmptyState.textContent = completedGoals.length
+    ? "Todas as suas metas estao concluidas. Crie uma nova quando quiser."
+    : "Nenhuma meta cadastrada ainda.";
+  completedGoalsSection.hidden = !completedGoals.length;
+  completedGoalsCount.textContent = `${completedGoals.length} ${completedGoals.length === 1 ? "concluida" : "concluidas"}`;
 
-  savingsGoals.forEach((goal) => {
+  activeGoals.forEach((goal) => {
     const savedAmount = Number(goal.savedAmount || 0);
     const targetAmount = Number(goal.targetAmount || 0);
     const remaining = Math.max(targetAmount - savedAmount, 0);
@@ -945,15 +974,43 @@ function renderSavingsGoals() {
       <footer>
         <span class="muted">${status}</span>
       </footer>
-      <form class="deposit-form" data-goal-deposit="${goal.id}">
+      ${remaining <= 0 ? `
+        <button class="primary-button completed-goal-button" type="button" data-goal-complete="${goal.id}">
+          <i data-lucide="circle-check-big" aria-hidden="true"></i>
+          <span>Meta Conclu&iacute;da</span>
+        </button>
+      ` : `<form class="deposit-form" data-goal-deposit="${goal.id}">
         <label>
           Depositar
           <input type="number" min="0.01" step="0.01" placeholder="0,00" required />
         </label>
         <button class="secondary-button" type="submit">Adicionar</button>
-      </form>
+      </form>`}
     `;
     savingsGoalsList.append(card);
+  });
+
+  completedGoals.forEach((goal) => {
+    const completedDate = new Date(goal.completedAt).toLocaleDateString("pt-BR");
+    const card = document.createElement("article");
+    card.className = "savings-card completed-goal-card";
+    card.innerHTML = `
+      <header>
+        <div>
+          <span class="completed-goal-badge"><i data-lucide="trophy" aria-hidden="true"></i> Meta conclu&iacute;da</span>
+          <h3>${escapeHTML(goal.name)}</h3>
+          ${goal.note ? `<p class="muted">${escapeHTML(goal.note)}</p>` : ""}
+        </div>
+        <button class="delete-button" type="button" data-goal-delete="${goal.id}" title="Excluir do historico" aria-label="Excluir meta do historico">x</button>
+      </header>
+      <div class="savings-values">
+        <div><span>Valor alcancado</span><strong>${money(goal.savedAmount)}</strong></div>
+        <div><span>Objetivo</span><strong>${money(goal.targetAmount)}</strong></div>
+        <div><span>Concluida em</span><strong>${completedDate}</strong></div>
+      </div>
+      <div class="progress-track completed-progress" aria-label="Meta ${escapeHTML(goal.name)} concluida"><span style="width: 100%"></span></div>
+    `;
+    completedGoalsList.append(card);
   });
 }
 
@@ -1847,6 +1904,12 @@ savingsGoalsList.addEventListener("submit", async (event) => {
 });
 
 savingsGoalsList.addEventListener("click", async (event) => {
+  const completeButton = event.target.closest("[data-goal-complete]");
+  if (completeButton) {
+    await completeSavingsGoal(completeButton.dataset.goalComplete);
+    return;
+  }
+
   const editButton = event.target.closest("[data-goal-edit]");
   if (editButton) {
     const goal = savingsGoals.find((item) => item.id === editButton.dataset.goalEdit);
@@ -1863,6 +1926,17 @@ savingsGoalsList.addEventListener("click", async (event) => {
   });
   if (!confirmed) return;
   await deleteSavingsGoal(button.dataset.goalDelete);
+});
+
+completedGoalsList.addEventListener("click", async (event) => {
+  const button = event.target.closest("[data-goal-delete]");
+  if (!button) return;
+  const confirmed = await askConfirmation({
+    title: "Excluir do historico?",
+    message: "A meta concluida e todo o historico de depositos dela serao removidos. Esta acao nao pode ser desfeita.",
+    confirmLabel: "Excluir meta",
+  });
+  if (confirmed) await deleteSavingsGoal(button.dataset.goalDelete);
 });
 
 recordsBody.addEventListener("click", async (event) => {

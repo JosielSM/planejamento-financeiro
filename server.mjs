@@ -135,6 +135,7 @@ async function migrate() {
       name TEXT NOT NULL,
       target_amount NUMERIC(12, 2) NOT NULL CHECK (target_amount > 0),
       note TEXT NOT NULL DEFAULT '',
+      completed_at TIMESTAMPTZ,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
   `);
@@ -162,6 +163,7 @@ async function migrate() {
   await pool.query(`ALTER TABLE settings ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES users(id) ON DELETE CASCADE;`);
   await pool.query(`ALTER TABLE transactions ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES users(id) ON DELETE CASCADE;`);
   await pool.query(`ALTER TABLE savings_goals ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES users(id) ON DELETE CASCADE;`);
+  await pool.query(`ALTER TABLE savings_goals ADD COLUMN IF NOT EXISTS completed_at TIMESTAMPTZ;`);
 
   await pool.query(`
     DO $$
@@ -211,6 +213,7 @@ function mapSavingsGoal(row) {
     targetAmount: Number(row.target_amount),
     savedAmount: Number(row.saved_amount || 0),
     note: row.note || "",
+    completedAt: row.completed_at || null,
     deposits: row.deposits || [],
   };
 }
@@ -294,6 +297,7 @@ async function findSavingsGoal(id, userId) {
       goal.name,
       goal.target_amount,
       goal.note,
+      goal.completed_at,
       COALESCE(SUM(deposit.amount), 0) AS saved_amount,
       COALESCE(
         JSON_AGG(
@@ -493,6 +497,7 @@ app.get("/api/savings-goals", async (request, response) => {
       goal.name,
       goal.target_amount,
       goal.note,
+      goal.completed_at,
       COALESCE(SUM(deposit.amount), 0) AS saved_amount,
       COALESCE(
         JSON_AGG(
@@ -527,7 +532,7 @@ app.post("/api/savings-goals", async (request, response) => {
   const result = await pool.query(
     `INSERT INTO savings_goals (id, user_id, name, target_amount, note)
      VALUES ($1, $2, $3, $4, $5)
-     RETURNING id, name, target_amount, note, 0 AS saved_amount, '[]'::json AS deposits`,
+     RETURNING id, name, target_amount, note, completed_at, 0 AS saved_amount, '[]'::json AS deposits`,
     [id, user.id, name, targetAmount, note],
   );
 
@@ -588,6 +593,7 @@ app.post("/api/savings-goals/:id/deposits", async (request, response) => {
       goal.name,
       goal.target_amount,
       goal.note,
+      goal.completed_at,
       COALESCE(SUM(deposit.amount), 0) AS saved_amount,
       COALESCE(
         JSON_AGG(
@@ -615,6 +621,28 @@ app.delete("/api/savings-goals/:id", async (request, response) => {
   if (!user) return;
   await pool.query("DELETE FROM savings_goals WHERE id = $1 AND user_id = $2", [request.params.id, user.id]);
   response.status(204).end();
+});
+
+app.post("/api/savings-goals/:id/complete", async (request, response) => {
+  const user = await requireAuth(request, response);
+  if (!user) return;
+  const result = await pool.query(
+    `UPDATE savings_goals goal
+     SET completed_at = NOW()
+     WHERE goal.id = $1
+       AND goal.user_id = $2
+       AND goal.completed_at IS NULL
+       AND (SELECT COALESCE(SUM(amount), 0) FROM savings_deposits WHERE goal_id = goal.id) >= goal.target_amount
+     RETURNING goal.id`,
+    [request.params.id, user.id],
+  );
+
+  if (!result.rowCount) {
+    response.status(400).json({ error: "A meta ainda nao atingiu o valor total ou ja foi concluida" });
+    return;
+  }
+
+  response.json(await findSavingsGoal(request.params.id, user.id));
 });
 
 app.get("/api/settings", async (request, response) => {

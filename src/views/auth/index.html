@@ -1,0 +1,112 @@
+<section class="auth-screen" id="authScreen" hidden>
+      <div class="auth-panel">
+        <div>
+          <p class="eyebrow">Acesso</p>
+          <h2 id="authTitle">Entrar na conta</h2>
+          <p class="section-note">Cada pessoa usa seus proprios dados, metas e registros.</p>
+        </div>
+
+        <form class="auth-form active" id="loginForm">
+          <h3>Entrar na conta</h3>
+          <button class="google-auth-button" data-google-signin type="button">
+            <svg aria-hidden="true" viewBox="0 0 24 24">
+              <path fill="#4285F4" d="M21.6 12.23c0-.71-.06-1.4-.18-2.07H12v3.92h5.38a4.6 4.6 0 0 1-2 3.02v2.55h3.24c1.9-1.75 2.98-4.33 2.98-7.42Z"/>
+              <path fill="#34A853" d="M12 22c2.7 0 4.97-.9 6.62-2.35l-3.24-2.55c-.9.6-2.05.96-3.38.96-2.6 0-4.81-1.76-5.6-4.13H3.06v2.63A10 10 0 0 0 12 22Z"/>
+              <path fill="#FBBC05" d="M6.4 13.93A6 6 0 0 1 6.08 12c0-.67.12-1.32.32-1.93V7.44H3.06A10 10 0 0 0 2 12c0 1.64.39 3.19 1.06 4.56l3.34-2.63Z"/>
+              <path fill="#EA4335" d="M12 5.94c1.47 0 2.79.5 3.82 1.5l2.87-2.87A9.63 9.63 0 0 0 12 2a10 10 0 0 0-8.94 5.44l3.34 2.63C7.19 7.7 9.4 5.94 12 5.94Z"/>
+            </svg>
+            <span>Continuar com Google</span>
+          </button>
+          <div class="auth-divider"><span>ou use seu email</span></div>
+          <label>
+            Email
+            <input id="loginEmail" type="email" autocomplete="email" required />
+          </label>
+          <div class="password-field">
+            <label for="loginPassword">Senha</label>
+            <span class="password-input-wrap">
+              <input id="loginPassword" type="password" autocomplete="current-password" required />
+              <button class="password-visibility-button" type="button" data-password-toggle="loginPassword" aria-label="Mostrar senha" aria-pressed="false"><i data-lucide="eye" aria-hidden="true"></i></button>
+            </span>
+          </div>
+          <button class="primary-button" type="submit">Entrar</button>
+          <button class="text-button" id="showForgotPasswordButton" type="button">Esqueci minha senha</button>
+          <button class="secondary-button" id="showSignupButton" type="button">Cadastrar</button>
+        </form>
+
+        <form class="auth-form" id="signupForm">
+          <h3>Criar cadastro</h3>
+          <p class="section-note">Seu email devera ser confirmado antes do primeiro acesso.</p>
+          <button class="google-auth-button" data-google-signin type="button">
+            <svg aria-hidden="true" viewBox="0 0 24 24">
+              <path fill="#4285F4" d="M21.6 12.23c0-.71-.06-1.4-.18-2.07H12v3.92h5.38a4.6 4.6 0 0 1-2 3.02v2.55h3.24c1.9-1.75 2.98-4.33 2.98-7.42Z"/>
+              <path fill="#34A853" d="M12 22c2.7 0 4.97-.9 6.62-2.35l-3.24-2.55c-.9.6-2.05.96-3.38.96-2.6 0-4.81-1.76-5.6-4.13H3.06v2.63A10 10 0 0 0 12 22Z"/>
+              <path fill="#FBBC05" d="M6.4 13.93A6 6 0 0 1 6.08 12c0-.67.12-1.32.32-1.93V7.44H3.06A10 10 0 0 0 2 12c0 1.64.39 3.19 1.06 4.56l3.34-2.63Z"/>
+              <path fill="#EA4335" d="M12 5.94c1.47 0 2.79.5 3.82 1.5l2.87-2.87A9.63 9.63 0 0 0 12 2a10 10 0 0 0-8.94 5.44l3.34 2.63C7.19 7.7 9.4 5.94 12 5.94Z"/>
+            </svg>
+            <span>Cadastrar com Google</span>
+          </button>
+          <div class="auth-divider"><span>ou cadastre com email</span></div>
+          <label>
+            Nome
+            <input id="signupName" type="text" autocomplete="name" required />
+          </label>
+          <label>
+            Email
+            <input id="signupEmail" type="email" autocomplete="email" required />
+          </label>
+          <div class="password-field">
+            <label for="signupPassword">Senha</label>
+            <span class="password-input-wrap">
+              <input id="signupPassword" type="password" autocomplete="new-password" minlength="10" maxlength="128" aria-describedby="passwordRequirements" required />
+              <button class="password-visibility-button" type="button" data-password-toggle="signupPassword" aria-label="Mostrar senha" aria-pressed="false"><i data-lucide="eye" aria-hidden="true"></i></button>
+            </span>
+          </div>
+          <div class="password-guidance" id="passwordRequirements">
+            <div class="password-strength-heading">
+              <span>Segurança da senha</span>
+              <strong id="passwordStrengthLabel" aria-live="polite">Muito fraca</strong>
+            </div>
+            <div class="password-strength-track" aria-hidden="true"><span id="passwordStrengthBar"></span></div>
+            <ul>
+              <li data-password-rule="length">Pelo menos 10 caracteres</li>
+              <li data-password-rule="lowercase">Uma letra minúscula</li>
+              <li data-password-rule="uppercase">Uma letra maiúscula</li>
+              <li data-password-rule="number">Um número</li>
+              <li data-password-rule="symbol">Um caractere especial</li>
+            </ul>
+          </div>
+          <div class="password-field">
+            <label for="signupPasswordConfirmation">Confirmar senha</label>
+            <span class="password-input-wrap">
+              <input id="signupPasswordConfirmation" type="password" autocomplete="new-password" minlength="10" maxlength="128" required />
+              <button class="password-visibility-button" type="button" data-password-toggle="signupPasswordConfirmation" aria-label="Mostrar confirmação da senha" aria-pressed="false"><i data-lucide="eye" aria-hidden="true"></i></button>
+            </span>
+          </div>
+          <p class="password-match-status" id="passwordMatchStatus" aria-live="polite">Digite novamente a mesma senha.</p>
+          <button class="primary-button" type="submit">Criar conta</button>
+          <button class="secondary-button" id="showLoginButton" type="button">Voltar para login</button>
+        </form>
+
+        <form class="auth-form" id="forgotPasswordForm">
+          <h3>Recuperar senha</h3>
+          <p class="section-note">Enviaremos um link seguro para redefinir sua senha.</p>
+          <label>
+            Email
+            <input id="forgotPasswordEmail" type="email" autocomplete="email" required />
+          </label>
+          <button class="primary-button" type="submit">Enviar link de recuperacao</button>
+          <button class="secondary-button" id="backToLoginButton" type="button">Voltar para login</button>
+        </form>
+
+        <div class="auth-form verification-panel" id="verificationPanel" hidden>
+          <h3>Confirme seu email</h3>
+          <p class="section-note" id="verificationMessage">Enviamos um link de confirmacao para seu email.</p>
+          <button class="primary-button" id="checkVerificationButton" type="button">Ja confirmei meu email</button>
+          <button class="secondary-button" id="resendVerificationButton" type="button">Reenviar email</button>
+          <button class="text-button" id="verificationLogoutButton" type="button">Usar outra conta</button>
+        </div>
+
+        <p class="auth-error" id="authError" role="alert" aria-live="polite"></p>
+      </div>
+    </section>

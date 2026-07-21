@@ -1,0 +1,98 @@
+<div class="tab-screen active" data-tab-panel="inicio">
+        <section class="summary-band" aria-label="Resumo do mes">
+          <div class="month-control">
+            <label class="control-label" for="monthFilter">
+              <i data-lucide="calendar-days" aria-hidden="true"></i>
+              <span>Mes analisado</span>
+            </label>
+            <input id="monthFilter" type="month" />
+          </div>
+          <div class="metric positive">
+            <div class="metric-label">
+              <i class="metric-icon" data-lucide="trending-up" aria-hidden="true"></i>
+              <span>Ganhos</span>
+            </div>
+            <strong id="totalIncome">R$ 0,00</strong>
+          </div>
+          <div class="metric negative">
+            <div class="metric-label">
+              <i class="metric-icon" data-lucide="trending-down" aria-hidden="true"></i>
+              <span>Despesas</span>
+            </div>
+            <strong id="totalExpense">R$ 0,00</strong>
+          </div>
+          <div class="metric balance">
+            <div class="metric-label">
+              <i class="metric-icon" data-lucide="wallet" aria-hidden="true"></i>
+              <span>Saldo</span>
+            </div>
+            <strong id="balance">R$ 0,00</strong>
+          </div>
+          <div class="metric daily-metric">
+            <div class="metric-label">
+              <i class="metric-icon" data-lucide="chart-line" aria-hidden="true"></i>
+              <span>Lucro por dia</span>
+            </div>
+            <strong id="dailyAverage">R$ 0,00</strong>
+            <div class="metric-secondary">
+              <span class="secondary-label"><i data-lucide="coins" aria-hidden="true"></i> Ganhos por dia</span>
+              <strong id="incomeDailyAverage">R$ 0,00</strong>
+            </div>
+          </div>
+        </section>
+
+        <section class="goal-band" aria-label="Meta diaria">
+          <div class="goal-copy">
+            <h2 class="heading-with-icon"><i data-lucide="target" aria-hidden="true"></i> Meta diaria de ganhos</h2>
+            <p id="goalStatus">Defina quanto voce quer ganhar por dia.</p>
+            <button class="secondary-button goal-toggle" id="goalToggleButton" type="button">
+              <i data-lucide="pencil" aria-hidden="true"></i>
+              <span>Editar meta</span>
+            </button>
+          </div>
+          <form class="goal-form" id="goalForm" hidden>
+            <label>
+              Meta
+              <input id="dailyGoal" type="number" min="0" step="0.01" placeholder="Ex: 150,00" />
+            </label>
+            <button class="primary-button compact" type="submit">Salvar meta</button>
+          </form>
+          <div class="goal-progress">
+            <div class="goal-numbers">
+              <span id="todayIncome">Hoje: R$ 0,00</span>
+              <strong id="goalPercent">0%</strong>
+            </div>
+            <div class="progress-track" aria-label="Progresso da meta diaria">
+              <span id="goalProgressBar"></span>
+            </div>
+          </div>
+        </section>
+
+        <section class="quick-actions" aria-label="Acoes rapidas">
+          <button class="action-tile primary-action" type="button" data-tab-target="novo">
+            <i data-lucide="circle-plus" aria-hidden="true"></i>
+            <span>Registrar agora</span>
+            <strong>Ganho ou despesa</strong>
+          </button>
+          <button class="action-tile savings-action" type="button" data-tab-target="metas">
+            <i data-lucide="piggy-bank" aria-hidden="true"></i>
+            <span>Guardar dinheiro</span>
+            <strong>Metas</strong>
+          </button>
+          <button class="action-tile expenses-action" type="button" data-tab-target="destino">
+            <i data-lucide="chart-pie" aria-hidden="true"></i>
+            <span>Ver gastos</span>
+            <strong>Para onde vai</strong>
+          </button>
+          <button class="action-tile records-action" type="button" data-tab-target="registros">
+            <i data-lucide="clipboard-list" aria-hidden="true"></i>
+            <span>Consultar</span>
+            <strong>Registros</strong>
+          </button>
+          <button class="action-tile report-action" id="pdfSummaryButton" type="button">
+            <i data-lucide="sheet" aria-hidden="true"></i>
+            <span>Baixar</span>
+            <strong>Relatorio PDF / Excel</strong>
+          </button>
+        </section>
+      </div>

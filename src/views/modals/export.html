@@ -1,0 +1,37 @@
+<div class="transaction-modal" id="pdfSummaryModal" hidden>
+      <div class="modal-backdrop" data-close-pdf-summary></div>
+      <form class="modal-card compact-modal" id="pdfSummaryForm" role="dialog" aria-modal="true" aria-labelledby="pdfSummaryTitle">
+        <div class="modal-heading">
+          <h2 id="pdfSummaryTitle">Exportar relatorio financeiro</h2>
+          <button class="delete-button" type="button" data-close-pdf-summary title="Fechar" aria-label="Fechar">x</button>
+        </div>
+
+        <fieldset class="choice-group">
+          <legend>Periodo</legend>
+          <label class="choice-option">
+            <input name="pdfMonthChoice" type="radio" value="current" checked />
+            Mes atual
+          </label>
+          <label class="choice-option">
+            <input name="pdfMonthChoice" type="radio" value="other" />
+            Escolher outro mes
+          </label>
+        </fieldset>
+
+        <label id="pdfMonthField" hidden>
+          Mes do resumo
+          <input id="pdfMonthInput" type="month" />
+        </label>
+
+        <div class="export-actions">
+          <button class="primary-button" type="submit" name="exportFormat" value="pdf">
+            <i data-lucide="file-text" aria-hidden="true"></i>
+            <span>Baixar PDF</span>
+          </button>
+          <button class="secondary-button excel-button" type="submit" name="exportFormat" value="xlsx">
+            <i data-lucide="sheet" aria-hidden="true"></i>
+            <span>Baixar Excel</span>
+          </button>
+        </div>
+      </form>
+    </div>

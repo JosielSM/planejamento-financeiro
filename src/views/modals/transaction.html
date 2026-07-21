@@ -1,0 +1,72 @@
+<div class="transaction-modal" id="transactionModal" hidden>
+      <div class="modal-backdrop" data-close-transaction-modal></div>
+      <form class="modal-card" id="transactionForm" role="dialog" aria-modal="true" aria-labelledby="transactionModalTitle">
+        <div class="modal-heading">
+          <h2 id="transactionModalTitle">Registrar ganho</h2>
+          <button class="delete-button" type="button" data-close-transaction-modal title="Fechar" aria-label="Fechar">x</button>
+        </div>
+        <input id="transactionType" name="type" type="hidden" value="income" />
+
+        <div class="form-grid">
+          <label>
+            Descricao
+            <input id="description" type="text" placeholder="Ex: diaria, aluguel, comida" required />
+          </label>
+          <label>
+            Valor
+            <input id="amount" type="number" min="0.01" step="0.01" placeholder="0,00" required />
+          </label>
+          <label>
+            Data
+            <input id="date" type="date" required />
+          </label>
+          <div class="category-field">
+            <label for="category">
+            Categoria
+            <select id="category"></select>
+            </label>
+            <div class="category-actions">
+              <button class="text-button" id="newCategoryButton" type="button">
+                <i data-lucide="circle-plus" aria-hidden="true"></i>
+                Nova categoria
+              </button>
+              <button class="text-button" id="manageCategoriesButton" type="button">
+                <i data-lucide="settings-2" aria-hidden="true"></i>
+                Gerenciar
+              </button>
+            </div>
+          </div>
+          <label>
+            Frequencia
+            <select id="frequency">
+              <option value="daily">Diário</option>
+              <option value="monthly">Mensal fixa</option>
+              <option value="occasional">Eventual</option>
+            </select>
+          </label>
+          <label>
+            Observacao
+            <input id="note" type="text" placeholder="Opcional" />
+          </label>
+        </div>
+
+        <section class="category-manager" id="categoryManager" hidden aria-label="Gerenciar categorias">
+          <div class="category-manager-heading">
+            <div>
+              <strong id="categoryManagerTitle">Nova categoria de ganho</strong>
+              <p class="section-note">As categorias personalizadas ficam salvas somente na sua conta.</p>
+            </div>
+            <button class="delete-button" id="closeCategoryManagerButton" type="button" aria-label="Fechar categorias">x</button>
+          </div>
+          <div class="category-editor">
+            <label for="customCategoryName">Nome da categoria</label>
+            <input id="customCategoryName" type="text" minlength="2" maxlength="40" placeholder="Ex: Investimentos" />
+            <button class="primary-button compact" id="saveCategoryButton" type="button">Salvar categoria</button>
+            <button class="secondary-button" id="cancelCategoryEditButton" type="button" hidden>Cancelar edicao</button>
+          </div>
+          <div class="custom-category-list" id="customCategoryList"></div>
+        </section>
+
+        <button class="primary-button" id="transactionSubmitButton" type="submit">Adicionar ganho</button>
+      </form>
+    </div>

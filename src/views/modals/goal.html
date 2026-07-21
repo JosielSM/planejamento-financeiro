@@ -1,0 +1,28 @@
+<div class="transaction-modal" id="savingsGoalModal" hidden>
+      <div class="modal-backdrop" data-close-savings-goal-modal></div>
+      <form class="modal-card compact-modal savings-form" id="savingsGoalForm" role="dialog" aria-modal="true" aria-labelledby="savingsGoalModalTitle">
+        <div class="modal-heading">
+          <div>
+            <p class="eyebrow savings-eyebrow">Planeje seu objetivo</p>
+            <h2 id="savingsGoalModalTitle">Nova meta</h2>
+          </div>
+          <button class="delete-button" type="button" data-close-savings-goal-modal title="Fechar" aria-label="Fechar">x</button>
+        </div>
+        <label>
+          Nome do objetivo
+          <input id="savingsGoalName" type="text" placeholder="Ex: Conta de luz, viagem, celular" required />
+        </label>
+        <label>
+          Valor total
+          <input id="savingsGoalTarget" type="number" min="0.01" step="0.01" placeholder="0,00" required />
+        </label>
+        <label>
+          Observacao
+          <input id="savingsGoalNote" type="text" placeholder="Opcional" />
+        </label>
+        <div class="savings-form-actions">
+          <button class="secondary-button" id="savingsGoalCancelButton" type="button">Cancelar</button>
+          <button class="primary-button compact" id="savingsGoalSubmitButton" type="submit">Concluir</button>
+        </div>
+      </form>
+    </div>

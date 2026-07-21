@@ -1,0 +1,48 @@
+<div class="profile-modal" id="profileModal" hidden>
+      <div class="modal-backdrop" data-profile-close></div>
+      <section class="modal-card profile-card" role="dialog" aria-modal="true" aria-labelledby="profileModalTitle">
+        <div class="profile-heading">
+          <div class="profile-avatar" aria-hidden="true"><i data-lucide="user-round"></i></div>
+          <div>
+            <p class="eyebrow profile-eyebrow">Sua conta</p>
+            <h2 id="profileModalTitle">Perfil</h2>
+          </div>
+          <button class="icon-close-button" id="closeProfileButton" type="button" aria-label="Fechar perfil">×</button>
+        </div>
+        <div class="profile-identity">
+          <strong id="accountName"></strong>
+          <span id="accountEmail"></span>
+        </div>
+        <div class="profile-provider">
+          <div class="provider-copy">
+            <span class="google-mark" aria-hidden="true">G</span>
+            <div>
+              <strong>Conta Google</strong>
+              <small id="googleLinkStatus">Não vinculada</small>
+            </div>
+          </div>
+          <button class="secondary-button" id="linkGoogleButton" type="button">Vincular</button>
+        </div>
+        <div class="profile-security">
+          <div class="profile-security-icon" aria-hidden="true"><i data-lucide="key-round"></i></div>
+          <div>
+            <strong>Senha da conta</strong>
+            <small id="passwordProviderStatus">Receba um link seguro no seu e-mail.</small>
+          </div>
+          <button class="secondary-button" id="profilePasswordResetButton" type="button">Alterar senha</button>
+        </div>
+        <label class="profile-preference" for="includeSundaysToggle">
+          <span class="profile-preference-icon" aria-hidden="true"><i data-lucide="calendar-days"></i></span>
+          <span class="profile-preference-copy">
+            <strong>Incluir domingos nas médias</strong>
+            <small>Ative se domingo também fizer parte da sua rotina de trabalho.</small>
+          </span>
+          <input id="includeSundaysToggle" type="checkbox" role="switch" />
+          <span class="preference-switch" aria-hidden="true"></span>
+        </label>
+        <button class="profile-logout-button" id="logoutButton" type="button">
+          <i data-lucide="log-out" aria-hidden="true"></i>
+          <span>Sair da conta</span>
+        </button>
+      </section>
+    </div>

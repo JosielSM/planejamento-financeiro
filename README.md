@@ -39,6 +39,25 @@ Depois acesse:
 http://127.0.0.1:5500
 ```
 
+## Estrutura do projeto
+
+```text
+public/
+  css/                 Estilos separados por area da interface
+  js/                  Modulos do navegador em ordem de carregamento
+src/
+  server.mjs           Servidor, seguranca e API
+  views/
+    auth/              Login, cadastro e verificacao
+    screens/           Painel, metas, movimentacoes e registros
+    modals/             Formularios e dialogos sobrepostos
+    partials/           Cabecalho e dependencias compartilhadas
+scripts/                Utilitarios administrativos
+schema.sql              Referencia do banco PostgreSQL
+```
+
+O servidor monta a pagina a partir das telas em `src/views`. Dessa forma, cada funcionalidade pode ser mantida separadamente sem duplicar a estrutura principal da aplicacao.
+
 ## Banco PostgreSQL
 
 O servidor cria as tabelas automaticamente ao iniciar. O arquivo `schema.sql` tambem fica no projeto como referencia.

@@ -1,0 +1,380 @@
+@media (min-width: 641px) and (max-width: 1180px) {
+  .layout {
+    width: calc(100vw - 20px);
+  }
+
+  .topbar {
+    padding-inline: 20px;
+  }
+
+  .auth-screen {
+    width: calc(100vw - 20px);
+  }
+
+  .entry-panel,
+  .insights-panel,
+  .records-band,
+  .savings-band {
+    padding: 22px;
+  }
+
+  .chart-card {
+    grid-template-columns: 1fr;
+  }
+
+  .savings-form {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .savings-overview {
+    grid-template-columns: 1fr;
+  }
+
+  .form-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .primary-button {
+    min-height: 48px;
+  }
+}
+
+@media (max-width: 640px) {
+  body {
+    padding-bottom: 86px;
+  }
+
+  .panel-heading,
+  .records-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .topbar {
+    align-items: center;
+    gap: 10px;
+    padding: 18px 16px;
+  }
+
+  .topbar h1 {
+    font-size: 1.3rem;
+  }
+
+  .topbar .eyebrow {
+    font-size: 0.7rem;
+  }
+
+  .auth-screen {
+    width: min(100% - 20px, 560px);
+    margin-top: 14px;
+  }
+
+  .auth-panel {
+    grid-template-columns: 1fr;
+    padding: 14px;
+  }
+
+  .topbar-actions {
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: flex-end;
+  }
+
+  .icon-button {
+    width: 44px;
+  }
+
+  .danger-button {
+    width: 100%;
+  }
+
+  .layout {
+    width: min(100% - 20px, 560px);
+    margin-top: 14px;
+  }
+
+  .app-tabs {
+    position: fixed;
+    right: 0;
+    bottom: auto;
+    left: 0;
+    top: 100dvh;
+    transform: translateY(-100%);
+    grid-template-columns: repeat(5, 1fr);
+    gap: 4px;
+    margin: 0;
+    padding: 8px 8px calc(8px + env(safe-area-inset-bottom));
+    border-width: 1px 0 0;
+    background: #ffffff;
+  }
+
+  .tab-button {
+    min-height: 54px;
+    padding: 6px 2px;
+    font-size: 0.68rem;
+    line-height: 1.05;
+  }
+
+  .tab-button svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .summary-band,
+  .goal-band,
+  .savings-form,
+  .form-grid,
+  .goal-form,
+  .quick-actions,
+  .register-actions,
+  .chart-card,
+  .donut-wrap,
+  .savings-values {
+    grid-template-columns: 1fr;
+  }
+
+  .month-control,
+  .metric,
+  .goal-band,
+  .savings-band,
+  .entry-panel,
+  .insights-panel,
+  .records-band,
+  .action-tile {
+    box-shadow: 0 10px 28px rgba(28, 39, 33, 0.08);
+  }
+
+  .summary-band {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .month-control {
+    grid-column: 1 / -1;
+  }
+
+  .metric,
+  .month-control {
+    min-height: auto;
+    padding: 14px;
+  }
+
+  .metric strong {
+    font-size: 1.18rem;
+  }
+
+  .metric {
+    min-width: 0;
+  }
+
+  .metric-secondary strong {
+    font-size: 0.92rem;
+  }
+
+  .goal-band,
+  .savings-band,
+  .entry-panel,
+  .insights-panel,
+  .records-band {
+    padding: 14px;
+  }
+
+  .entry-panel.tab-screen.active {
+    width: 100%;
+  }
+
+  .quick-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .report-action {
+    grid-column: 1 / -1;
+  }
+
+  .action-tile {
+    min-height: 72px;
+  }
+
+  .export-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .register-card {
+    min-height: 104px;
+  }
+
+  .donut-wrap {
+    justify-items: center;
+  }
+
+  .chart-legend {
+    width: 100%;
+  }
+
+  .modal-card {
+    max-height: 88vh;
+    padding: 14px;
+  }
+
+  .system-dialog-card {
+    grid-template-columns: 1fr;
+    padding: 18px;
+  }
+
+  .system-dialog-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  #systemDialogCancelButton[hidden] + #systemDialogConfirmButton {
+    grid-column: 1 / -1;
+  }
+
+  .category-editor {
+    grid-template-columns: 1fr;
+  }
+
+  .category-editor label {
+    grid-column: auto;
+  }
+
+  .category-manager-heading {
+    align-items: flex-start;
+  }
+
+  .savings-card header,
+  .savings-card footer,
+  .goal-numbers {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .savings-overview,
+  .reserve-chart-wrap,
+  .reserve-metrics {
+    grid-template-columns: 1fr;
+  }
+
+  .reserve-chart-wrap {
+    justify-items: center;
+    text-align: center;
+  }
+
+  .reserve-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .available-reserve-metric {
+    grid-column: 1 / -1;
+  }
+
+  .segmented,
+  .filters select {
+    width: 100%;
+  }
+
+  .filters {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .table-wrap {
+    overflow: visible;
+  }
+
+  table {
+    min-width: 0;
+  }
+
+  table,
+  thead,
+  tbody,
+  tr,
+  td {
+    display: block;
+    width: 100%;
+  }
+
+  thead {
+    display: none;
+  }
+
+  tbody {
+    display: grid;
+    gap: 12px;
+  }
+
+  tr {
+    border: 1px solid var(--line);
+    background: #fbfcfa;
+    padding: 12px;
+  }
+
+  .transaction-row {
+    overflow: hidden;
+    padding: 10px 12px;
+    border-width: 1px 1px 1px 4px;
+    border-radius: 12px;
+    box-shadow: var(--soft-shadow);
+  }
+
+  .transaction-row.income-row {
+    border-color: var(--green-line);
+    border-left-color: var(--green);
+    background: var(--green-soft);
+  }
+
+  .transaction-row.expense-row {
+    border-color: var(--red-line);
+    border-left-color: var(--red);
+    background: var(--red-soft);
+  }
+
+  .transaction-row td,
+  .transaction-row td:first-child,
+  .transaction-row td:last-child {
+    border-right: 0;
+    border-left: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  td {
+    display: grid;
+    grid-template-columns: 92px minmax(0, 1fr);
+    gap: 12px;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid #eef2ed;
+  }
+
+  td:last-child {
+    border-bottom: 0;
+  }
+
+  td::before {
+    content: attr(data-label);
+    color: var(--muted);
+    font-size: 0.76rem;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+
+  td.value {
+    justify-items: stretch;
+  }
+
+  td.value::before {
+    color: var(--muted);
+  }
+
+  td[data-label="Valor"] {
+    font-size: 1.05rem;
+  }
+
+  td[data-label="Acao"] .delete-button {
+    justify-self: start;
+  }
+}

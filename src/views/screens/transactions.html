@@ -1,0 +1,54 @@
+<section class="entry-panel tab-screen" data-tab-panel="novo" aria-label="Registrar ganho ou despesa">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow register-eyebrow">Movimentação financeira</p>
+              <h2 class="heading-with-icon"><i data-lucide="square-pen" aria-hidden="true"></i> Registrar ganho ou despesa</h2>
+              <p class="section-note">Mantenha seu saldo atualizado registrando cada entrada e saída.</p>
+            </div>
+          </div>
+
+          <div class="register-actions" aria-label="Escolha o tipo de registro">
+            <button class="register-card income-card" type="button" data-transaction-type="income">
+              <i data-lucide="trending-up" aria-hidden="true"></i>
+              <span>Registrar ganho</span>
+              <strong id="registerIncomeValue">R$ 0,00</strong>
+            </button>
+            <button class="register-card expense-card" type="button" data-transaction-type="expense">
+              <i data-lucide="trending-down" aria-hidden="true"></i>
+              <span>Registrar despesa</span>
+              <strong id="registerExpenseValue">R$ 0,00</strong>
+            </button>
+          </div>
+
+          <section class="register-context" aria-label="Resumo para novos registros">
+            <article><i data-lucide="wallet-cards" aria-hidden="true"></i><span>Saldo do mês</span><strong id="registerBalanceValue">R$ 0,00</strong></article>
+            <article><i data-lucide="list-checks" aria-hidden="true"></i><span>Lançamentos no mês</span><strong id="registerCountValue">0</strong></article>
+            <article><i data-lucide="calendar-clock" aria-hidden="true"></i><span>Última movimentação</span><strong id="registerLastDate">Nenhuma</strong></article>
+          </section>
+
+          <div class="register-support-grid">
+            <section class="chart-card" aria-label="Grafico de ganhos e despesas">
+              <div><h3>Ganhos x despesas</h3><p class="section-note">Comparação do mês selecionado.</p></div>
+              <div class="donut-wrap">
+                <div class="donut-chart" id="incomeExpenseChart" role="img" aria-label="Grafico de ganhos e despesas"></div>
+                <div class="chart-legend">
+                  <div><span class="legend-dot income-dot"></span><span>Ganhos</span><strong id="chartIncomeValue">R$ 0,00</strong></div>
+                  <div><span class="legend-dot expense-dot"></span><span>Despesas</span><strong id="chartExpenseValue">R$ 0,00</strong></div>
+                </div>
+              </div>
+            </section>
+            <section class="recent-registers" aria-labelledby="recentRegistersTitle">
+              <div class="recent-registers-heading">
+                <div><h3 id="recentRegistersTitle">Últimos lançamentos</h3><p>Confira antes de adicionar um novo registro.</p></div>
+                <button class="text-button" type="button" data-tab-target="registros">Ver todos</button>
+              </div>
+              <div class="recent-registers-list" id="recentRegistersList"></div>
+              <p class="recent-registers-empty" id="recentRegistersEmpty">Nenhum lançamento neste mês.</p>
+            </section>
+          </div>
+
+          <aside class="register-tip">
+            <i data-lucide="lightbulb" aria-hidden="true"></i>
+            <div><strong>Dica para manter o controle correto</strong><span>Use “Mensal fixa” para contas recorrentes e registre a data real de cada movimentação.</span></div>
+          </aside>
+        </section>

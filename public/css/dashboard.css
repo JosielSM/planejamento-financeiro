@@ -1,0 +1,377 @@
+.app-tabs {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 18px;
+  padding: 8px;
+  background: rgba(245, 247, 243, 0.94);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(8px);
+}
+
+.tab-button {
+  display: grid;
+  place-items: center;
+  gap: 4px;
+  min-height: 46px;
+  padding: 6px 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.tab-button svg {
+  width: 19px;
+  height: 19px;
+  stroke-width: 2.2;
+}
+
+.tab-button span {
+  display: block;
+}
+
+.tab-button.active {
+  background: #22352d;
+  color: #fff;
+}
+
+.tab-screen {
+  display: none;
+}
+
+.tab-screen.active {
+  display: block;
+}
+
+.summary-band {
+  display: grid;
+  grid-template-columns: minmax(180px, 1.2fr) repeat(4, minmax(150px, 1fr));
+  gap: 10px;
+  align-items: stretch;
+  margin-bottom: 20px;
+}
+
+.month-control,
+.metric,
+.goal-band,
+.savings-band,
+.entry-panel,
+.insights-panel,
+.records-band {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+  border-radius: 14px;
+}
+
+.month-control,
+.metric {
+  min-height: 94px;
+  padding: 16px;
+}
+
+.month-control {
+  background: linear-gradient(145deg, #ffffff, #f2f5f1);
+}
+
+.metric {
+  position: relative;
+  overflow: hidden;
+  border-top-width: 4px;
+  box-shadow: var(--soft-shadow);
+}
+
+.metric.positive {
+  border-color: var(--green-line);
+  border-top-color: var(--green);
+  background: linear-gradient(145deg, #ffffff 10%, var(--green-soft));
+}
+
+.metric.negative {
+  border-color: var(--red-line);
+  border-top-color: var(--red);
+  background: linear-gradient(145deg, #ffffff 10%, var(--red-soft));
+}
+
+.metric.balance {
+  border-color: #c5d9f1;
+  border-top-color: var(--blue);
+  background: linear-gradient(145deg, #ffffff 10%, var(--blue-soft));
+}
+
+.metric.daily-metric {
+  border-color: #d9cbed;
+  border-top-color: var(--purple);
+  background: linear-gradient(145deg, #ffffff 10%, var(--purple-soft));
+}
+
+.month-control label,
+.metric span,
+label {
+  display: block;
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.month-control input {
+  width: 100%;
+  margin-top: 10px;
+}
+
+.month-control .control-label,
+.metric-label,
+.metric .secondary-label,
+.heading-with-icon {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.control-label svg,
+.secondary-label svg {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+}
+
+.metric-icon {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  padding: 5px;
+  box-sizing: content-box;
+  border-radius: 9px;
+  background: #eef2ed;
+}
+
+.positive .metric-icon {
+  background: #e4f4eb;
+  color: var(--green);
+}
+
+.negative .metric-icon {
+  background: #fff0ee;
+  color: var(--red);
+}
+
+.balance .metric-icon {
+  background: #e9f1fb;
+  color: var(--blue);
+}
+
+.daily-metric .metric-icon {
+  background: #f3edff;
+  color: #7554a3;
+}
+
+.metric strong {
+  display: block;
+  margin-top: 10px;
+  font-size: 1.35rem;
+}
+
+.metric-secondary {
+  margin-top: 10px;
+  padding-top: 9px;
+  border-top: 1px solid var(--line);
+}
+
+.metric-secondary strong {
+  margin-top: 4px;
+  font-size: 1rem;
+}
+
+.heading-with-icon svg {
+  width: 21px;
+  height: 21px;
+  color: var(--green);
+}
+
+.positive strong {
+  color: var(--green);
+}
+
+.negative strong {
+  color: var(--red);
+}
+
+.balance strong {
+  color: var(--blue);
+}
+
+.goal-band {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) minmax(280px, 0.9fr) minmax(260px, 1fr);
+  gap: 18px;
+  align-items: end;
+  margin-bottom: 20px;
+  padding: 18px;
+  border-color: #ead8a8;
+  background: linear-gradient(120deg, #fff, var(--amber-soft));
+}
+
+.goal-copy p {
+  margin: 8px 0 0;
+  color: var(--muted);
+}
+
+.goal-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.goal-toggle svg {
+  width: 17px;
+  height: 17px;
+}
+
+.section-note {
+  margin: 8px 0 0;
+  color: var(--muted);
+}
+
+.goal-form {
+  display: grid;
+  grid-template-columns: minmax(140px, 1fr) auto;
+  gap: 10px;
+  align-items: end;
+  padding: 14px;
+  border: 1px solid var(--line);
+  background: #fbfcfa;
+}
+
+.goal-form[hidden] {
+  display: none;
+}
+
+.primary-button.compact {
+  width: auto;
+  min-width: 130px;
+  margin-top: 0;
+  padding: 0 14px;
+}
+
+.goal-progress {
+  display: grid;
+  gap: 10px;
+}
+
+.goal-numbers {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--muted);
+}
+
+.goal-numbers strong {
+  color: var(--green);
+}
+
+.progress-track {
+  height: 14px;
+  background: #e8ece6;
+  overflow: hidden;
+}
+
+.progress-track span {
+  display: block;
+  width: 0;
+  height: 100%;
+  background: var(--green);
+  transition: width 0.2s ease;
+}
+
+.quick-actions {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.action-tile {
+  display: grid;
+  gap: 6px;
+  min-height: 86px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--text);
+  text-align: left;
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  border-radius: 13px;
+  transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+}
+
+.action-tile:hover,
+.register-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 30px rgba(28, 39, 33, 0.12);
+}
+
+.action-tile > svg {
+  width: 22px;
+  height: 22px;
+  color: var(--green);
+}
+
+.action-tile span {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.action-tile strong {
+  font-size: 1rem;
+}
+
+.primary-action {
+  border-color: #bcd8ca;
+  background: #e5f4ec;
+  color: var(--green);
+}
+
+.savings-action {
+  border-color: #d8c9ed;
+  background: var(--purple-soft);
+}
+
+.savings-action > svg {
+  color: var(--purple);
+}
+
+.expenses-action {
+  border-color: var(--red-line);
+  background: var(--red-soft);
+}
+
+.expenses-action > svg {
+  color: var(--red);
+}
+
+.records-action {
+  border-color: #c5d9f1;
+  background: var(--blue-soft);
+}
+
+.records-action > svg {
+  color: var(--blue);
+}
+
+.report-action {
+  border-color: #ead8a8;
+  background: var(--amber-soft);
+}
+
+.report-action > svg {
+  color: var(--amber);
+}

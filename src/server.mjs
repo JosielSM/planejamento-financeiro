@@ -4,11 +4,39 @@ import { applicationDefault, cert, getApps, initializeApp } from "firebase-admin
 import { getAuth } from "firebase-admin/auth";
 import helmet from "helmet";
 import pg from "pg";
+import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const { Pool } = pg;
 const __dirname = dirname(fileURLToPath(import.meta.url));
+const projectRoot = join(__dirname, "..");
+const publicDirectory = join(projectRoot, "public");
+const viewsDirectory = join(__dirname, "views");
+
+function loadView(relativePath) {
+  return readFileSync(join(viewsDirectory, relativePath), "utf8").trim();
+}
+
+const indexDocument = Object.entries({
+  topbar: "partials/topbar.html",
+  auth: "auth/index.html",
+  navigation: "screens/navigation.html",
+  dashboard: "screens/dashboard.html",
+  goals: "screens/goals.html",
+  transactions: "screens/transactions.html",
+  insights: "screens/insights.html",
+  records: "screens/records.html",
+  goalModal: "modals/goal.html",
+  transactionModal: "modals/transaction.html",
+  exportModal: "modals/export.html",
+  profileModal: "modals/profile.html",
+  systemDialog: "modals/system-dialog.html",
+  scripts: "partials/scripts.html",
+}).reduce(
+  (document, [placeholder, relativePath]) => document.replace(`{{${placeholder}}}`, loadView(relativePath)),
+  loadView("layout.html"),
+);
 const app = express();
 if (process.env.NODE_ENV === "production") app.set("trust proxy", 1);
 const port = Number(process.env.PORT || 5500);
@@ -74,7 +102,7 @@ app.use("/api", rateLimit({
   legacyHeaders: false,
   message: { error: "Muitas solicitacoes. Aguarde alguns minutos e tente novamente." },
 }));
-app.use(express.static(__dirname, {
+app.use(express.static(publicDirectory, {
   extensions: ["html"],
   setHeaders(response) {
     response.setHeader("Cache-Control", "no-store");
@@ -668,7 +696,7 @@ app.put("/api/settings/:key", async (request, response) => {
 });
 
 app.get("*", (_request, response) => {
-  response.sendFile(join(__dirname, "index.html"));
+  response.type("html").send(indexDocument);
 });
 
 migrate()

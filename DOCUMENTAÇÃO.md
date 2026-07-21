@@ -161,6 +161,8 @@ Os módulos são scripts clássicos e compartilham o mesmo ambiente global. A nu
 
 Alterar essa ordem pode fazer um módulo tentar usar variáveis ou funções que ainda não foram declaradas.
 
+O estado inicial de `settings` é criado diretamente no primeiro módulo, usando os valores padrão e a cópia local disponível. Ele não pode chamar uma função declarada somente em um script posterior, pois scripts clássicos diferentes são executados sequencialmente e não compartilham içamento de declarações entre arquivos.
+
 ## 5. Montagem da interface HTML
 
 Ao iniciar, `src/server.mjs` lê os arquivos de `src/views` com `readFileSync`. O objeto de composição associa cada marcador a um arquivo. O resultado é armazenado em `indexDocument`.

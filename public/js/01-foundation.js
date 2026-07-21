@@ -148,7 +148,7 @@ const themeToggleText = document.querySelector("#themeToggleText");
 const toastRegion = document.querySelector("#toastRegion");
 
 let transactions = [];
-let settings = loadSettings();
+let settings = { dailyGoal: 0, includeSundays: false, ...loadJSON(SETTINGS_KEY, {}) };
 let savingsGoals = [];
 let customCategories = [];
 let editingCategoryId = null;

@@ -44,6 +44,7 @@ saveCategoryButton.addEventListener("click", async () => {
 
   saveCategoryButton.disabled = true;
   try {
+    const wasEditingCategory = Boolean(editingCategoryId);
     const saved = editingCategoryId
       ? await updateCustomCategory(editingCategoryId, name)
       : await createCustomCategory(type, name);
@@ -51,6 +52,7 @@ saveCategoryButton.addEventListener("click", async () => {
     updateCategoryOptions(saved.name);
     renderCategoryManager();
     render();
+    showToast(wasEditingCategory ? "Categoria atualizada." : "Categoria criada.");
   } catch (error) {
     await showNotice(error.message || "Nao foi possivel salvar a categoria.", "Erro ao salvar", "error");
   } finally {
@@ -88,6 +90,7 @@ customCategoryList.addEventListener("click", async (event) => {
     resetCategoryEditor();
     updateCategoryOptions();
     renderCategoryManager();
+    showToast("Categoria excluida.");
   } catch (error) {
     await showNotice(error.message || "Nao foi possivel excluir a categoria.", "Categoria nao excluida", "error");
   }
@@ -111,16 +114,18 @@ form.addEventListener("submit", async (event) => {
     return;
   }
 
-  await createTransaction(transaction);
+  const saved = await createTransaction(transaction);
   resetForm();
   closeTransactionModal();
+  showToast(saved ? "Registro salvo com sucesso." : "Nao foi possivel sincronizar o registro.", saved ? "success" : "error", saved ? 3200 : 5000);
 });
 
 goalForm.addEventListener("submit", async (event) => {
   event.preventDefault();
-  await saveSetting("dailyGoal", parseAmount(dailyGoalInput.value));
+  const saved = await saveSetting("dailyGoal", parseAmount(dailyGoalInput.value));
   setGoalFormOpen(false);
   render();
+  showToast(saved ? "Meta diaria atualizada." : "Nao foi possivel salvar a meta diaria.", saved ? "success" : "error");
 });
 
 goalToggleButton.addEventListener("click", () => {
@@ -135,10 +140,12 @@ savingsGoalForm.addEventListener("submit", async (event) => {
 
   if (!name || targetAmount <= 0) return;
 
-  if (editingSavingsGoalId) {
-    await updateSavingsGoal(editingSavingsGoalId, { name, targetAmount, note });
+  const wasEditing = Boolean(editingSavingsGoalId);
+  let saved;
+  if (wasEditing) {
+    saved = await updateSavingsGoal(editingSavingsGoalId, { name, targetAmount, note });
   } else {
-    await createSavingsGoal({
+    saved = await createSavingsGoal({
       id: crypto.randomUUID(),
       name,
       targetAmount,
@@ -149,6 +156,10 @@ savingsGoalForm.addEventListener("submit", async (event) => {
   }
 
   setSavingsGoalFormOpen(false);
+  showToast(
+    saved ? (wasEditing ? "Meta atualizada." : "Nova meta criada.") : "Nao foi possivel sincronizar a meta.",
+    saved ? "success" : "error",
+  );
 });
 
 savingsGoalToggleButton.addEventListener("click", () => {
@@ -171,13 +182,15 @@ savingsGoalsList.addEventListener("submit", async (event) => {
   event.preventDefault();
   const amount = parseAmount(depositForm.querySelector("input").value);
   if (amount <= 0) return;
-  await addSavingsDeposit(depositForm.dataset.goalDeposit, amount);
+  const saved = await addSavingsDeposit(depositForm.dataset.goalDeposit, amount);
+  showToast(saved ? "Deposito adicionado a meta." : "Nao foi possivel sincronizar o deposito.", saved ? "success" : "error");
 });
 
 savingsGoalsList.addEventListener("click", async (event) => {
   const completeButton = event.target.closest("[data-goal-complete]");
   if (completeButton) {
-    await completeSavingsGoal(completeButton.dataset.goalComplete);
+    const saved = await completeSavingsGoal(completeButton.dataset.goalComplete);
+    showToast(saved ? "Parabens! Meta concluida." : "Nao foi possivel concluir a meta.", saved ? "success" : "error", 4200);
     return;
   }
 
@@ -196,7 +209,8 @@ savingsGoalsList.addEventListener("click", async (event) => {
     confirmLabel: "Excluir meta",
   });
   if (!confirmed) return;
-  await deleteSavingsGoal(button.dataset.goalDelete);
+  const deleted = await deleteSavingsGoal(button.dataset.goalDelete);
+  showToast(deleted ? "Meta excluida." : "Nao foi possivel excluir a meta.", deleted ? "success" : "error");
 });
 
 completedGoalsList.addEventListener("click", async (event) => {
@@ -207,7 +221,10 @@ completedGoalsList.addEventListener("click", async (event) => {
     message: "A meta concluida e todo o historico de depositos dela serao removidos. Esta acao nao pode ser desfeita.",
     confirmLabel: "Excluir meta",
   });
-  if (confirmed) await deleteSavingsGoal(button.dataset.goalDelete);
+  if (confirmed) {
+    const deleted = await deleteSavingsGoal(button.dataset.goalDelete);
+    showToast(deleted ? "Meta removida do historico." : "Nao foi possivel excluir a meta.", deleted ? "success" : "error");
+  }
 });
 
 recordsBody.addEventListener("click", async (event) => {
@@ -225,7 +242,8 @@ recordsBody.addEventListener("click", async (event) => {
     confirmLabel: "Excluir registro",
   });
   if (!confirmed) return;
-  await deleteTransaction(button.dataset.id);
+  const deleted = await deleteTransaction(button.dataset.id);
+  showToast(deleted ? "Registro excluido." : "Nao foi possivel excluir o registro.", deleted ? "success" : "error");
 });
 
 monthFilter.addEventListener("change", render);
@@ -278,6 +296,7 @@ pdfSummaryForm.addEventListener("submit", async (event) => {
     generateMonthlyPdf(selectedMonth);
   }
   closePdfSummaryModal();
+  showToast(`Relatorio ${exportFormat === "xlsx" ? "Excel" : "PDF"} gerado.`);
 });
 
 pdfSummaryModal.addEventListener("click", (event) => {
@@ -423,6 +442,7 @@ resendVerificationButton.addEventListener("click", async () => {
   try {
     await firebaseAuth.currentUser?.sendEmailVerification();
     verificationMessage.textContent = `Enviamos um novo link de confirmacao para ${firebaseAuth.currentUser?.email}.`;
+    showToast("Novo link de confirmacao enviado.", "info");
   } catch (error) {
     authError.textContent = firebaseErrorMessage(error);
   }
@@ -457,7 +477,9 @@ includeSundaysToggle.addEventListener("change", async () => {
   render();
 
   try {
-    await saveSetting("includeSundays", nextValue);
+    const saved = await saveSetting("includeSundays", nextValue);
+    if (!saved) throw new Error("Preferencia nao sincronizada");
+    showToast("Preferencia de medias atualizada.");
   } catch {
     settings.includeSundays = previousValue;
     includeSundaysToggle.checked = previousValue;
@@ -554,6 +576,7 @@ document.addEventListener("keydown", (event) => {
 themeToggleButton.addEventListener("click", () => {
   const nextTheme = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
   applyTheme(nextTheme, true);
+  showToast(nextTheme === "dark" ? "Modo escuro ativado." : "Modo claro ativado.", "info", 2200);
 });
 
 async function start() {

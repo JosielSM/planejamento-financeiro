@@ -80,8 +80,10 @@ async function saveSetting(key, value) {
       method: "PUT",
       body: JSON.stringify({ value }),
     });
+    return true;
   } catch {
     api.enabled = false;
+    return false;
   }
 }
 
@@ -98,8 +100,10 @@ async function createTransaction(transaction) {
     transactions = transactions.map((item) => (item.id === transaction.id ? saved : item));
     saveTransactions();
     render();
+    return true;
   } catch {
     api.enabled = false;
+    return false;
   }
 }
 
@@ -110,8 +114,10 @@ async function deleteTransaction(id) {
 
   try {
     await api.request(`/api/transactions/${id}`, { method: "DELETE" });
+    return true;
   } catch {
     api.enabled = false;
+    return false;
   }
 }
 
@@ -128,8 +134,10 @@ async function createSavingsGoal(goal) {
     savingsGoals = savingsGoals.map((item) => (item.id === goal.id ? normalizeSavingsGoal(saved) : item));
     saveSavingsGoals();
     render();
+    return true;
   } catch {
     api.enabled = false;
+    return false;
   }
 }
 
@@ -175,8 +183,10 @@ async function updateSavingsGoal(id, updates) {
     savingsGoals = savingsGoals.map((goal) => (goal.id === id ? normalizeSavingsGoal(saved) : goal));
     saveSavingsGoals();
     render();
+    return true;
   } catch {
     api.enabled = false;
+    return false;
   }
 }
 
@@ -201,8 +211,10 @@ async function addSavingsDeposit(goalId, amount) {
     savingsGoals = savingsGoals.map((goal) => (goal.id === goalId ? normalizeSavingsGoal(saved) : goal));
     saveSavingsGoals();
     render();
+    return true;
   } catch {
     api.enabled = false;
+    return false;
   }
 }
 
@@ -213,8 +225,10 @@ async function deleteSavingsGoal(id) {
 
   try {
     await api.request(`/api/savings-goals/${id}`, { method: "DELETE" });
+    return true;
   } catch {
     api.enabled = false;
+    return false;
   }
 }
 
@@ -233,7 +247,9 @@ async function completeSavingsGoal(id) {
     savingsGoals = savingsGoals.map((goal) => (goal.id === id ? normalizeSavingsGoal(saved) : goal));
     saveSavingsGoals();
     render();
+    return true;
   } catch {
     api.enabled = false;
+    return false;
   }
 }

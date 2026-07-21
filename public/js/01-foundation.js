@@ -145,6 +145,7 @@ const logoutButton = document.querySelector("#logoutButton");
 const googleSignInButtons = document.querySelectorAll("[data-google-signin]");
 const themeToggleButton = document.querySelector("#themeToggleButton");
 const themeToggleText = document.querySelector("#themeToggleText");
+const toastRegion = document.querySelector("#toastRegion");
 
 let transactions = [];
 let settings = loadSettings();
@@ -242,6 +243,30 @@ function syncModalOpenState() {
     "modal-open",
     !transactionModal.hidden || !pdfSummaryModal.hidden || !savingsGoalModal.hidden || !profileModal.hidden || !systemDialog.hidden,
   );
+}
+
+function showToast(message, tone = "success", duration = 3200) {
+  const icons = { success: "circle-check", error: "circle-alert", warning: "triangle-alert", info: "info" };
+  const toast = document.createElement("div");
+  toast.className = `app-toast ${tone}`;
+  toast.setAttribute("role", tone === "error" ? "alert" : "status");
+  toast.innerHTML = `
+    <i data-lucide="${icons[tone] || icons.info}" aria-hidden="true"></i>
+    <span>${escapeHTML(message)}</span>
+    <button type="button" aria-label="Fechar aviso"><i data-lucide="x" aria-hidden="true"></i></button>
+  `;
+
+  const dismiss = () => {
+    if (toast.classList.contains("leaving")) return;
+    toast.classList.add("leaving");
+    setTimeout(() => toast.remove(), 180);
+  };
+
+  toast.querySelector("button").addEventListener("click", dismiss);
+  toastRegion.append(toast);
+  while (toastRegion.children.length > 3) toastRegion.firstElementChild.remove();
+  refreshIcons();
+  setTimeout(dismiss, duration);
 }
 
 function openProfileModal() {

@@ -908,6 +908,20 @@ O aplicativo possui um diálogo próprio para avisos e confirmações. As funç�
 
 Exclusões importantes não usam `window.confirm`; usam esse componente consistente e acessível.
 
+### 25.1 Feedback temporário
+
+A função `showToast()` apresenta mensagens não bloqueantes após ações do usuário. Esses avisos aparecem no canto superior direito em telas maiores e acima da navegação inferior em celulares. Cada aviso:
+
+- informa sucesso, erro, alerta ou informação;
+- utiliza cor e ícone correspondentes ao tipo;
+- possui `role="status"` ou `role="alert"`;
+- pode ser fechado manualmente;
+- desaparece automaticamente após alguns segundos;
+- não impede o usuário de continuar navegando;
+- limita a região a três avisos simultâneos.
+
+Há feedback para criação e exclusão de registros, atualização da meta diária, criação/edição/exclusão/conclusão de metas, depósitos, categorias, relatórios, preferências, reenvio de confirmação e mudança de tema. Quando uma operação financeira não consegue chegar à API, o aviso utiliza o tom de erro e informa que não houve sincronização.
+
 ## 26. Manutenção por funcionalidade
 
 ### Alterar autenticação

@@ -40,6 +40,13 @@
 }
 
 @media (max-width: 640px) {
+  .toast-region {
+    top: auto;
+    right: 12px;
+    bottom: 96px;
+    width: calc(100vw - 24px);
+  }
+
   body {
     padding-bottom: 86px;
   }

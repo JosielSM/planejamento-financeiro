@@ -14,6 +14,7 @@ Aplicação web para controle financeiro pessoal, com autenticação individual,
 - Análise das despesas por categoria.
 - Exportação de relatórios em PDF e Excel.
 - Tema claro e escuro.
+- Feedback temporário para ações concluídas e falhas de sincronização.
 - Persistência no PostgreSQL/Neon por meio de uma API Express.
 - Hospedagem preparada para o Render.
 

@@ -308,12 +308,20 @@ pdfSummaryModal.addEventListener("click", (event) => {
 loginForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   authError.textContent = "";
+  if (!authenticationReady()) return;
   const enteredPassword = document.querySelector("#loginPassword").value;
+  let credential;
   try {
-    const credential = await firebaseAuth.signInWithEmailAndPassword(
+    credential = await firebaseAuth.signInWithEmailAndPassword(
       document.querySelector("#loginEmail").value.trim(),
       enteredPassword,
     );
+  } catch (error) {
+    authError.textContent = firebaseErrorMessage(error);
+    return;
+  }
+
+  try {
     const loaded = await loadAuthenticatedUser(credential.user);
     if (loaded && !isStrongPassword(enteredPassword)) {
       await showNotice(
@@ -330,6 +338,7 @@ loginForm.addEventListener("submit", async (event) => {
 googleSignInButtons.forEach((button) => {
   button.addEventListener("click", async () => {
     authError.textContent = "";
+    if (!authenticationReady()) return;
     googleSignInButtons.forEach((item) => { item.disabled = true; });
     try {
       const provider = new window.firebase.auth.GoogleAuthProvider();
@@ -580,20 +589,26 @@ themeToggleButton.addEventListener("click", () => {
 });
 
 async function start() {
+  if (authenticationStarting) return;
+  authenticationStarting = true;
+  clearTimeout(authenticationRetryTimer);
   applyTheme(preferredTheme());
   monthFilter.value = monthISO();
   resetForm();
   pdfMonthInput.value = monthISO();
+  showAuth("Conectando ao servidor...");
+  setAuthenticationControlsEnabled(false);
 
   try {
     if (window.location.protocol === "file:") {
       throw new Error("Abra o sistema pelo endereco online ou pelo servidor local, nao diretamente pelo arquivo index.html");
     }
-    const health = await fetch("/api/health").then((response) => response.json());
+    const health = await loadHealthWithRetry();
     authRequired = health.database === "connected" && health.firebase === "configured";
     if (!authRequired) throw new Error("Banco de dados ou Firebase ainda nao configurado");
 
     await initializeFirebase();
+    setAuthenticationControlsEnabled(true);
     const googleAuthAction = sessionStorage.getItem("googleAuthAction");
     let redirectResult = null;
     try {
@@ -620,7 +635,11 @@ async function start() {
     }
   } catch (error) {
     showAuth(`Autenticacao indisponivel: ${error.message}`);
+    setAuthenticationControlsEnabled(false);
     refreshIcons();
+    authenticationRetryTimer = setTimeout(start, 15000);
+  } finally {
+    authenticationStarting = false;
   }
 }
 

@@ -1,5 +1,5 @@
-const SHELL_CACHE = "planejamento-financeiro-shell-v1";
-const RUNTIME_CACHE = "planejamento-financeiro-runtime-v1";
+const SHELL_CACHE = "planejamento-financeiro-shell-v2";
+const RUNTIME_CACHE = "planejamento-financeiro-runtime-v2";
 const APP_SHELL = [
   "/",
   "/manifest.webmanifest",
@@ -61,10 +61,12 @@ self.addEventListener("fetch", (event) => {
 
   if (url.origin === self.location.origin) {
     event.respondWith(
-      caches.match(request).then((cached) => cached || fetch(request).then((response) => {
-        if (response.ok) caches.open(SHELL_CACHE).then((cache) => cache.put(request, response.clone()));
-        return response;
-      })),
+      fetch(request)
+        .then((response) => {
+          if (response.ok) caches.open(SHELL_CACHE).then((cache) => cache.put(request, response.clone()));
+          return response;
+        })
+        .catch(() => caches.match(request)),
     );
     return;
   }

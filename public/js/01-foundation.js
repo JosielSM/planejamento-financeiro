@@ -43,6 +43,7 @@ const api = {
       const data = await response.json().catch(() => ({}));
       const error = new Error(data.error || `Erro ${response.status}`);
       error.status = response.status;
+      error.code = `api/${response.status}`;
       throw error;
     }
 
@@ -158,6 +159,8 @@ let editingSavingsGoalId = null;
 let authRequired = false;
 let firebaseAuth = null;
 let profileLastFocus = null;
+let authenticationStarting = false;
+let authenticationRetryTimer = null;
 
 function applyTheme(theme, savePreference = false) {
   const isDark = theme === "dark";
@@ -438,9 +441,55 @@ function firebaseErrorMessage(error) {
     "auth/unauthorized-domain": "Este endereco ainda nao esta autorizado no Firebase.",
     "auth/web-storage-unsupported": "O navegador esta bloqueando o armazenamento necessario para o login.",
     "auth/internal-error": "O Firebase encontrou um erro interno ao concluir o login.",
+    "api/401": "Sua sessao expirou. Entre novamente.",
+    "api/403": "Confirme seu email antes de acessar seus dados.",
+    "api/429": "Muitas tentativas. Aguarde alguns minutos e tente novamente.",
+    "api/500": "O servidor encontrou um erro ao carregar sua conta. Tente novamente em instantes.",
+    "api/503": "O banco de dados ou a autenticacao esta temporariamente indisponivel.",
   };
-  return messages[error?.code]
-    || `Nao foi possivel concluir a autenticacao. Codigo: ${error?.code || "desconhecido"}.`;
+  if (messages[error?.code]) return messages[error.code];
+  if (error?.code?.startsWith("auth/")) {
+    return `Nao foi possivel concluir a autenticacao. Codigo: ${error.code}.`;
+  }
+  return error?.message || "Nao foi possivel concluir a autenticacao. Tente novamente.";
+}
+
+function authenticationReady() {
+  if (firebaseAuth) return true;
+  authError.textContent = "O servico de login ainda nao esta disponivel. Atualize a pagina e tente novamente.";
+  return false;
+}
+
+function setAuthenticationControlsEnabled(enabled) {
+  loginForm.querySelector('button[type="submit"]').disabled = !enabled;
+  signupForm.querySelector('button[type="submit"]').disabled = !enabled;
+  forgotPasswordForm.querySelector('button[type="submit"]').disabled = !enabled;
+  googleSignInButtons.forEach((button) => { button.disabled = !enabled; });
+}
+
+function wait(milliseconds) {
+  return new Promise((resolve) => setTimeout(resolve, milliseconds));
+}
+
+async function loadHealthWithRetry(maxAttempts = 8) {
+  let lastError;
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    try {
+      const response = await fetch("/api/health", {
+        headers: { Accept: "application/json" },
+        cache: "no-store",
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || `Erro ${response.status}`);
+      return data;
+    } catch (error) {
+      lastError = error;
+      if (attempt === maxAttempts) break;
+      authError.textContent = `Conectando ao servidor... tentativa ${attempt + 1} de ${maxAttempts}.`;
+      await wait(Math.min(attempt * 2000, 8000));
+    }
+  }
+  throw lastError || new Error("Servidor indisponivel");
 }
 
 function setAuthMode(mode) {

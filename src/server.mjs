@@ -357,8 +357,13 @@ app.get("/api/health", async (_request, response) => {
     return;
   }
 
-  await pool.query("SELECT 1");
-  response.json({ ok: true, database: "connected", firebase: firebaseAdminAuth ? "configured" : "not_configured" });
+  try {
+    await pool.query("SELECT 1");
+    response.json({ ok: true, database: "connected", firebase: firebaseAdminAuth ? "configured" : "not_configured" });
+  } catch (error) {
+    console.error("Erro ao verificar conexao com o banco:", error);
+    response.status(503).json({ error: "Banco de dados temporariamente indisponivel" });
+  }
 });
 
 app.get("/api/config/firebase", (_request, response) => {
@@ -370,9 +375,16 @@ app.get("/api/config/firebase", (_request, response) => {
 });
 
 app.get("/api/auth/me", async (request, response) => {
-  const user = await requireAuth(request, response);
-  if (!user) return;
-  response.json({ user: mapUser(user) });
+  try {
+    const user = await requireAuth(request, response);
+    if (!user) return;
+    response.json({ user: mapUser(user) });
+  } catch (error) {
+    console.error("Erro ao carregar usuario autenticado:", error);
+    if (!response.headersSent) {
+      response.status(500).json({ error: "Nao foi possivel carregar sua conta" });
+    }
+  }
 });
 
 app.get("/api/transactions", async (request, response) => {

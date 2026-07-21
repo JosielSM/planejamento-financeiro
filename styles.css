@@ -1049,17 +1049,27 @@ label {
 
 .savings-form {
   display: grid;
-  grid-template-columns: minmax(190px, 1fr) minmax(150px, 0.55fr) minmax(180px, 1fr) auto auto;
-  gap: 12px;
-  align-items: end;
-  margin-top: 16px;
-  padding: 14px;
-  border: 1px solid var(--line);
-  background: #fbfcfa;
+  gap: 14px;
 }
 
-.savings-form[hidden] {
-  display: none;
+.modal-card.savings-form {
+  grid-template-columns: 1fr;
+  width: min(520px, 100%);
+}
+
+.savings-form .modal-heading {
+  margin-bottom: 2px;
+}
+
+.savings-form .modal-heading .eyebrow {
+  margin-bottom: 4px;
+}
+
+.savings-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 4px;
 }
 
 .savings-list {

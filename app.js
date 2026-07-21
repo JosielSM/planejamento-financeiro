@@ -55,6 +55,8 @@ const form = document.querySelector("#transactionForm");
 const goalForm = document.querySelector("#goalForm");
 const goalToggleButton = document.querySelector("#goalToggleButton");
 const savingsGoalForm = document.querySelector("#savingsGoalForm");
+const savingsGoalModal = document.querySelector("#savingsGoalModal");
+const savingsGoalModalTitle = document.querySelector("#savingsGoalModalTitle");
 const savingsGoalToggleButton = document.querySelector("#savingsGoalToggleButton");
 const savingsGoalSubmitButton = document.querySelector("#savingsGoalSubmitButton");
 const savingsGoalCancelButton = document.querySelector("#savingsGoalCancelButton");
@@ -235,7 +237,7 @@ function loadJSON(key, fallback) {
 function syncModalOpenState() {
   document.body.classList.toggle(
     "modal-open",
-    !transactionModal.hidden || !pdfSummaryModal.hidden || !profileModal.hidden || !systemDialog.hidden,
+    !transactionModal.hidden || !pdfSummaryModal.hidden || !savingsGoalModal.hidden || !profileModal.hidden || !systemDialog.hidden,
   );
 }
 
@@ -1637,18 +1639,21 @@ async function generateMonthlyExcel(monthValue) {
 function resetSavingsGoalForm() {
   savingsGoalForm.reset();
   editingSavingsGoalId = null;
-  savingsGoalSubmitButton.textContent = "Criar meta";
+  savingsGoalSubmitButton.textContent = "Concluir";
 }
 
 function setSavingsGoalFormOpen(isOpen, goal = null) {
-  savingsGoalForm.hidden = !isOpen;
-  savingsGoalToggleButton.querySelector("span").textContent = isOpen ? "Fechar" : "Nova meta";
+  savingsGoalModal.hidden = !isOpen;
   savingsGoalToggleButton.setAttribute("aria-expanded", String(isOpen));
 
   if (!isOpen) {
     resetSavingsGoalForm();
+    syncModalOpenState();
+    savingsGoalToggleButton.focus();
     return;
   }
+
+  document.body.classList.add("modal-open");
 
   if (goal) {
     editingSavingsGoalId = goal.id;
@@ -1656,8 +1661,10 @@ function setSavingsGoalFormOpen(isOpen, goal = null) {
     document.querySelector("#savingsGoalTarget").value = goal.targetAmount;
     document.querySelector("#savingsGoalNote").value = goal.note || "";
     savingsGoalSubmitButton.textContent = "Salvar alteracoes";
+    savingsGoalModalTitle.textContent = "Editar meta";
   } else {
     resetSavingsGoalForm();
+    savingsGoalModalTitle.textContent = "Nova meta";
   }
 
   setTimeout(() => document.querySelector("#savingsGoalName").focus(), 80);
@@ -1817,11 +1824,17 @@ savingsGoalForm.addEventListener("submit", async (event) => {
 });
 
 savingsGoalToggleButton.addEventListener("click", () => {
-  setSavingsGoalFormOpen(savingsGoalForm.hidden);
+  setSavingsGoalFormOpen(savingsGoalModal.hidden);
 });
 
 savingsGoalCancelButton.addEventListener("click", () => {
   setSavingsGoalFormOpen(false);
+});
+
+savingsGoalModal.addEventListener("click", (event) => {
+  if (event.target.closest("[data-close-savings-goal-modal]")) {
+    setSavingsGoalFormOpen(false);
+  }
 });
 
 savingsGoalsList.addEventListener("submit", async (event) => {
@@ -2179,6 +2192,10 @@ document.addEventListener("keydown", (event) => {
   }
   if (event.key === "Escape" && !profileModal.hidden) {
     closeProfileModal();
+    return;
+  }
+  if (event.key === "Escape" && !savingsGoalModal.hidden) {
+    setSavingsGoalFormOpen(false);
     return;
   }
   if (event.key === "Escape" && !transactionModal.hidden) {

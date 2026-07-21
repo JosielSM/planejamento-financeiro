@@ -52,9 +52,11 @@ O Firebase Authentication executa cadastro, login, login Google, confirmação d
 
 O Neon mantém os dados permanentes do aplicativo em PostgreSQL. A remoção do aplicativo do celular ou a limpeza do navegador não apaga os registros que já foram enviados ao servidor.
 
-### 2.5 Estado atual em relação a PWA
+### 2.5 Aplicativo PWA
 
-O sistema ainda não é uma PWA completa. Atualmente não existem manifesto de aplicativo, Service Worker, ícones de instalação ou fila offline. A organização descrita neste documento prepara o projeto para essa evolução, mas não deve ser confundida com uma implementação PWA já concluída.
+O sistema é instalável como Progressive Web App. O manifesto define identidade, cores, modo independente e ícones; o Service Worker mantém os arquivos da interface disponíveis no dispositivo; e o cabeçalho oferece o botão “Instalar app”. A instalação não remove a dependência do Render, Firebase ou Neon para autenticação, leitura e gravação dos dados financeiros.
+
+O cache permite abrir a estrutura visual quando a conexão falhar, mas o aplicativo ainda não possui fila offline para criar ou alterar dados e sincronizá-los posteriormente.
 
 ## 3. Tecnologias e dependências
 
@@ -104,7 +106,16 @@ planejamento-financeiro/
 │     ├─ 04-ui.js
 │     ├─ 05-reports.js
 │     ├─ 06-goal-form.js
-│     └─ 07-events.js
+│     ├─ 07-events.js
+│     └─ 08-pwa.js
+│  ├─ icons/
+│  │  ├─ icon-192.png
+│  │  ├─ icon-512.png
+│  │  ├─ icon-maskable-512.png
+│  │  ├─ apple-touch-icon.png
+│  │  └─ favicon-64.png
+│  ├─ manifest.webmanifest
+│  └─ service-worker.js
 ├─ src/
 │  ├─ server.mjs
 │  └─ views/
@@ -158,6 +169,7 @@ Os módulos são scripts clássicos e compartilham o mesmo ambiente global. A nu
 5. `05-reports.js`: PDF, Excel e gráficos dos relatórios.
 6. `06-goal-form.js`: formulário de criação e edição de metas.
 7. `07-events.js`: eventos da interface e inicialização.
+8. `08-pwa.js`: instalação do aplicativo e registro do Service Worker.
 
 Alterar essa ordem pode fazer um módulo tentar usar variáveis ou funções que ainda não foram declaradas.
 
@@ -182,6 +194,15 @@ As cinco áreas principais são:
 3. Metas.
 4. Destino.
 5. Registros.
+
+### 6.0 Instalação do aplicativo
+
+O botão “Instalar app” fica no cabeçalho enquanto o sistema estiver sendo usado no navegador. Quando a aplicação já estiver em modo independente, o botão é ocultado.
+
+- Em navegadores compatíveis com `beforeinstallprompt`, o botão abre a confirmação nativa de instalação.
+- Em iPhone e iPad, o botão explica o caminho Compartilhar → Adicionar à Tela de Início, pois o iOS não disponibiliza a confirmação programática usada pelo Chrome no Android.
+- Em outros navegadores sem evento de instalação, o botão orienta a usar “Instalar aplicativo” ou “Adicionar à tela inicial” no menu.
+- O evento `appinstalled` oculta o botão e confirma a instalação por um aviso temporário.
 
 ### 6.1 Tela Início
 
@@ -449,6 +470,23 @@ Quando banco e Firebase estão configurados, `authRequired` fica verdadeiro e os
 
 O aplicativo atual não possui sincronização offline confiável. Operações inicialmente atualizam a interface de forma otimista, mas não existe uma fila durável para reenviar alterações depois de uma falha prolongada.
 
+### 8.1 Cache da PWA
+
+O Service Worker utiliza dois caches versionados:
+
+- `planejamento-financeiro-shell-v1`: documento principal, CSS, JavaScript, manifesto e ícones;
+- `planejamento-financeiro-runtime-v1`: bibliotecas externas carregadas por CDN.
+
+Regras de rede:
+
+- chamadas `/api/` nunca são interceptadas nem armazenadas pelo Service Worker;
+- navegações usam a rede primeiro e recorrem ao documento armazenado quando a rede falha;
+- recursos estáticos da própria origem usam cache primeiro;
+- scripts permitidos de Firebase, jsDelivr e unpkg usam rede primeiro e cache como alternativa;
+- caches de versões antigas são removidos na ativação.
+
+Sempre que os arquivos da interface forem alterados, a versão de `SHELL_CACHE` em `public/service-worker.js` deve ser incrementada para forçar a renovação segura do conteúdo instalado.
+
 ## 9. API REST completa
 
 Todas as rotas protegidas exigem `Authorization: Bearer <Firebase ID token>`.
@@ -666,6 +704,8 @@ O servidor:
 - usa política de referência `no-referrer`;
 - restringe scripts, conexões, imagens, fontes e frames com CSP;
 - permite popups do Firebase com `same-origin-allow-popups`.
+
+O arquivo `service-worker.js` recebe `Service-Worker-Allowed: /`, permitindo controlar toda a aplicação dentro da origem.
 
 ### 14.3 Content Security Policy
 
@@ -1019,8 +1059,7 @@ Verifique se as bibliotecas CDN foram carregadas e se a CSP permite os domínios
 
 ## 29. Limitações atuais conhecidas
 
-- Ainda não existe PWA ou instalação própria.
-- Não há funcionamento offline sincronizado.
+- A PWA abre a interface armazenada, mas não há funcionamento financeiro offline sincronizado.
 - Não existe fila para reenviar alterações feitas sem conexão.
 - Não existe edição de uma movimentação já criada.
 - Não existe exclusão individual de depósitos.
@@ -1038,11 +1077,10 @@ Verifique se as bibliotecas CDN foram carregadas e se a CSP permite os domínios
 3. separar rotas e serviços do servidor por domínio;
 4. converter scripts compartilhados em módulos ES explícitos;
 5. adicionar endpoint e interface de edição de movimentações;
-6. implementar PWA com manifesto, ícones e Service Worker;
-7. implementar armazenamento local com IndexedDB;
-8. criar fila offline e estratégia de resolução de conflitos;
-9. adicionar observabilidade e acompanhamento de erros;
-10. documentar backup e restauração do Neon.
+6. implementar armazenamento local com IndexedDB;
+7. criar fila offline e estratégia de resolução de conflitos;
+8. adicionar observabilidade e acompanhamento de erros;
+9. documentar backup e restauração do Neon.
 
 ## 31. Checklist de produção
 

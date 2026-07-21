@@ -104,8 +104,11 @@ app.use("/api", rateLimit({
 }));
 app.use(express.static(publicDirectory, {
   extensions: ["html"],
-  setHeaders(response) {
+  setHeaders(response, filePath) {
     response.setHeader("Cache-Control", "no-store");
+    if (filePath.endsWith("service-worker.js")) {
+      response.setHeader("Service-Worker-Allowed", "/");
+    }
   },
 }));
 

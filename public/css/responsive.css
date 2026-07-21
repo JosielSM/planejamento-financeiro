@@ -87,6 +87,19 @@
     justify-content: flex-end;
   }
 
+  .install-app-button {
+    width: 44px;
+    padding: 8px;
+  }
+
+  .install-app-button span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+  }
+
   .icon-button {
     width: 44px;
   }

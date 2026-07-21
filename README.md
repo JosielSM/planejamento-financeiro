@@ -15,6 +15,7 @@ Aplicação web para controle financeiro pessoal, com autenticação individual,
 - Exportação de relatórios em PDF e Excel.
 - Tema claro e escuro.
 - Feedback temporário para ações concluídas e falhas de sincronização.
+- Instalação como PWA pelo botão “Instalar app”, com suporte a Android, iPhone, iPad e computadores compatíveis.
 - Persistência no PostgreSQL/Neon por meio de uma API Express.
 - Hospedagem preparada para o Render.
 
@@ -56,7 +57,7 @@ Acesse `http://127.0.0.1:5500`.
 ## Estrutura resumida
 
 ```text
-public/                 CSS e JavaScript enviados ao navegador
+public/                 CSS, JavaScript, PWA e ícones enviados ao navegador
 src/server.mjs          Servidor Express, API e migrações automáticas
 src/views/              Telas, modais e partes HTML
 scripts/                Utilitários administrativos

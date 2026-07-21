@@ -83,7 +83,8 @@ select {
 }
 
 .theme-toggle,
-.profile-toggle {
+.profile-toggle,
+.install-app-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -100,16 +101,28 @@ select {
 }
 
 .theme-toggle:hover,
-.profile-toggle:hover {
+.profile-toggle:hover,
+.install-app-button:hover {
   background: rgba(255, 255, 255, 0.18);
   border-color: rgba(255, 255, 255, 0.45);
   transform: translateY(-1px);
 }
 
 .theme-toggle svg,
-.profile-toggle svg {
+.profile-toggle svg,
+.install-app-button svg {
   width: 18px;
   height: 18px;
+}
+
+.install-app-button {
+  gap: 7px;
+  width: auto;
+  padding-inline: 12px;
+}
+
+.install-app-button[hidden] {
+  display: none;
 }
 
 .theme-toggle span {

@@ -1,8 +1,10 @@
-const SHELL_CACHE = "planejamento-financeiro-shell-v2";
-const RUNTIME_CACHE = "planejamento-financeiro-runtime-v2";
+const SHELL_CACHE = "planejamento-financeiro-shell-v3";
+const RUNTIME_CACHE = "planejamento-financeiro-runtime-v3";
 const APP_SHELL = [
   "/",
   "/manifest.webmanifest",
+  "/vendor/firebase/firebase-app-compat.js",
+  "/vendor/firebase/firebase-auth-compat.js",
   "/css/base.css",
   "/css/dashboard.css",
   "/css/goals.css",
@@ -72,7 +74,7 @@ self.addEventListener("fetch", (event) => {
   }
 
   const cacheableLibrary = request.destination === "script"
-    && ["www.gstatic.com", "cdn.jsdelivr.net", "unpkg.com"].includes(url.hostname);
+    && ["cdn.jsdelivr.net", "unpkg.com"].includes(url.hostname);
   if (cacheableLibrary) {
     event.respondWith(
       fetch(request)

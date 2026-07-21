@@ -79,7 +79,7 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       "default-src": ["'self'"],
-      "script-src": ["'self'", "https://www.gstatic.com", "https://cdn.jsdelivr.net", "https://unpkg.com"],
+      "script-src": ["'self'", "https://cdn.jsdelivr.net", "https://unpkg.com"],
       "style-src": ["'self'", "'unsafe-inline'"],
       "img-src": ["'self'", "data:", "blob:"],
       "connect-src": ["'self'", "https://*.googleapis.com", "https://securetoken.googleapis.com", "https://identitytoolkit.googleapis.com"],
@@ -101,6 +101,12 @@ app.use("/api", rateLimit({
   standardHeaders: "draft-7",
   legacyHeaders: false,
   message: { error: "Muitas solicitacoes. Aguarde alguns minutos e tente novamente." },
+}));
+app.use("/vendor/firebase", express.static(join(projectRoot, "node_modules", "firebase"), {
+  fallthrough: false,
+  setHeaders(response) {
+    response.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+  },
 }));
 app.use(express.static(publicDirectory, {
   extensions: ["html"],

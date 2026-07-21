@@ -78,13 +78,13 @@ O cache permite abrir a estrutura visual quando a conexão falhar, mas o aplicat
 
 | Biblioteca | Uso atual |
 |---|---|
-| Firebase Web Compat 11.10.0 | Autenticação no navegador. |
+| Firebase Web Compat 12.16.0 | Autenticação no navegador, instalada pelo npm e servida pela própria aplicação. |
 | jsPDF 2.5.1 | Geração de PDF. |
 | jsPDF AutoTable 3.8.4 | Tabelas no PDF. |
 | ExcelJS 4.4.0 | Geração de arquivos XLSX. |
 | Lucide | Ícones da interface. |
 
-As bibliotecas do navegador são carregadas por CDN no arquivo `src/views/partials/scripts.html`.
+O Firebase Web é instalado pelo npm e servido em `/vendor/firebase`, evitando que o login dependa do carregamento de uma biblioteca externa. As demais bibliotecas visuais continuam declaradas em `src/views/partials/scripts.html`.
 
 ## 4. Estrutura completa do repositório
 
@@ -475,14 +475,15 @@ O aplicativo atual não possui sincronização offline confiável. Operações i
 O Service Worker utiliza dois caches versionados:
 
 - `planejamento-financeiro-shell-v1`: documento principal, CSS, JavaScript, manifesto e ícones;
-- `planejamento-financeiro-runtime-v1`: bibliotecas externas carregadas por CDN.
+- `planejamento-financeiro-runtime-v3`: bibliotecas visuais externas carregadas por CDN.
 
 Regras de rede:
 
 - chamadas `/api/` nunca são interceptadas nem armazenadas pelo Service Worker;
 - navegações usam a rede primeiro e recorrem ao documento armazenado quando a rede falha;
 - recursos estáticos da própria origem usam cache primeiro;
-- scripts permitidos de Firebase, jsDelivr e unpkg usam rede primeiro e cache como alternativa;
+- os scripts locais do Firebase usam a mesma origem e fazem parte do cache da interface;
+- scripts permitidos de jsDelivr e unpkg usam rede primeiro e cache como alternativa;
 - caches de versões antigas são removidos na ativação.
 
 Sempre que os arquivos da interface forem alterados, a versão de `SHELL_CACHE` em `public/service-worker.js` deve ser incrementada para forçar a renovação segura do conteúdo instalado.
@@ -709,7 +710,7 @@ O arquivo `service-worker.js` recebe `Service-Worker-Allowed: /`, permitindo con
 
 ### 14.3 Content Security Policy
 
-Scripts são aceitos somente da própria origem, Google Firebase, jsDelivr e unpkg. Conexões são aceitas para a própria origem e endpoints Google/Firebase previstos. Objetos incorporados são bloqueados.
+Scripts são aceitos somente da própria origem, jsDelivr e unpkg. Conexões são aceitas para a própria origem e endpoints Google/Firebase previstos. Objetos incorporados são bloqueados.
 
 ### 14.4 Limitação de requisições
 

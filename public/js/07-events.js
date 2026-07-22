@@ -646,7 +646,8 @@ async function start() {
   monthFilter.value = monthISO();
   resetForm();
   pdfMonthInput.value = monthISO();
-  showAuth("Conectando ao servidor...");
+  authScreen.hidden = true;
+  appShell.hidden = true;
   setAuthenticationControlsEnabled(false);
 
   try {

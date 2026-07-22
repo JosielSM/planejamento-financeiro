@@ -146,6 +146,7 @@ const googleSignInButtons = document.querySelectorAll("[data-google-signin]");
 const themeToggleButton = document.querySelector("#themeToggleButton");
 const themeToggleText = document.querySelector("#themeToggleText");
 const toastRegion = document.querySelector("#toastRegion");
+const startupSplash = document.querySelector("#startupSplash");
 const syncStatusButton = document.querySelector("#syncStatusButton");
 const syncStatusText = document.querySelector("#syncStatusText");
 const syncPendingCount = document.querySelector("#syncPendingCount");
@@ -165,6 +166,14 @@ let firebaseAuth = null;
 let profileLastFocus = null;
 let authenticationStarting = false;
 let authenticationRetryTimer = null;
+let startupResolved = false;
+
+function finishStartupSplash() {
+  if (startupResolved) return;
+  startupResolved = true;
+  startupSplash?.classList.add("leaving");
+  setTimeout(() => { if (startupSplash) startupSplash.hidden = true; }, 300);
+}
 
 function applyTheme(theme, savePreference = false) {
   const isDark = theme === "dark";
@@ -352,6 +361,7 @@ function askConfirmation({ title, message, confirmLabel = "Confirmar", tone = "d
 }
 
 function showAuth(message = "") {
+  finishStartupSplash();
   authRequired = true;
   appShell.hidden = true;
   authScreen.hidden = false;
@@ -362,6 +372,7 @@ function showAuth(message = "") {
 }
 
 function showVerification(user, message = "") {
+  finishStartupSplash();
   appShell.hidden = true;
   authScreen.hidden = false;
   profileButton.hidden = true;
@@ -427,6 +438,7 @@ function updatePasswordGuidance() {
 }
 
 function showApp(user = null) {
+  finishStartupSplash();
   appShell.hidden = false;
   authScreen.hidden = true;
   profileButton.hidden = !user;

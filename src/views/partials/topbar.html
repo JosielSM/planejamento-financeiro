@@ -4,6 +4,11 @@
         <h1>Planejamento Financeiro</h1>
       </div>
       <div class="topbar-actions">
+        <button class="sync-status" id="syncStatusButton" type="button" aria-label="Estado da sincronização" hidden>
+          <i data-lucide="cloud-check" aria-hidden="true"></i>
+          <span id="syncStatusText">Sincronizado</span>
+          <strong id="syncPendingCount" hidden>0</strong>
+        </button>
         <a class="download-app-button" id="downloadAppButton" href="/download/android" aria-label="Baixar aplicativo para Android">
           <i data-lucide="download" aria-hidden="true"></i>
           <span>Baixar para Android</span>

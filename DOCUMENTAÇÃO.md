@@ -1114,7 +1114,23 @@ Verifique se `npm install` foi executado e se os arquivos locais em `/vendor/jsp
 - [ ] logs do Render sem erros de migração.
 - [ ] segredos ausentes do Git.
 
-## 32. Resumo final
+## 32. Melhorias da versão 1.1.0
+
+- O cabeçalho mostra estado sincronizado, offline, quantidade pendente e erro que exige atenção.
+- Tocar no indicador tenta reenviar a fila e apresenta o motivo de uma falha persistente.
+- Operações rejeitadas não são mais descartadas silenciosamente; tentativa, horário, status e mensagem ficam preservados.
+- O perfil oferece política de privacidade e exclusão definitiva da conta.
+- `DELETE /api/account` apaga o usuário no PostgreSQL; as chaves estrangeiras removem configurações, registros, categorias, metas e depósitos, e o Firebase Admin remove a identidade.
+- Toda resposta da API recebe `X-Request-ID`; método, rota, status e duração são registrados no Render sem conteúdo financeiro ou token.
+- O Android passou para versão 1.1.0, código 2, ofuscação e redução de recursos em release.
+- `npm run android:release` exige assinatura externa, testa, gera APK/AAB e registra versão, tamanho e SHA-256.
+- Chaves JKS, credenciais de release e `google-services.json` estão explicitamente fora do Git.
+- O Android usa `FLAG_SECURE` para impedir capturas de tela e prévias do conteúdo financeiro na tela de aplicativos recentes; o backup do aplicativo permanece desativado.
+- `npm test` cobre cache por usuário, reenvio, retenção de erro permanente, contrato de exclusão, privacidade, segurança Android e sintaxe.
+
+A assinatura definitiva, o `google-services.json`, o SHA-1/SHA-256 no Firebase, o teste em aparelho físico e eventual mudança do plano do Render dependem das contas e credenciais do proprietário. O projeto bloqueia release sem essas credenciais. O procedimento completo está em `RELEASE_ANDROID.md`.
+
+## 33. Resumo final
 
 O Planejamento Financeiro é uma aplicação web autenticada, organizada por telas no servidor e por responsabilidades no navegador. O Firebase identifica as pessoas, o servidor Express valida cada requisição e o Neon preserva os dados financeiros. O projeto suporta controle mensal, médias, meta diária, categorias, metas com depósitos, histórico de conclusão, análises e relatórios.
 

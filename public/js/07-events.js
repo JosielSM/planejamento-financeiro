@@ -472,6 +472,56 @@ logoutButton.addEventListener("click", async () => {
   showAuth("Voce saiu da conta.");
 });
 
+syncStatusButton.addEventListener("click", async () => {
+  const queue = loadSyncQueue();
+  if (!queue.length) {
+    showToast(navigator.onLine ? "Todos os dados estão sincronizados." : "Você está offline.", "info");
+    return;
+  }
+  if (!navigator.onLine) {
+    showToast("Sem internet. As alterações continuam protegidas neste aparelho.", "info", 4500);
+    return;
+  }
+  const synchronized = await flushSyncQueue();
+  const remaining = loadSyncQueue();
+  if (remaining.length) {
+    const detail = remaining[0].lastError ? ` Motivo: ${remaining[0].lastError}.` : "";
+    await showNotice(`Ainda existem ${remaining.length} alteração(ões) pendentes.${detail}`, "Sincronização pendente", "error");
+  } else if (!synchronized) {
+    showToast("Todos os dados estão sincronizados.");
+  }
+});
+
+privacyPolicyButton.addEventListener("click", () => {
+  window.open(apiUrl("/privacidade"), "_blank", "noopener,noreferrer");
+});
+
+deleteAccountButton.addEventListener("click", async () => {
+  const confirmed = await askConfirmation({
+    title: "Excluir conta permanentemente?",
+    message: "Esta ação apaga definitivamente sua conta, registros, metas, depósitos, categorias e preferências. Não será possível recuperar os dados.",
+    confirmLabel: "Excluir tudo",
+  });
+  if (!confirmed) return;
+  deleteAccountButton.disabled = true;
+  deleteAccountButton.textContent = "Excluindo...";
+  try {
+    await api.request("/api/account", { method: "DELETE" });
+    clearCurrentUserLocalData();
+    await firebaseAuth.signOut();
+    closeProfileModal();
+    transactions = [];
+    savingsGoals = [];
+    customCategories = [];
+    showAuth("Sua conta e todos os dados foram excluídos.");
+  } catch (error) {
+    await showNotice(error.message || "Não foi possível excluir a conta.", "Exclusão não concluída", "error");
+  } finally {
+    deleteAccountButton.disabled = false;
+    deleteAccountButton.textContent = "Excluir conta e dados";
+  }
+});
+
 profileButton.addEventListener("click", openProfileModal);
 closeProfileButton.addEventListener("click", closeProfileModal);
 profileModal.addEventListener("click", (event) => {
@@ -659,5 +709,8 @@ async function start() {
 start();
 
 window.addEventListener("online", () => {
+  updateSyncStatus();
   if (isNativeRuntime()) start();
 });
+
+window.addEventListener("offline", updateSyncStatus);

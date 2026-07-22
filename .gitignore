@@ -3,3 +3,7 @@ node_modules/
 .DS_Store
 npm-debug.log*
 dist/
+*.jks
+*.keystore
+.env.release
+android/app/google-services.json

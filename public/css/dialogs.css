@@ -335,6 +335,10 @@
   cursor: pointer;
 }
 
+.profile-data-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.danger-outline-button { border: 1px solid var(--red-line); border-radius: 11px; background: transparent; color: var(--red); font: inherit; font-weight: 800; padding: 10px; cursor: pointer; }
+.danger-outline-button:hover { background: var(--red-soft); }
+
 .profile-logout-button svg {
   width: 18px;
   height: 18px;

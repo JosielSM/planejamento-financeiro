@@ -5,6 +5,7 @@ import { getAuth } from "firebase-admin/auth";
 import helmet from "helmet";
 import pg from "pg";
 import { readFileSync } from "node:fs";
+import { randomUUID } from "node:crypto";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -75,6 +76,17 @@ const pool = databaseUrl
   : null;
 
 app.disable("x-powered-by");
+app.use((request, response, next) => {
+  const requestId = request.get("X-Request-ID") || randomUUID();
+  response.setHeader("X-Request-ID", requestId);
+  const startedAt = Date.now();
+  response.on("finish", () => {
+    if (request.path.startsWith("/api/")) {
+      console.log(JSON.stringify({ requestId, method: request.method, path: request.path, status: response.statusCode, durationMs: Date.now() - startedAt }));
+    }
+  });
+  next();
+});
 app.use(helmet({
   crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" },
   contentSecurityPolicy: {
@@ -407,6 +419,19 @@ app.get("/api/auth/me", async (request, response) => {
     if (!response.headersSent) {
       response.status(500).json({ error: "Nao foi possivel carregar sua conta" });
     }
+  }
+});
+
+app.delete("/api/account", async (request, response) => {
+  try {
+    const user = await requireAuth(request, response);
+    if (!user) return;
+    await pool.query("DELETE FROM users WHERE id = $1", [user.id]);
+    if (user.firebase_uid) await firebaseAdminAuth.deleteUser(user.firebase_uid);
+    response.status(204).end();
+  } catch (error) {
+    console.error("Erro ao excluir conta:", error);
+    if (!response.headersSent) response.status(500).json({ error: "Não foi possível excluir a conta" });
   }
 });
 

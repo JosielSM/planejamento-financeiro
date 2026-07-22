@@ -68,6 +68,21 @@ function loadSyncQueue() {
 
 function saveSyncQueue(queue) {
   localStorage.setItem(userStorageKey(SYNC_QUEUE_KEY), JSON.stringify(queue));
+  updateSyncStatus();
+}
+
+function updateSyncStatus(state = "") {
+  if (!syncStatusButton) return;
+  const queue = loadSyncQueue();
+  const failed = queue.some((item) => item.lastError && item.lastStatus && item.lastStatus < 500 && item.lastStatus !== 429);
+  syncStatusButton.hidden = !firebaseAuth?.currentUser;
+  syncStatusButton.classList.toggle("pending", queue.length > 0 && !failed);
+  syncStatusButton.classList.toggle("error", failed);
+  syncPendingCount.hidden = queue.length === 0;
+  syncPendingCount.textContent = String(queue.length);
+  syncStatusText.textContent = state === "syncing" ? "Sincronizando..." : failed ? "Ação necessária" : queue.length ? `${queue.length} pendente${queue.length > 1 ? "s" : ""}` : navigator.onLine ? "Sincronizado" : "Offline";
+  syncStatusButton.querySelector("[data-lucide]")?.setAttribute("data-lucide", failed ? "cloud-alert" : queue.length ? "cloud-upload" : navigator.onLine ? "cloud-check" : "cloud-off");
+  refreshIcons();
 }
 
 function isRetryableSyncError(error) {
@@ -82,6 +97,7 @@ function queueMutation(path, options = {}) {
     method: options.method || "POST",
     body: options.body || null,
     createdAt: new Date().toISOString(),
+    attempts: 0,
   });
   saveSyncQueue(queue);
   showToast("Alteracao salva no celular. A sincronizacao sera automatica.", "info", 4200);
@@ -100,6 +116,7 @@ async function requestOrQueue(path, options = {}) {
 async function flushSyncQueue() {
   if (syncInProgress || !firebaseAuth?.currentUser) return 0;
   syncInProgress = true;
+  updateSyncStatus("syncing");
   let queue = loadSyncQueue();
   let synchronized = 0;
   try {
@@ -120,19 +137,27 @@ async function flushSyncQueue() {
           synchronized += 1;
           continue;
         }
-        if (error.status && error.status < 500 && error.status !== 429) {
-          queue.shift();
-          saveSyncQueue(queue);
-          continue;
-        }
+        operation.attempts = Number(operation.attempts || 0) + 1;
+        operation.lastAttemptAt = new Date().toISOString();
+        operation.lastStatus = error.status || 0;
+        operation.lastError = error.message || "Falha desconhecida";
+        saveSyncQueue(queue);
         break;
       }
     }
   } finally {
     syncInProgress = false;
+    updateSyncStatus();
   }
   if (synchronized) showToast(`${synchronized} alteracao(oes) sincronizada(s) com o servidor.`);
   return synchronized;
+}
+
+function clearCurrentUserLocalData() {
+  const uid = firebaseAuth?.currentUser?.uid;
+  if (!uid) return;
+  [TRANSACTIONS_KEY, SETTINGS_KEY, SAVINGS_GOALS_KEY, CATEGORIES_KEY, SYNC_QUEUE_KEY, ACCOUNT_KEY]
+    .forEach((key) => localStorage.removeItem(userStorageKey(key, uid)));
 }
 
 function normalizeSavingsGoal(goal) {

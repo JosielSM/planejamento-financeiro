@@ -7,6 +7,10 @@ const storage = new Map();
 const context = vm.createContext({
   console,
   crypto: webcrypto,
+  navigator: { onLine: false },
+  syncStatusButton: null,
+  syncStatusText: null,
+  syncPendingCount: null,
   localStorage: {
     getItem: (key) => storage.get(key) ?? null,
     setItem: (key, value) => storage.set(key, String(value)),
@@ -64,5 +68,15 @@ context.firebaseAuth.currentUser.uid = "usuario-a";
 context.api.request = async () => ({ ok: true });
 assert.equal(await vm.runInContext("flushSyncQueue()", context), 1);
 assert.equal(vm.runInContext("loadSyncQueue().length", context), 0);
+
+context.api.request = async () => {
+  const error = new Error("Categoria inválida");
+  error.status = 400;
+  throw error;
+};
+vm.runInContext(`queueMutation("/api/settings/test", { method: "PUT", body: "{}" })`, context);
+assert.equal(await vm.runInContext("flushSyncQueue()", context), 0);
+assert.equal(vm.runInContext("loadSyncQueue().length", context), 1, "falhas definitivas não podem ser descartadas");
+assert.equal(vm.runInContext("loadSyncQueue()[0].lastStatus", context), 400);
 
 console.log("Cache por usuario e fila offline validados.");

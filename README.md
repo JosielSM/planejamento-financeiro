@@ -25,6 +25,8 @@ Aplicação web para controle financeiro pessoal, com autenticação individual,
 
 Consulte [DOCUMENTAÇÃO.md](DOCUMENTAÇÃO.md) para conhecer detalhadamente a arquitetura, cada tela, os fluxos de autenticação, as regras financeiras, o banco de dados, todos os endpoints, a organização dos arquivos, a segurança, a implantação e os procedimentos de manutenção.
 
+Para assinatura, versionamento, Firebase Android e Play Store, consulte [RELEASE_ANDROID.md](RELEASE_ANDROID.md).
+
 ## Início rápido
 
 Requisitos:
@@ -57,6 +59,9 @@ Acesse `http://127.0.0.1:5500`.
 | `npm run cap:sync` | Gera a interface e sincroniza o projeto Android. |
 | `npm run cap:open` | Abre o projeto no Android Studio. |
 | `npm run test:offline` | Valida isolamento do cache por usuário e reenvio da fila offline. |
+| `npm test` | Executa os testes offline, de segurança e de sintaxe. |
+| `npm run android:debug` | Gera um APK de desenvolvimento para testes. |
+| `npm run android:release` | Testa e gera APK/AAB assinados; exige credenciais externas. |
 | `npm run migrate:firebase-users` | Simula a migração de usuários antigos para o Firebase. |
 | `npm run migrate:firebase-users -- --apply` | Executa a migração após a revisão da simulação. |
 

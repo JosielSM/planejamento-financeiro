@@ -35,6 +35,12 @@ for (const [placeholder, relativePath] of Object.entries(parts)) {
 await rm(outputDirectory, { recursive: true, force: true });
 await cp(join(projectRoot, "public"), outputDirectory, { recursive: true });
 await writeFile(join(outputDirectory, "index.html"), document, "utf8");
+// O OneDrive pode representar arquivos novos como reparse points. Regravar o HTML
+// garante um arquivo regular aceito pelo empacotador de assets do Android.
+const privacyOutput = join(outputDirectory, "privacidade.html");
+const privacyDocument = await readFile(join(projectRoot, "public", "privacidade.html"), "utf8");
+await rm(privacyOutput, { force: true });
+await writeFile(privacyOutput, privacyDocument, "utf8");
 
 const vendorFiles = [
   ["node_modules/firebase/firebase-app-compat.js", "vendor/firebase/firebase-app-compat.js"],

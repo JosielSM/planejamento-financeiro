@@ -146,6 +146,11 @@ const googleSignInButtons = document.querySelectorAll("[data-google-signin]");
 const themeToggleButton = document.querySelector("#themeToggleButton");
 const themeToggleText = document.querySelector("#themeToggleText");
 const toastRegion = document.querySelector("#toastRegion");
+const syncStatusButton = document.querySelector("#syncStatusButton");
+const syncStatusText = document.querySelector("#syncStatusText");
+const syncPendingCount = document.querySelector("#syncPendingCount");
+const privacyPolicyButton = document.querySelector("#privacyPolicyButton");
+const deleteAccountButton = document.querySelector("#deleteAccountButton");
 
 let transactions = [];
 let settings = { dailyGoal: 0, includeSundays: false, ...loadJSON(SETTINGS_KEY, {}) };
@@ -437,6 +442,7 @@ function showApp(user = null) {
     : "Sua senha é administrada pela Conta Google.";
   profilePasswordResetButton.hidden = !user || !passwordLinked;
   authError.textContent = "";
+  if (typeof updateSyncStatus === "function") updateSyncStatus();
 }
 
 function firebaseErrorMessage(error) {

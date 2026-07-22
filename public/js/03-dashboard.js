@@ -55,7 +55,13 @@ function getVisibleTransactions() {
     .filter(isInSelectedMonth)
     .filter((item) => typeFilter.value === "all" || item.type === typeFilter.value)
     .filter((item) => frequencyFilter.value === "all" || item.frequency === frequencyFilter.value)
-    .sort((a, b) => b.date.localeCompare(a.date));
+    .sort(compareTransactionsNewestFirst);
+}
+
+function compareTransactionsNewestFirst(a, b) {
+  const dateDifference = String(b.date).localeCompare(String(a.date));
+  if (dateDifference) return dateDifference;
+  return String(b.createdAt || "").localeCompare(String(a.createdAt || ""));
 }
 
 function getMonthTransactions() {
@@ -120,7 +126,7 @@ function renderIncomeExpenseChart(income, expense) {
 
 function renderRegisterOverview(monthItems, income, expense) {
   const recentItems = [...monthItems]
-    .sort((a, b) => b.date.localeCompare(a.date))
+    .sort(compareTransactionsNewestFirst)
     .slice(0, 3);
   const lastItem = recentItems[0];
   const recentList = document.querySelector("#recentRegistersList");

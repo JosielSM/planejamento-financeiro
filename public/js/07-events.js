@@ -109,6 +109,7 @@ form.addEventListener("submit", async (event) => {
     category: categorySelect.value,
     frequency: document.querySelector("#frequency").value,
     note: document.querySelector("#note").value.trim(),
+    createdAt: new Date().toISOString(),
   };
 
   if (!transaction.description || transaction.amount <= 0 || !transaction.date) {

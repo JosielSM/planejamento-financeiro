@@ -262,6 +262,7 @@ function mapTransaction(row) {
     category: row.category,
     frequency: row.frequency,
     note: row.note || "",
+    createdAt: row.created_at instanceof Date ? row.created_at.toISOString() : new Date(row.created_at).toISOString(),
   };
 }
 
@@ -451,19 +452,20 @@ app.get("/api/transactions", async (request, response) => {
 app.post("/api/transactions", async (request, response) => {
   const user = await requireAuth(request, response);
   if (!user) return;
-  const { id, type, description, amount, date, category, frequency, note = "" } = request.body;
+  const { id, type, description, amount, date, category, frequency, note = "", createdAt } = request.body;
 
   if (!id || !type || !description || !amount || !date || !category || !frequency) {
     response.status(400).json({ error: "Campos obrigatorios faltando" });
     return;
   }
 
+  const normalizedCreatedAt = Number.isFinite(Date.parse(createdAt)) ? new Date(createdAt).toISOString() : new Date().toISOString();
   const result = await pool.query(
-    `INSERT INTO transactions (id, user_id, type, description, amount, date, category, frequency, note)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+    `INSERT INTO transactions (id, user_id, type, description, amount, date, category, frequency, note, created_at)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
      ON CONFLICT (id) DO NOTHING
      RETURNING *`,
-    [id, user.id, type, description, amount, date, category, frequency, note],
+    [id, user.id, type, description, amount, date, category, frequency, note, normalizedCreatedAt],
   );
 
   if (result.rows[0]) {

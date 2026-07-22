@@ -1154,7 +1154,13 @@ Na versão 1.4.0, a ação destrutiva deixou de aparecer diretamente entre as a�
 
 A validação não depende apenas da interface: `DELETE /api/account` exige `emailConfirmation` e compara o valor normalizado ao e-mail da identidade autenticada antes de apagar qualquer dado. Isso reduz exclusões acidentais e impede chamadas incompletas, preservando simultaneamente o caminho de exclusão exigido pelas lojas.
 
-## 36. Resumo final
+## 36. Ordenação cronológica dos registros
+
+Na versão 1.5.0, cada movimentação preserva `createdAt` desde o momento em que é registrada no aparelho, inclusive offline. A API grava esse instante em `transactions.created_at` e o devolve ao cliente. A tela ordena primeiro pela data financeira em ordem decrescente e, quando dois registros possuem a mesma data, pelo horário de criação também decrescente. Dessa forma, o último registro criado no mesmo dia aparece primeiro de modo consistente antes e depois da sincronização.
+
+Registros antigos recebem o `created_at` já existente no PostgreSQL ao serem carregados. O endpoint continua usando `ORDER BY date DESC, created_at DESC`, e a mesma regra é aplicada à tabela completa e ao resumo dos três registros recentes.
+
+## 37. Resumo final
 
 O Planejamento Financeiro é uma aplicação web autenticada, organizada por telas no servidor e por responsabilidades no navegador. O Firebase identifica as pessoas, o servidor Express valida cada requisição e o Neon preserva os dados financeiros. O projeto suporta controle mensal, médias, meta diária, categorias, metas com depósitos, histórico de conclusão, análises e relatórios.
 

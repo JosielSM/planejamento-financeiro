@@ -56,6 +56,7 @@ const transaction = {
   category: "Trabalho",
   frequency: "occasional",
   note: "",
+  createdAt: "2026-07-21T14:00:00.000Z",
 };
 
 assert.equal(await vm.runInContext(`createTransaction(${JSON.stringify(transaction)})`, context), true);

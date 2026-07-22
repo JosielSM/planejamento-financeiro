@@ -10,11 +10,13 @@ const pwaManifest = JSON.parse(await readFile(new URL("../public/manifest.webman
 const platform = await readFile(new URL("../public/js/08-platform.js", import.meta.url), "utf8");
 const runtime = await readFile(new URL("../public/js/00-runtime.js", import.meta.url), "utf8");
 const packageMetadata = JSON.parse(await readFile(new URL("../package.json", import.meta.url), "utf8"));
+const dashboard = await readFile(new URL("../public/js/03-dashboard.js", import.meta.url), "utf8");
 
 assert.match(server, /app\.delete\("\/api\/account"/);
 assert.match(server, /DELETE FROM users WHERE id = \$1/);
 assert.match(server, /firebaseAdminAuth\.deleteUser/);
 assert.match(server, /emailConfirmation/);
+assert.match(server, /createdAt: row\.created_at/);
 assert.match(server, /X-Request-ID/);
 assert.match(androidManifest, /android:allowBackup="false"/);
 assert.match(androidManifest, /android:usesCleartextTraffic="false"/);
@@ -31,4 +33,6 @@ assert.match(platform, /checkAndroidUpdate/);
 assert.match(server, /\/api\/app-version/);
 assert.match(runtime, new RegExp(`APP_VERSION = "${packageMetadata.version.replaceAll(".", "\\.")}"`));
 assert.match(gradle, new RegExp(`versionName "${packageMetadata.version.replaceAll(".", "\\.")}"`));
+assert.match(dashboard, /compareTransactionsNewestFirst/);
+assert.match(dashboard, /b\.createdAt/);
 console.log("Contrato de segurança, privacidade e release validado.");

@@ -1,6 +1,6 @@
 # Publicação Android
 
-O aplicativo usa `versionCode 5` e `versionName 1.4.0`. O APK disponível no site é compilado para testes diretos. Uma publicação pública deve usar uma chave privada definitiva e um Android App Bundle.
+O aplicativo usa `versionCode 6` e `versionName 1.5.0`. O APK disponível no site é compilado para testes diretos. Uma publicação pública deve usar uma chave privada definitiva e um Android App Bundle.
 
 ## Preparação única
 

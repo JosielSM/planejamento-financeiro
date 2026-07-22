@@ -207,6 +207,8 @@ As cinco áreas principais são:
 
 O aplicativo é instalado por um APK de desenvolvimento ou por um AAB assinado e publicado na Play Store. O navegador não oferece mais o botão de instalação PWA.
 
+O cabeçalho do site apresenta o botão “Baixar para Android”. Ele chama `GET /download/android`; o Express entrega `downloads/planejamento-financeiro.apk` como `Planejamento-Financeiro.apk` com o tipo MIME de pacote Android. Dentro do aplicativo Capacitor, o botão é ocultado para evitar oferecer o próprio instalador novamente.
+
 Fluxo de desenvolvimento Android:
 
 1. execute `npm install`;

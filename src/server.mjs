@@ -13,6 +13,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const projectRoot = join(__dirname, "..");
 const publicDirectory = join(projectRoot, "public");
 const viewsDirectory = join(__dirname, "views");
+const androidApkPath = join(projectRoot, "downloads", "planejamento-financeiro.apk");
 
 function loadView(relativePath) {
   return readFileSync(join(viewsDirectory, relativePath), "utf8").trim();
@@ -751,6 +752,13 @@ app.put("/api/settings/:key", async (request, response) => {
     [user.id, request.params.key, value],
   );
   response.json(result.rows[0]);
+});
+
+app.get("/download/android", (_request, response, next) => {
+  response.type("application/vnd.android.package-archive");
+  response.download(androidApkPath, "Planejamento-Financeiro.apk", (error) => {
+    if (error && !response.headersSent) next(error);
+  });
 });
 
 app.get("*", (_request, response) => {

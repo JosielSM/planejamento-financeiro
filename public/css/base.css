@@ -83,7 +83,8 @@ select {
 }
 
 .theme-toggle,
-.profile-toggle {
+.profile-toggle,
+.download-app-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -96,20 +97,29 @@ select {
   color: #fff;
   font-weight: 700;
   cursor: pointer;
+  text-decoration: none;
   transition: background 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
 }
 
 .theme-toggle:hover,
-.profile-toggle:hover {
+.profile-toggle:hover,
+.download-app-button:hover {
   background: rgba(255, 255, 255, 0.18);
   border-color: rgba(255, 255, 255, 0.45);
   transform: translateY(-1px);
 }
 
 .theme-toggle svg,
-.profile-toggle svg {
+.profile-toggle svg,
+.download-app-button svg {
   width: 18px;
   height: 18px;
+}
+
+.download-app-button {
+  gap: 7px;
+  width: auto;
+  padding-inline: 12px;
 }
 
 .theme-toggle span {

@@ -15,3 +15,6 @@ async function removeLegacyPwa() {
 window.addEventListener("load", () => {
   removeLegacyPwa().catch(() => {});
 });
+
+const downloadAppButton = document.querySelector("#downloadAppButton");
+if (downloadAppButton) downloadAppButton.hidden = isNativeRuntime();

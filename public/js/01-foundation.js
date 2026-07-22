@@ -511,9 +511,11 @@ async function loadHealthWithRetry(maxAttempts = 8) {
       const response = await fetch(apiUrl("/api/health"), {
         headers: { Accept: "application/json" },
         cache: "no-store",
+        signal: AbortSignal.timeout(12000),
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error || `Erro ${response.status}`);
+      if (typeof serverConnectionState !== "undefined") serverConnectionState = "online";
       return data;
     } catch (error) {
       lastError = error;

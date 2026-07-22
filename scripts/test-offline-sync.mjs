@@ -8,6 +8,7 @@ const context = vm.createContext({
   console,
   crypto: webcrypto,
   navigator: { onLine: false },
+  setTimeout: () => 0,
   syncStatusButton: null,
   syncStatusText: null,
   syncPendingCount: null,
@@ -61,12 +62,20 @@ assert.equal(await vm.runInContext(`createTransaction(${JSON.stringify(transacti
 assert.equal(vm.runInContext("loadSyncQueue().length", context), 1);
 assert.equal(vm.runInContext("loadTransactions().length", context), 1);
 
+await vm.runInContext(`createTransaction(${JSON.stringify({ ...transaction, id: "22222222-2222-4222-8222-222222222222" })})`, context);
+assert.equal(vm.runInContext("loadTransactions().length", context), 2, "cada envio deve gerar somente um registro local");
+assert.equal(vm.runInContext("loadSyncQueue().length", context), 2, "cada registro deve gerar somente uma operação pendente");
+
+await vm.runInContext(`createTransaction(${JSON.stringify(transaction)})`, context);
+assert.equal(vm.runInContext("loadTransactions().length", context), 2, "reenvio do mesmo identificador não pode duplicar o registro");
+assert.equal(vm.runInContext("loadSyncQueue().length", context), 2, "reenvio idêntico não pode duplicar a fila");
+
 context.firebaseAuth.currentUser.uid = "usuario-b";
 assert.equal(vm.runInContext("loadTransactions().length", context), 0, "o cache deve ser isolado por UID");
 
 context.firebaseAuth.currentUser.uid = "usuario-a";
 context.api.request = async () => ({ ok: true });
-assert.equal(await vm.runInContext("flushSyncQueue()", context), 1);
+assert.equal(await vm.runInContext("flushSyncQueue()", context), 2);
 assert.equal(vm.runInContext("loadSyncQueue().length", context), 0);
 
 context.api.request = async () => {
@@ -78,5 +87,11 @@ vm.runInContext(`queueMutation("/api/settings/test", { method: "PUT", body: "{}"
 assert.equal(await vm.runInContext("flushSyncQueue()", context), 0);
 assert.equal(vm.runInContext("loadSyncQueue().length", context), 1, "falhas definitivas não podem ser descartadas");
 assert.equal(vm.runInContext("loadSyncQueue()[0].lastStatus", context), 400);
+
+vm.runInContext("saveSyncQueue([])", context);
+vm.runInContext(`queueMutation("/api/settings/dailyGoal", { method: "PUT", body: JSON.stringify({ value: 100 }) })`, context);
+vm.runInContext(`queueMutation("/api/settings/dailyGoal", { method: "PUT", body: JSON.stringify({ value: 200 }) })`, context);
+assert.equal(vm.runInContext("loadSyncQueue().length", context), 1, "atualizações pendentes devem manter somente o valor mais recente");
+assert.equal(vm.runInContext("JSON.parse(loadSyncQueue()[0].body).value", context), 200);
 
 console.log("Cache por usuario e fila offline validados.");

@@ -98,6 +98,7 @@ customCategoryList.addEventListener("click", async (event) => {
 
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
+  if (transactionSubmitButton.disabled) return;
   const data = new FormData(form);
   const transaction = {
     id: crypto.randomUUID(),
@@ -114,18 +115,34 @@ form.addEventListener("submit", async (event) => {
     return;
   }
 
-  const saved = await createTransaction(transaction);
-  resetForm();
-  closeTransactionModal();
-  showToast(saved ? "Registro salvo com sucesso." : "Nao foi possivel sincronizar o registro.", saved ? "success" : "error", saved ? 3200 : 5000);
+  transactionSubmitButton.disabled = true;
+  try {
+    await createTransaction(transaction);
+    resetForm();
+    closeTransactionModal();
+    showToast(
+      navigator.onLine ? "Registro salvo. Sincronizando com o servidor." : "Registro salvo no celular. Será sincronizado quando a internet voltar.",
+      navigator.onLine ? "success" : "info",
+      4200,
+    );
+  } finally {
+    transactionSubmitButton.disabled = false;
+  }
 });
 
 goalForm.addEventListener("submit", async (event) => {
   event.preventDefault();
-  const saved = await saveSetting("dailyGoal", parseAmount(dailyGoalInput.value));
-  setGoalFormOpen(false);
-  render();
-  showToast(saved ? "Meta diaria atualizada." : "Nao foi possivel salvar a meta diaria.", saved ? "success" : "error");
+  const submitButton = goalForm.querySelector('[type="submit"]');
+  if (submitButton.disabled) return;
+  submitButton.disabled = true;
+  try {
+    const saved = await saveSetting("dailyGoal", parseAmount(dailyGoalInput.value));
+    setGoalFormOpen(false);
+    render();
+    showToast(saved ? "Meta diaria atualizada." : "Nao foi possivel salvar a meta diaria.", saved ? "success" : "error");
+  } finally {
+    submitButton.disabled = false;
+  }
 });
 
 goalToggleButton.addEventListener("click", () => {
@@ -134,32 +151,27 @@ goalToggleButton.addEventListener("click", () => {
 
 savingsGoalForm.addEventListener("submit", async (event) => {
   event.preventDefault();
+  if (savingsGoalSubmitButton.disabled) return;
   const name = document.querySelector("#savingsGoalName").value.trim();
   const targetAmount = parseAmount(document.querySelector("#savingsGoalTarget").value);
   const note = document.querySelector("#savingsGoalNote").value.trim();
 
   if (!name || targetAmount <= 0) return;
 
-  const wasEditing = Boolean(editingSavingsGoalId);
-  let saved;
-  if (wasEditing) {
-    saved = await updateSavingsGoal(editingSavingsGoalId, { name, targetAmount, note });
-  } else {
-    saved = await createSavingsGoal({
-      id: crypto.randomUUID(),
-      name,
-      targetAmount,
-      savedAmount: 0,
-      note,
-      deposits: [],
-    });
+  savingsGoalSubmitButton.disabled = true;
+  try {
+    const wasEditing = Boolean(editingSavingsGoalId);
+    let saved;
+    if (wasEditing) {
+      saved = await updateSavingsGoal(editingSavingsGoalId, { name, targetAmount, note });
+    } else {
+      saved = await createSavingsGoal({ id: crypto.randomUUID(), name, targetAmount, savedAmount: 0, note, deposits: [] });
+    }
+    setSavingsGoalFormOpen(false);
+    showToast(saved ? (wasEditing ? "Meta atualizada." : "Nova meta criada.") : "Nao foi possivel sincronizar a meta.", saved ? "success" : "error");
+  } finally {
+    savingsGoalSubmitButton.disabled = false;
   }
-
-  setSavingsGoalFormOpen(false);
-  showToast(
-    saved ? (wasEditing ? "Meta atualizada." : "Nova meta criada.") : "Nao foi possivel sincronizar a meta.",
-    saved ? "success" : "error",
-  );
 });
 
 savingsGoalToggleButton.addEventListener("click", () => {
@@ -182,15 +194,25 @@ savingsGoalsList.addEventListener("submit", async (event) => {
   event.preventDefault();
   const amount = parseAmount(depositForm.querySelector("input").value);
   if (amount <= 0) return;
-  const saved = await addSavingsDeposit(depositForm.dataset.goalDeposit, amount);
-  showToast(saved ? "Deposito adicionado a meta." : "Nao foi possivel sincronizar o deposito.", saved ? "success" : "error");
+  const submitButton = depositForm.querySelector('[type="submit"]');
+  if (submitButton?.disabled) return;
+  if (submitButton) submitButton.disabled = true;
+  try {
+    const saved = await addSavingsDeposit(depositForm.dataset.goalDeposit, amount);
+    showToast(saved ? "Deposito adicionado a meta." : "Nao foi possivel sincronizar o deposito.", saved ? "success" : "error");
+  } finally {
+    if (submitButton) submitButton.disabled = false;
+  }
 });
 
 savingsGoalsList.addEventListener("click", async (event) => {
   const completeButton = event.target.closest("[data-goal-complete]");
   if (completeButton) {
+    if (completeButton.disabled) return;
+    completeButton.disabled = true;
     const saved = await completeSavingsGoal(completeButton.dataset.goalComplete);
     showToast(saved ? "Parabens! Meta concluida." : "Nao foi possivel concluir a meta.", saved ? "success" : "error", 4200);
+    if (!saved) completeButton.disabled = false;
     return;
   }
 
@@ -474,6 +496,10 @@ logoutButton.addEventListener("click", async () => {
 
 syncStatusButton.addEventListener("click", async () => {
   const queue = loadSyncQueue();
+  if (navigator.onLine && serverConnectionState !== "online") {
+    const connected = await checkServerConnection({ notify: true });
+    if (!connected) return;
+  }
   if (!queue.length) {
     showToast(navigator.onLine ? "Todos os dados estão sincronizados." : "Você está offline.", "info");
     return;
@@ -710,8 +736,19 @@ async function start() {
 start();
 
 window.addEventListener("online", () => {
-  updateSyncStatus();
-  if (isNativeRuntime()) start();
+  checkServerConnection({ notify: true });
+  if (isNativeRuntime() && !firebaseAuth?.currentUser) start();
 });
 
-window.addEventListener("offline", updateSyncStatus);
+window.addEventListener("offline", () => {
+  serverConnectionState = "unavailable";
+  updateSyncStatus();
+});
+
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden && firebaseAuth?.currentUser) checkServerConnection({ notify: true });
+});
+
+window.addEventListener("pageshow", () => {
+  if (firebaseAuth?.currentUser) checkServerConnection();
+});

@@ -155,7 +155,11 @@ select {
 .sync-status { gap: 7px; width: auto; }
 .sync-status.pending { color: #ffe29a; }
 .sync-status.error { color: #ffaaa3; }
+.sync-status.syncing { color: #d7f7e7; }
+.sync-status.syncing svg { animation: sync-spin .85s linear infinite; }
 .sync-status strong { min-width: 20px; padding: 2px 6px; border-radius: 999px; background: currentColor; color: #22352d; font-size: 11px; }
+
+@keyframes sync-spin { to { transform: rotate(360deg); } }
 
 .download-app-button {
   gap: 7px;

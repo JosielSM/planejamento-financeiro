@@ -1,6 +1,9 @@
 const CATEGORIES_KEY = "planejamento-financeiro-categories-v1";
 const SYNC_QUEUE_KEY = "planejamento-financeiro-sync-queue-v1";
 let syncInProgress = false;
+let serverConnectionState = "unknown";
+let serverCheckInProgress = false;
+let serverWakeRetryTimer = null;
 
 function userStorageKey(baseKey, uid = firebaseAuth?.currentUser?.uid) {
   return `${baseKey}:${uid || "anonymous"}`;
@@ -75,14 +78,51 @@ function updateSyncStatus(state = "") {
   if (!syncStatusButton) return;
   const queue = loadSyncQueue();
   const failed = queue.some((item) => item.lastError && item.lastStatus && item.lastStatus < 500 && item.lastStatus !== 429);
+  const connecting = state === "syncing" || serverConnectionState === "checking";
+  const unavailable = !navigator.onLine || serverConnectionState === "unavailable";
   syncStatusButton.hidden = !firebaseAuth?.currentUser;
-  syncStatusButton.classList.toggle("pending", queue.length > 0 && !failed);
-  syncStatusButton.classList.toggle("error", failed);
+  syncStatusButton.classList.toggle("syncing", connecting);
+  syncStatusButton.classList.toggle("pending", !connecting && !unavailable && queue.length > 0 && !failed);
+  syncStatusButton.classList.toggle("error", !connecting && (failed || unavailable));
   syncPendingCount.hidden = queue.length === 0;
   syncPendingCount.textContent = String(queue.length);
-  syncStatusText.textContent = state === "syncing" ? "Sincronizando..." : failed ? "Ação necessária" : queue.length ? `${queue.length} pendente${queue.length > 1 ? "s" : ""}` : navigator.onLine ? "Sincronizado" : "Offline";
-  syncStatusButton.querySelector("[data-lucide]")?.setAttribute("data-lucide", failed ? "cloud-alert" : queue.length ? "cloud-upload" : navigator.onLine ? "cloud-check" : "cloud-off");
+  syncStatusText.textContent = connecting ? "Conectando..." : !navigator.onLine ? "Sem internet" : serverConnectionState === "unavailable" ? "Servidor iniciando" : failed ? "Ação necessária" : queue.length ? `${queue.length} pendente${queue.length > 1 ? "s" : ""}` : "Sincronizado";
+  syncStatusButton.querySelector("[data-lucide]")?.setAttribute("data-lucide", connecting ? "loader-circle" : failed ? "cloud-alert" : unavailable ? "cloud-off" : queue.length ? "cloud-upload" : "cloud-check");
   refreshIcons();
+}
+
+async function checkServerConnection({ notify = false } = {}) {
+  if (serverCheckInProgress || !firebaseAuth?.currentUser || document.hidden) return false;
+  if (!navigator.onLine) {
+    serverConnectionState = "unavailable";
+    updateSyncStatus();
+    return false;
+  }
+  serverCheckInProgress = true;
+  serverConnectionState = "checking";
+  updateSyncStatus();
+  clearTimeout(serverWakeRetryTimer);
+  try {
+    const response = await fetch(apiUrl("/api/health"), {
+      headers: { Accept: "application/json" },
+      cache: "no-store",
+      signal: AbortSignal.timeout(12000),
+    });
+    const health = await response.json().catch(() => ({}));
+    if (!response.ok || health.database !== "connected" || health.firebase !== "configured") throw new Error("Servidor indisponível");
+    serverConnectionState = "online";
+    updateSyncStatus();
+    await flushSyncQueue();
+    return true;
+  } catch {
+    serverConnectionState = "unavailable";
+    updateSyncStatus();
+    if (notify) showToast("O servidor ainda está iniciando. Você pode continuar usando os dados salvos no celular.", "info", 5000);
+    serverWakeRetryTimer = setTimeout(() => checkServerConnection(), 15000);
+    return false;
+  } finally {
+    serverCheckInProgress = false;
+  }
 }
 
 function isRetryableSyncError(error) {
@@ -90,17 +130,25 @@ function isRetryableSyncError(error) {
 }
 
 function queueMutation(path, options = {}) {
-  const queue = loadSyncQueue();
-  queue.push({
+  const method = options.method || "POST";
+  const body = options.body || null;
+  let queue = loadSyncQueue();
+  const duplicate = queue.find((operation) => operation.path === path && operation.method === method && operation.body === body);
+  if (duplicate) return duplicate;
+  if (method === "PUT") {
+    queue = queue.filter((operation) => !(operation.path === path && operation.method === "PUT"));
+  }
+  const operation = {
     id: crypto.randomUUID(),
     path,
-    method: options.method || "POST",
-    body: options.body || null,
+    method,
+    body,
     createdAt: new Date().toISOString(),
     attempts: 0,
-  });
+  };
+  queue.push(operation);
   saveSyncQueue(queue);
-  showToast("Alteracao salva no celular. A sincronizacao sera automatica.", "info", 4200);
+  return operation;
 }
 
 async function requestOrQueue(path, options = {}) {
@@ -223,26 +271,20 @@ async function saveSetting(key, value) {
 }
 
 async function createTransaction(transaction) {
+  if (transactions.some((item) => item.id === transaction.id)) return true;
   transactions.push(transaction);
   saveTransactions();
   render();
-
-  try {
-    const result = await requestOrQueue("/api/transactions", {
-      method: "POST",
-      body: JSON.stringify(transaction),
-    });
-    if (result.queued) return true;
-    transactions = transactions.map((item) => (item.id === transaction.id ? result.data : item));
-    saveTransactions();
-    render();
-    return true;
-  } catch {
-    return false;
-  }
+  queueMutation("/api/transactions", {
+    method: "POST",
+    body: JSON.stringify(transaction),
+  });
+  if (navigator.onLine) setTimeout(() => flushSyncQueue(), 0);
+  return true;
 }
 
 async function deleteTransaction(id) {
+  if (!transactions.some((item) => item.id === id)) return true;
   transactions = transactions.filter((item) => item.id !== id);
   saveTransactions();
   render();
@@ -256,6 +298,7 @@ async function deleteTransaction(id) {
 }
 
 async function createSavingsGoal(goal) {
+  if (savingsGoals.some((item) => item.id === goal.id)) return true;
   savingsGoals.unshift(goal);
   saveSavingsGoals();
   render();
@@ -315,6 +358,7 @@ async function updateCustomCategory(id, name) {
 }
 
 async function deleteCustomCategory(id) {
+  if (!customCategories.some((item) => item.id === id)) return;
   customCategories = customCategories.filter((item) => item.id !== id);
   saveCategories();
   await requestOrQueue(`/api/categories/${id}`, { method: "DELETE" });
@@ -369,6 +413,7 @@ async function addSavingsDeposit(goalId, amount) {
 }
 
 async function deleteSavingsGoal(id) {
+  if (!savingsGoals.some((goal) => goal.id === id)) return true;
   savingsGoals = savingsGoals.filter((goal) => goal.id !== id);
   saveSavingsGoals();
   render();
@@ -386,6 +431,8 @@ function currentCategoryType() {
 }
 
 async function completeSavingsGoal(id) {
+  const existingGoal = savingsGoals.find((goal) => goal.id === id);
+  if (!existingGoal || existingGoal.completedAt) return true;
   const completedAt = new Date().toISOString();
   savingsGoals = savingsGoals.map((goal) => (goal.id === id ? { ...goal, completedAt } : goal));
   saveSavingsGoals();

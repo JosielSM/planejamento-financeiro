@@ -1148,7 +1148,13 @@ Toda alteração que precise chegar ao Android deve atualizar conjuntamente: `pa
 
 Um deploy apenas do servidor pode corrigir API e site sem exigir APK. Mudanças de interface ou lógica empacotada exigem nova versão e recompilação do APK; caso contrário, o servidor não deve anunciar uma versão que ainda não esteja disponível para download.
 
-## 35. Resumo final
+## 35. Exclusão segura da conta
+
+Na versão 1.4.0, a ação destrutiva deixou de aparecer diretamente entre as ações principais do perfil. Ela fica recolhida em “Privacidade e dados”. Ao abrir a seção, o usuário recebe a explicação de irreversibilidade e precisa digitar exatamente o e-mail cadastrado; somente então o botão de exclusão é habilitado. Uma confirmação final ainda é exibida.
+
+A validação não depende apenas da interface: `DELETE /api/account` exige `emailConfirmation` e compara o valor normalizado ao e-mail da identidade autenticada antes de apagar qualquer dado. Isso reduz exclusões acidentais e impede chamadas incompletas, preservando simultaneamente o caminho de exclusão exigido pelas lojas.
+
+## 36. Resumo final
 
 O Planejamento Financeiro é uma aplicação web autenticada, organizada por telas no servidor e por responsabilidades no navegador. O Firebase identifica as pessoas, o servidor Express valida cada requisição e o Neon preserva os dados financeiros. O projeto suporta controle mensal, médias, meta diária, categorias, metas com depósitos, histórico de conclusão, análises e relatórios.
 

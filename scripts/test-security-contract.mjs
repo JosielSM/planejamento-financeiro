@@ -14,13 +14,15 @@ const packageMetadata = JSON.parse(await readFile(new URL("../package.json", imp
 assert.match(server, /app\.delete\("\/api\/account"/);
 assert.match(server, /DELETE FROM users WHERE id = \$1/);
 assert.match(server, /firebaseAdminAuth\.deleteUser/);
+assert.match(server, /emailConfirmation/);
 assert.match(server, /X-Request-ID/);
 assert.match(androidManifest, /android:allowBackup="false"/);
 assert.match(androidManifest, /android:usesCleartextTraffic="false"/);
 assert.match(gradle, /PF_RELEASE_STORE_FILE/);
 assert.match(gradle, /minifyEnabled true/);
-assert.match(privacy, /Excluir conta e dados/);
+assert.match(privacy, /Privacidade e dados/);
 assert.match(activity, /FLAG_SECURE/);
+assert.match(privacy, /confirmando o e-mail cadastrado/);
 assert.equal(pwaManifest.display, "standalone");
 assert.ok(pwaManifest.icons.some((icon) => icon.sizes === "512x512" && icon.purpose === "maskable"));
 assert.match(platform, /Instalar no iPhone/);

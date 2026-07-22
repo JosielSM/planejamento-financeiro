@@ -152,6 +152,8 @@ const syncStatusText = document.querySelector("#syncStatusText");
 const syncPendingCount = document.querySelector("#syncPendingCount");
 const privacyPolicyButton = document.querySelector("#privacyPolicyButton");
 const deleteAccountButton = document.querySelector("#deleteAccountButton");
+const deleteAccountEmail = document.querySelector("#deleteAccountEmail");
+const profileDangerZone = document.querySelector("#profileDangerZone");
 
 let transactions = [];
 let settings = { dailyGoal: 0, includeSundays: false, ...loadJSON(SETTINGS_KEY, {}) };
@@ -305,6 +307,9 @@ function showToast(message, tone = "success", duration = 3200) {
 function openProfileModal() {
   profileLastFocus = document.activeElement;
   profileModal.hidden = false;
+  profileDangerZone.open = false;
+  deleteAccountEmail.value = "";
+  deleteAccountButton.disabled = true;
   syncModalOpenState();
   refreshIcons();
   setTimeout(() => closeProfileButton.focus(), 40);

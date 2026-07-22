@@ -522,6 +522,12 @@ privacyPolicyButton.addEventListener("click", () => {
   window.open(apiUrl("/privacidade"), "_blank", "noopener,noreferrer");
 });
 
+deleteAccountEmail.addEventListener("input", () => {
+  const expectedEmail = String(firebaseAuth?.currentUser?.email || "").trim().toLocaleLowerCase("pt-BR");
+  const confirmationEmail = deleteAccountEmail.value.trim().toLocaleLowerCase("pt-BR");
+  deleteAccountButton.disabled = !expectedEmail || confirmationEmail !== expectedEmail;
+});
+
 deleteAccountButton.addEventListener("click", async () => {
   const confirmed = await askConfirmation({
     title: "Excluir conta permanentemente?",
@@ -532,7 +538,10 @@ deleteAccountButton.addEventListener("click", async () => {
   deleteAccountButton.disabled = true;
   deleteAccountButton.textContent = "Excluindo...";
   try {
-    await api.request("/api/account", { method: "DELETE" });
+    await api.request("/api/account", {
+      method: "DELETE",
+      body: JSON.stringify({ emailConfirmation: deleteAccountEmail.value.trim() }),
+    });
     clearCurrentUserLocalData();
     await firebaseAuth.signOut();
     closeProfileModal();
@@ -543,7 +552,8 @@ deleteAccountButton.addEventListener("click", async () => {
   } catch (error) {
     await showNotice(error.message || "Não foi possível excluir a conta.", "Exclusão não concluída", "error");
   } finally {
-    deleteAccountButton.disabled = false;
+    deleteAccountEmail.value = "";
+    deleteAccountButton.disabled = true;
     deleteAccountButton.textContent = "Excluir conta e dados";
   }
 });

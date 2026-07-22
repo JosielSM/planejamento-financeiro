@@ -427,6 +427,11 @@ app.delete("/api/account", async (request, response) => {
   try {
     const user = await requireAuth(request, response);
     if (!user) return;
+    const emailConfirmation = String(request.body.emailConfirmation || "").trim().toLowerCase();
+    if (!emailConfirmation || emailConfirmation !== String(user.email).trim().toLowerCase()) {
+      response.status(400).json({ error: "Confirme o e-mail cadastrado para excluir a conta" });
+      return;
+    }
     await pool.query("DELETE FROM users WHERE id = $1", [user.id]);
     if (user.firebase_uid) await firebaseAdminAuth.deleteUser(user.firebase_uid);
     response.status(204).end();

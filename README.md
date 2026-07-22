@@ -16,6 +16,8 @@ Aplicação web para controle financeiro pessoal, com autenticação individual,
 - Tema claro e escuro.
 - Feedback temporário para ações concluídas e falhas de sincronização.
 - Aplicativo Android nativo com Capacitor, interface empacotada e abertura independente do Render.
+- PWA instalável no iPhone pelo Safari, com ícone, tela de abertura e cache do aplicativo.
+- Botão adaptável: baixa o APK no Android e ensina a instalação na Tela de Início no iPhone.
 - Download direto do APK pelo botão “Baixar para Android” no site.
 - Cache local separado por usuário e fila de sincronização automática para alterações feitas sem conexão.
 - Persistência no PostgreSQL/Neon por meio de uma API Express.

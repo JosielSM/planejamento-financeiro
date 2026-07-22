@@ -1,6 +1,6 @@
 {
   "name": "planejamento-financeiro",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -11,7 +11,7 @@
     "cap:open": "cap open android",
     "android:debug": "npm run cap:sync && cd android && gradlew.bat assembleDebug",
     "android:release": "node scripts/release-android.mjs",
-    "test": "npm run test:offline && node scripts/test-security-contract.mjs && node --check src/server.mjs && node --check public/js/02-data.js && node --check public/js/07-events.js",
+    "test": "npm run test:offline && node scripts/test-security-contract.mjs && node --check src/server.mjs && node --check public/js/02-data.js && node --check public/js/07-events.js && node --check public/js/08-platform.js && node --check public/service-worker.js",
     "test:offline": "node scripts/test-offline-sync.mjs",
     "migrate:firebase-users": "node scripts/migrate-users-to-firebase.mjs"
   },

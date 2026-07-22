@@ -1130,7 +1130,15 @@ Verifique se `npm install` foi executado e se os arquivos locais em `/vendor/jsp
 
 A assinatura definitiva, o `google-services.json`, o SHA-1/SHA-256 no Firebase, o teste em aparelho físico e eventual mudança do plano do Render dependem das contas e credenciais do proprietário. O projeto bloqueia release sem essas credenciais. O procedimento completo está em `RELEASE_ANDROID.md`.
 
-## 33. Resumo final
+## 33. PWA para iPhone e convivência com Capacitor
+
+A versão 1.2.0 mantém duas distribuições. No Android, o Capacitor empacota todos os recursos no APK e não registra service worker. No iPhone, o Safari registra `service-worker.js`, lê `manifest.webmanifest` e permite adicionar o aplicativo à Tela de Início.
+
+O manifesto define nome, orientação, cores e ícones comuns e maskable. O HTML também declara `apple-touch-icon`, título e estilo da barra do iOS. O service worker preserva HTML, CSS, JavaScript, ícones e bibliotecas locais; requisições `/api/` e downloads nunca são armazenados em cache. Assim, autenticação e dados continuam vindo do Firebase, Render e Neon, enquanto a interface consegue abrir sem rede após a primeira visita.
+
+O botão superior detecta o ambiente. No Android/navegador, oferece o APK. No iPhone, exibe “Instalar no iPhone” e orienta Compartilhar → Adicionar à Tela de Início. Dentro do APK ou do PWA já instalado, o botão fica oculto.
+
+## 34. Resumo final
 
 O Planejamento Financeiro é uma aplicação web autenticada, organizada por telas no servidor e por responsabilidades no navegador. O Firebase identifica as pessoas, o servidor Express valida cada requisição e o Neon preserva os dados financeiros. O projeto suporta controle mensal, médias, meta diária, categorias, metas com depósitos, histórico de conclusão, análises e relatórios.
 

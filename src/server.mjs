@@ -79,7 +79,7 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       "default-src": ["'self'"],
-      "script-src": ["'self'", "https://cdn.jsdelivr.net", "https://unpkg.com"],
+      "script-src": ["'self'"],
       "style-src": ["'self'", "'unsafe-inline'"],
       "img-src": ["'self'", "data:", "blob:"],
       "connect-src": ["'self'", "https://*.googleapis.com", "https://securetoken.googleapis.com", "https://identitytoolkit.googleapis.com"],
@@ -95,6 +95,21 @@ app.use(helmet({
   referrerPolicy: { policy: "no-referrer" },
 }));
 app.use(express.json({ limit: "100kb" }));
+const capacitorOrigins = new Set(["https://localhost", "http://localhost", "capacitor://localhost"]);
+app.use("/api", (request, response, next) => {
+  const origin = request.get("Origin");
+  if (origin && capacitorOrigins.has(origin)) {
+    response.setHeader("Access-Control-Allow-Origin", origin);
+    response.setHeader("Vary", "Origin");
+    response.setHeader("Access-Control-Allow-Headers", "Authorization, Content-Type");
+    response.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+  }
+  if (request.method === "OPTIONS") {
+    response.status(204).end();
+    return;
+  }
+  next();
+});
 app.use("/api", rateLimit({
   windowMs: 15 * 60 * 1000,
   limit: 600,
@@ -108,13 +123,14 @@ app.use("/vendor/firebase", express.static(join(projectRoot, "node_modules", "fi
     response.setHeader("Cache-Control", "public, max-age=31536000, immutable");
   },
 }));
+app.use("/vendor/lucide", express.static(join(projectRoot, "node_modules", "lucide", "dist", "umd")));
+app.use("/vendor/jspdf", express.static(join(projectRoot, "node_modules", "jspdf", "dist")));
+app.use("/vendor/jspdf-autotable", express.static(join(projectRoot, "node_modules", "jspdf-autotable", "dist")));
+app.use("/vendor/exceljs", express.static(join(projectRoot, "node_modules", "exceljs", "dist")));
 app.use(express.static(publicDirectory, {
   extensions: ["html"],
   setHeaders(response, filePath) {
     response.setHeader("Cache-Control", "no-store");
-    if (filePath.endsWith("service-worker.js")) {
-      response.setHeader("Service-Worker-Allowed", "/");
-    }
   },
 }));
 
@@ -413,11 +429,21 @@ app.post("/api/transactions", async (request, response) => {
   const result = await pool.query(
     `INSERT INTO transactions (id, user_id, type, description, amount, date, category, frequency, note)
      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+     ON CONFLICT (id) DO NOTHING
      RETURNING *`,
     [id, user.id, type, description, amount, date, category, frequency, note],
   );
 
-  response.status(201).json(mapTransaction(result.rows[0]));
+  if (result.rows[0]) {
+    response.status(201).json(mapTransaction(result.rows[0]));
+    return;
+  }
+  const existing = await pool.query("SELECT * FROM transactions WHERE id = $1 AND user_id = $2", [id, user.id]);
+  if (!existing.rows[0]) {
+    response.status(409).json({ error: "Identificador de registro em uso" });
+    return;
+  }
+  response.json(mapTransaction(existing.rows[0]));
 });
 
 app.get("/api/categories", async (request, response) => {
@@ -581,11 +607,21 @@ app.post("/api/savings-goals", async (request, response) => {
   const result = await pool.query(
     `INSERT INTO savings_goals (id, user_id, name, target_amount, note)
      VALUES ($1, $2, $3, $4, $5)
+     ON CONFLICT (id) DO NOTHING
      RETURNING id, name, target_amount, note, completed_at, 0 AS saved_amount, '[]'::json AS deposits`,
     [id, user.id, name, targetAmount, note],
   );
 
-  response.status(201).json(mapSavingsGoal(result.rows[0]));
+  if (result.rows[0]) {
+    response.status(201).json(mapSavingsGoal(result.rows[0]));
+    return;
+  }
+  const existing = await findSavingsGoal(id, user.id);
+  if (!existing) {
+    response.status(409).json({ error: "Identificador de meta em uso" });
+    return;
+  }
+  response.json(existing);
 });
 
 app.put("/api/savings-goals/:id", async (request, response) => {
@@ -632,7 +668,8 @@ app.post("/api/savings-goals/:id/deposits", async (request, response) => {
 
   await pool.query(
     `INSERT INTO savings_deposits (id, goal_id, amount, date)
-     VALUES ($1, $2, $3, $4)`,
+     VALUES ($1, $2, $3, $4)
+     ON CONFLICT (id) DO NOTHING`,
     [id, request.params.id, amount, date],
   );
 

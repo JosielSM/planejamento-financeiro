@@ -6,17 +6,30 @@
   "scripts": {
     "start": "node src/server.mjs",
     "dev": "node src/server.mjs",
+    "build:mobile": "node scripts/build-mobile.mjs",
+    "cap:sync": "npm run build:mobile && cap sync android",
+    "cap:open": "cap open android",
+    "test:offline": "node scripts/test-offline-sync.mjs",
     "migrate:firebase-users": "node scripts/migrate-users-to-firebase.mjs"
   },
   "dependencies": {
+    "@capacitor/android": "^8.0.0",
+    "@capacitor/core": "^8.0.0",
+    "exceljs": "^4.4.0",
     "express": "^4.19.2",
     "express-rate-limit": "^8.6.0",
     "firebase": "^12.16.0",
     "firebase-admin": "^14.2.0",
     "helmet": "^8.3.0",
+    "jspdf": "^4.2.1",
+    "jspdf-autotable": "^5.0.8",
+    "lucide": "^0.468.0",
     "pg": "^8.12.0"
   },
   "engines": {
     "node": ">=22"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.0.0"
   }
 }

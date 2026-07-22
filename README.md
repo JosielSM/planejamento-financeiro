@@ -15,7 +15,8 @@ Aplicação web para controle financeiro pessoal, com autenticação individual,
 - Exportação de relatórios em PDF e Excel.
 - Tema claro e escuro.
 - Feedback temporário para ações concluídas e falhas de sincronização.
-- Instalação como PWA pelo botão “Instalar app”, com suporte a Android, iPhone, iPad e computadores compatíveis.
+- Aplicativo Android nativo com Capacitor, interface empacotada e abertura independente do Render.
+- Cache local separado por usuário e fila de sincronização automática para alterações feitas sem conexão.
 - Persistência no PostgreSQL/Neon por meio de uma API Express.
 - Hospedagem preparada para o Render.
 
@@ -51,13 +52,20 @@ Acesse `http://127.0.0.1:5500`.
 |---|---|
 | `npm start` | Inicia o servidor principal. |
 | `npm run dev` | Inicia o mesmo servidor para desenvolvimento local. |
+| `npm run build:mobile` | Gera a interface estática do aplicativo em `dist/`. |
+| `npm run cap:sync` | Gera a interface e sincroniza o projeto Android. |
+| `npm run cap:open` | Abre o projeto no Android Studio. |
+| `npm run test:offline` | Valida isolamento do cache por usuário e reenvio da fila offline. |
 | `npm run migrate:firebase-users` | Simula a migração de usuários antigos para o Firebase. |
 | `npm run migrate:firebase-users -- --apply` | Executa a migração após a revisão da simulação. |
 
 ## Estrutura resumida
 
 ```text
-public/                 CSS, JavaScript, PWA e ícones enviados ao navegador
+public/                 CSS, JavaScript e ícones compartilhados pelo site e aplicativo
+android/                Projeto Android nativo gerado pelo Capacitor
+capacitor.config.json   Identidade e configuração do aplicativo Android
+dist/                   Build móvel gerado; não é versionado
 src/server.mjs          Servidor Express, API e migrações automáticas
 src/views/              Telas, modais e partes HTML
 scripts/                Utilitários administrativos

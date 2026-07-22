@@ -52,11 +52,15 @@ O Firebase Authentication executa cadastro, login, login Google, confirmação d
 
 O Neon mantém os dados permanentes do aplicativo em PostgreSQL. A remoção do aplicativo do celular ou a limpeza do navegador não apaga os registros que já foram enviados ao servidor.
 
-### 2.5 Aplicativo PWA
+### 2.5 Aplicativo Android com Capacitor
 
-O sistema é instalável como Progressive Web App. O manifesto define identidade, cores, modo independente e ícones; o Service Worker mantém os arquivos da interface disponíveis no dispositivo; e o cabeçalho oferece o botão “Instalar app”. A instalação não remove a dependência do Render, Firebase ou Neon para autenticação, leitura e gravação dos dados financeiros.
+O instalável oficial é um aplicativo Android criado com Capacitor. O HTML, CSS, JavaScript, Firebase Web, Lucide, jsPDF, AutoTable, ExcelJS, ícones e telas de abertura são copiados para dentro do APK. Por isso, a interface abre sem aguardar o Render.
 
-O cache permite abrir a estrutura visual quando a conexão falhar, mas o aplicativo ainda não possui fila offline para criar ou alterar dados e sincronizá-los posteriormente.
+Quando executado no Android, o arquivo `public/js/00-runtime.js` direciona as chamadas de API para `https://planejamento-financeiro-0b29.onrender.com`. O Neon continua sendo a fonte permanente dos dados e o Render continua validando a identidade e executando a API.
+
+Cada usuário possui uma cópia local isolada de movimentações, configurações, categorias e metas. Se uma gravação falhar por ausência de rede, erro 5xx ou indisponibilidade temporária, a operação é colocada em uma fila durável. Ao recuperar a conexão, o aplicativo envia a fila na ordem original e depois atualiza a cópia local com o estado do servidor.
+
+O PWA foi desativado. `08-platform.js` remove registros e caches antigos do Service Worker nos navegadores que instalaram versões anteriores.
 
 ## 3. Tecnologias e dependências
 
@@ -79,12 +83,13 @@ O cache permite abrir a estrutura visual quando a conexão falhar, mas o aplicat
 | Biblioteca | Uso atual |
 |---|---|
 | Firebase Web Compat 12.16.0 | Autenticação no navegador, instalada pelo npm e servida pela própria aplicação. |
-| jsPDF 2.5.1 | Geração de PDF. |
-| jsPDF AutoTable 3.8.4 | Tabelas no PDF. |
+| Capacitor 8 | Contêiner nativo e projeto Android. |
+| jsPDF 4.2.1 | Geração de PDF. |
+| jsPDF AutoTable 5.0.8 | Tabelas no PDF. |
 | ExcelJS 4.4.0 | Geração de arquivos XLSX. |
 | Lucide | Ícones da interface. |
 
-O Firebase Web é instalado pelo npm e servido em `/vendor/firebase`, evitando que o login dependa do carregamento de uma biblioteca externa. As demais bibliotecas visuais continuam declaradas em `src/views/partials/scripts.html`.
+Todas as bibliotecas do navegador são instaladas pelo npm e servidas em `/vendor`. O build móvel copia exatamente esses arquivos para o APK, eliminando a dependência de CDNs para autenticação, ícones e relatórios.
 
 ## 4. Estrutura completa do repositório
 
@@ -100,6 +105,7 @@ planejamento-financeiro/
 │  │  ├─ responsive.css
 │  │  └─ themes.css
 │  └─ js/
+│     ├─ 00-runtime.js
 │     ├─ 01-foundation.js
 │     ├─ 02-data.js
 │     ├─ 03-dashboard.js
@@ -107,15 +113,13 @@ planejamento-financeiro/
 │     ├─ 05-reports.js
 │     ├─ 06-goal-form.js
 │     ├─ 07-events.js
-│     └─ 08-pwa.js
+│     └─ 08-platform.js
 │  ├─ icons/
 │  │  ├─ icon-192.png
 │  │  ├─ icon-512.png
 │  │  ├─ icon-maskable-512.png
 │  │  ├─ apple-touch-icon.png
 │  │  └─ favicon-64.png
-│  ├─ manifest.webmanifest
-│  └─ service-worker.js
 ├─ src/
 │  ├─ server.mjs
 │  └─ views/
@@ -137,7 +141,10 @@ planejamento-financeiro/
 │     └─ partials/
 │        ├─ topbar.html
 │        └─ scripts.html
+├─ android/                Projeto Android nativo
+├─ capacitor.config.json  Configuração Capacitor
 ├─ scripts/
+│  ├─ build-mobile.mjs
 │  └─ migrate-users-to-firebase.mjs
 ├─ .env.example
 ├─ .gitignore
@@ -162,14 +169,15 @@ Essa abordagem evita repetir cabeçalho, scripts, autenticação e estrutura ger
 
 Os módulos são scripts clássicos e compartilham o mesmo ambiente global. A numeração define a ordem obrigatória:
 
-1. `01-foundation.js`: estado, seletores, utilitários e autenticação básica.
-2. `02-data.js`: carregamento, persistência e comunicação com a API.
-3. `03-dashboard.js`: cálculos e renderização das telas.
-4. `04-ui.js`: navegação e abertura/fechamento de modais.
-5. `05-reports.js`: PDF, Excel e gráficos dos relatórios.
-6. `06-goal-form.js`: formulário de criação e edição de metas.
-7. `07-events.js`: eventos da interface e inicialização.
-8. `08-pwa.js`: instalação do aplicativo e registro do Service Worker.
+1. `00-runtime.js`: identifica navegador ou Capacitor e escolhe a origem da API.
+2. `01-foundation.js`: estado, seletores, utilitários e autenticação básica.
+3. `02-data.js`: cache por usuário, fila offline, sincronização e comunicação com a API.
+4. `03-dashboard.js`: cálculos e renderização das telas.
+5. `04-ui.js`: navegação e abertura/fechamento de modais.
+6. `05-reports.js`: PDF, Excel e gráficos dos relatórios.
+7. `06-goal-form.js`: formulário de criação e edição de metas.
+8. `07-events.js`: eventos, inicialização, reconexão e retomada online.
+9. `08-platform.js`: remove instalações e caches legados do antigo PWA.
 
 Alterar essa ordem pode fazer um módulo tentar usar variáveis ou funções que ainda não foram declaradas.
 
@@ -197,12 +205,17 @@ As cinco áreas principais são:
 
 ### 6.0 Instalação do aplicativo
 
-O botão “Instalar app” fica no cabeçalho enquanto o sistema estiver sendo usado no navegador. Quando a aplicação já estiver em modo independente, o botão é ocultado.
+O aplicativo é instalado por um APK de desenvolvimento ou por um AAB assinado e publicado na Play Store. O navegador não oferece mais o botão de instalação PWA.
 
-- Em navegadores compatíveis com `beforeinstallprompt`, o botão abre a confirmação nativa de instalação.
-- Em iPhone e iPad, o botão explica o caminho Compartilhar → Adicionar à Tela de Início, pois o iOS não disponibiliza a confirmação programática usada pelo Chrome no Android.
-- Em outros navegadores sem evento de instalação, o botão orienta a usar “Instalar aplicativo” ou “Adicionar à tela inicial” no menu.
-- O evento `appinstalled` oculta o botão e confirma a instalação por um aviso temporário.
+Fluxo de desenvolvimento Android:
+
+1. execute `npm install`;
+2. execute `npm run cap:sync` sempre que HTML, CSS, JavaScript ou bibliotecas forem alterados;
+3. execute `npm run cap:open` para abrir no Android Studio;
+4. use `android/gradlew.bat assembleDebug` para gerar o APK de teste;
+5. o APK de desenvolvimento fica em `android/app/build/outputs/apk/debug/app-debug.apk`.
+
+Para distribuição pública é necessário criar uma chave de assinatura privada, configurar a assinatura de release e gerar um Android App Bundle. A chave de assinatura não deve ser versionada.
 
 ### 6.1 Tela Início
 
@@ -466,27 +479,17 @@ Chaves locais existentes:
 | `planejamento-financeiro-savings-goals-v1` | Metas locais. |
 | `planejamento-financeiro-theme-v1` | Tema visual. |
 
-Quando banco e Firebase estão configurados, `authRequired` fica verdadeiro e os dados financeiros são obtidos da API. As funções de gravação local evitam persistir cópias financeiras quando a autenticação online é obrigatória. O tema continua local por ser uma preferência do dispositivo.
+Quando banco e Firebase estão configurados, `authRequired` fica verdadeiro e os dados financeiros são obtidos da API. Depois de cada leitura ou alteração, uma cópia é gravada com uma chave que inclui o UID Firebase. Esse isolamento impede que o cache de uma conta seja exibido por outra conta no mesmo aparelho.
 
-O aplicativo atual não possui sincronização offline confiável. Operações inicialmente atualizam a interface de forma otimista, mas não existe uma fila durável para reenviar alterações depois de uma falha prolongada.
+Operações sem conexão atualizam a interface imediatamente e são gravadas em `planejamento-financeiro-sync-queue-v1:<uid>`. A fila armazena caminho, método, corpo e data. A sincronização respeita a ordem de criação, tolera reenvio idempotente e ocorre ao iniciar com rede ou quando o evento `online` é recebido.
 
-### 8.1 Cache da PWA
+### 8.1 Persistência e sincronização do Capacitor
 
-O Service Worker utiliza dois caches versionados:
+O diretório `dist/` contém a interface móvel montada e todas as dependências de navegador. Ele é gerado por `scripts/build-mobile.mjs`, não é versionado e é copiado pelo Capacitor para `android/app/src/main/assets/public`.
 
-- `planejamento-financeiro-shell-v1`: documento principal, CSS, JavaScript, manifesto e ícones;
-- `planejamento-financeiro-runtime-v3`: bibliotecas visuais externas carregadas por CDN.
+No Android, a interface não depende de uma resposta do Render para abrir. Se houver sessão Firebase e cache local, o aplicativo mostra os últimos dados imediatamente. O Render e o Neon continuam necessários para autenticar uma nova instalação, renovar a comunicação e preservar ou compartilhar dados entre aparelhos.
 
-Regras de rede:
-
-- chamadas `/api/` nunca são interceptadas nem armazenadas pelo Service Worker;
-- navegações usam a rede primeiro e recorrem ao documento armazenado quando a rede falha;
-- recursos estáticos da própria origem usam cache primeiro;
-- os scripts locais do Firebase usam a mesma origem e fazem parte do cache da interface;
-- scripts permitidos de jsDelivr e unpkg usam rede primeiro e cache como alternativa;
-- caches de versões antigas são removidos na ativação.
-
-Sempre que os arquivos da interface forem alterados, a versão de `SHELL_CACHE` em `public/service-worker.js` deve ser incrementada para forçar a renovação segura do conteúdo instalado.
+Antes de baixar o estado remoto, `flushSyncQueue()` envia as alterações pendentes. Criações de movimentações, metas e depósitos usam identificadores UUID e endpoints idempotentes, evitando duplicidade caso o servidor tenha processado uma requisição cuja resposta não chegou ao celular.
 
 ## 9. API REST completa
 
@@ -706,7 +709,7 @@ O servidor:
 - restringe scripts, conexões, imagens, fontes e frames com CSP;
 - permite popups do Firebase com `same-origin-allow-popups`.
 
-O arquivo `service-worker.js` recebe `Service-Worker-Allowed: /`, permitindo controlar toda a aplicação dentro da origem.
+As chamadas da API aceitam as origens locais usadas pelo Capacitor (`https://localhost`, `http://localhost` e `capacitor://localhost`). O servidor responde às requisições `OPTIONS` e permite os cabeçalhos `Authorization` e `Content-Type` somente para essas origens conhecidas.
 
 ### 14.3 Content Security Policy
 
@@ -1056,20 +1059,18 @@ Existe uma movimentação utilizando o nome da categoria.
 
 ### PDF ou Excel não é gerado
 
-Verifique se as bibliotecas CDN foram carregadas e se a CSP permite os domínios declarados.
+Verifique se `npm install` foi executado e se os arquivos locais em `/vendor/jspdf`, `/vendor/jspdf-autotable` e `/vendor/exceljs` respondem normalmente.
 
 ## 29. Limitações atuais conhecidas
 
-- A PWA abre a interface armazenada, mas não há funcionamento financeiro offline sincronizado.
-- Não existe fila para reenviar alterações feitas sem conexão.
 - Não existe edição de uma movimentação já criada.
 - Não existe exclusão individual de depósitos.
 - O servidor concentra API e migrações em um único arquivo.
 - Os módulos do navegador ainda compartilham escopo global e dependem da ordem numérica.
-- As bibliotecas de relatório e ícones dependem de CDNs externas.
-- Não há suíte automatizada de testes declarada no `package.json`.
+- A automação atual cobre cache por usuário e fila offline; ainda faltam testes completos da API e da interface.
 - O carregamento de `.env` não é automático pelo código atual.
 - A resposta de arquivos públicos usa `no-store`, priorizando atualização imediata em vez de cache.
+- O login Google nativo ainda exige incluir a configuração Android do projeto Firebase e registrar a impressão SHA-1 antes da publicação na Play Store.
 
 ## 30. Caminho recomendado para evolução
 
@@ -1078,8 +1079,8 @@ Verifique se as bibliotecas CDN foram carregadas e se a CSP permite os domínios
 3. separar rotas e serviços do servidor por domínio;
 4. converter scripts compartilhados em módulos ES explícitos;
 5. adicionar endpoint e interface de edição de movimentações;
-6. implementar armazenamento local com IndexedDB;
-7. criar fila offline e estratégia de resolução de conflitos;
+6. migrar o cache local para uma base SQLite criptografada se o volume de dados crescer;
+7. adicionar uma interface de acompanhamento das operações pendentes;
 8. adicionar observabilidade e acompanhamento de erros;
 9. documentar backup e restauração do Neon.
 
@@ -1100,6 +1101,14 @@ Verifique se as bibliotecas CDN foram carregadas e se a CSP permite os domínios
 - [ ] criação e exclusão de movimentação testadas.
 - [ ] criação, depósito e conclusão de meta testados.
 - [ ] PDF e Excel testados.
+- [ ] `npm run cap:sync` concluído.
+- [ ] `android/gradlew.bat assembleDebug` concluído.
+- [ ] ícone e tela de abertura conferidos em aparelho real.
+- [ ] primeira autenticação online testada no Android.
+- [ ] leitura local e fila de alterações testadas sem internet.
+- [ ] reconexão e sincronização conferidas no Neon.
+- [ ] chave de assinatura de release guardada fora do Git.
+- [ ] SHA-1 do aplicativo registrada no Firebase para login Google nativo.
 - [ ] logs do Render sem erros de migração.
 - [ ] segredos ausentes do Git.
 

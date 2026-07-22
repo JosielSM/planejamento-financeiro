@@ -603,11 +603,18 @@ async function start() {
     if (window.location.protocol === "file:") {
       throw new Error("Abra o sistema pelo endereco online ou pelo servidor local, nao diretamente pelo arquivo index.html");
     }
-    const health = await loadHealthWithRetry();
-    authRequired = health.database === "connected" && health.firebase === "configured";
-    if (!authRequired) throw new Error("Banco de dados ou Firebase ainda nao configurado");
+    let health = null;
+    try {
+      health = await loadHealthWithRetry(isNativeRuntime() ? 2 : 8);
+    } catch (error) {
+      if (!isNativeRuntime()) throw error;
+    }
+    authRequired = true;
+    if (health && (health.database !== "connected" || health.firebase !== "configured")) {
+      throw new Error("Banco de dados ou Firebase ainda nao configurado");
+    }
 
-    await initializeFirebase();
+    await initializeFirebase({ allowCachedConfig: isNativeRuntime() });
     setAuthenticationControlsEnabled(true);
     const googleAuthAction = sessionStorage.getItem("googleAuthAction");
     let redirectResult = null;
@@ -629,7 +636,13 @@ async function start() {
         reject,
       );
     });
-    const loaded = await loadAuthenticatedUser(redirectResult?.user || initialUser);
+    const authenticatedUser = redirectResult?.user || initialUser;
+    if (!health) {
+      showOfflineSession(authenticatedUser);
+      authenticationRetryTimer = setTimeout(start, 15000);
+      return;
+    }
+    const loaded = await loadAuthenticatedUser(authenticatedUser);
     if (loaded && googleAuthAction === "link") {
       await showNotice("Conta Google vinculada. Agora voce pode entrar com Google ou com sua senha.", "Google vinculado", "success");
     }
@@ -644,3 +657,7 @@ async function start() {
 }
 
 start();
+
+window.addEventListener("online", () => {
+  if (isNativeRuntime()) start();
+});

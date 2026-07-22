@@ -60,7 +60,7 @@
   .topbar {
     align-items: center;
     gap: 10px;
-    padding: 18px 16px;
+    padding: calc(18px + env(safe-area-inset-top)) 16px 18px;
   }
 
   .topbar h1 {
@@ -85,19 +85,6 @@
     display: flex;
     flex-wrap: nowrap;
     justify-content: flex-end;
-  }
-
-  .install-app-button {
-    width: 44px;
-    padding: 8px;
-  }
-
-  .install-app-button span {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
   }
 
   .icon-button {

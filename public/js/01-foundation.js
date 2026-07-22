@@ -2,6 +2,8 @@ const TRANSACTIONS_KEY = "planejamento-financeiro-v1";
 const SETTINGS_KEY = "planejamento-financeiro-settings-v1";
 const SAVINGS_GOALS_KEY = "planejamento-financeiro-savings-goals-v1";
 const THEME_KEY = "planejamento-financeiro-theme-v1";
+const FIREBASE_CONFIG_KEY = "planejamento-financeiro-firebase-config-v1";
+const ACCOUNT_KEY = "planejamento-financeiro-account-v1";
 
 function preferredTheme() {
   const savedTheme = localStorage.getItem(THEME_KEY);
@@ -23,13 +25,11 @@ const frequencyLabels = {
 };
 
 const api = {
-  enabled: true,
   async request(path, options = {}) {
-    if (!this.enabled) throw new Error("API desativada");
     const idToken = firebaseAuth?.currentUser
       ? await firebaseAuth.currentUser.getIdToken()
       : null;
-    const response = await fetch(path, {
+    const response = await fetch(apiUrl(path), {
       ...options,
       headers: {
         "Content-Type": "application/json",
@@ -39,7 +39,6 @@ const api = {
     });
 
     if (!response.ok) {
-      if (response.status === 503) this.enabled = false;
       const data = await response.json().catch(() => ({}));
       const error = new Error(data.error || `Erro ${response.status}`);
       error.status = response.status;
@@ -239,6 +238,22 @@ function loadJSON(key, fallback) {
   } catch {
     return fallback;
   }
+}
+
+function accountStorageKey(uid = firebaseAuth?.currentUser?.uid) {
+  return `${ACCOUNT_KEY}:${uid || "anonymous"}`;
+}
+
+function saveCachedAccount(user) {
+  if (!firebaseAuth?.currentUser?.uid || !user) return;
+  localStorage.setItem(accountStorageKey(), JSON.stringify(user));
+}
+
+function loadCachedAccount(firebaseUser = firebaseAuth?.currentUser) {
+  return loadJSON(accountStorageKey(firebaseUser?.uid), {
+    name: firebaseUser?.displayName || firebaseUser?.email?.split("@")[0] || "Usuario",
+    email: firebaseUser?.email || "",
+  });
 }
 
 function syncModalOpenState() {
@@ -475,7 +490,7 @@ async function loadHealthWithRetry(maxAttempts = 8) {
   let lastError;
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
     try {
-      const response = await fetch("/api/health", {
+      const response = await fetch(apiUrl("/api/health"), {
         headers: { Accept: "application/json" },
         cache: "no-store",
       });
@@ -514,11 +529,21 @@ function setAuthMode(mode) {
   }, 80);
 }
 
-async function initializeFirebase() {
+async function initializeFirebase({ allowCachedConfig = false } = {}) {
   if (!window.firebase?.initializeApp) throw new Error("Biblioteca do Firebase nao carregada");
-  const response = await fetch("/api/config/firebase", { headers: { Accept: "application/json" } });
-  const config = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(config.error || "Firebase nao configurado");
+  let config;
+  try {
+    const response = await fetch(apiUrl("/api/config/firebase"), {
+      headers: { Accept: "application/json" },
+      cache: "no-store",
+    });
+    config = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(config.error || "Firebase nao configurado");
+    localStorage.setItem(FIREBASE_CONFIG_KEY, JSON.stringify(config));
+  } catch (error) {
+    config = allowCachedConfig ? loadJSON(FIREBASE_CONFIG_KEY, null) : null;
+    if (!config) throw error;
+  }
   if (!window.firebase.apps.length) window.firebase.initializeApp(config);
   firebaseAuth = window.firebase.auth();
   firebaseAuth.languageCode = "pt-BR";
@@ -538,6 +563,8 @@ async function loadAuthenticatedUser(firebaseUser) {
 
   await firebaseUser.getIdToken(true);
   const data = await api.request("/api/auth/me");
+  saveCachedAccount(data.user);
+  await flushSyncQueue();
   showApp(data.user);
   await loadFromApi();
   render();

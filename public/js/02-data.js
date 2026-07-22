@@ -1,28 +1,138 @@
+const CATEGORIES_KEY = "planejamento-financeiro-categories-v1";
+const SYNC_QUEUE_KEY = "planejamento-financeiro-sync-queue-v1";
+let syncInProgress = false;
+
+function userStorageKey(baseKey, uid = firebaseAuth?.currentUser?.uid) {
+  return `${baseKey}:${uid || "anonymous"}`;
+}
+
 function loadTransactions() {
-  return loadJSON(TRANSACTIONS_KEY, []);
+  return loadJSON(userStorageKey(TRANSACTIONS_KEY), []);
 }
 
 function saveTransactions() {
-  if (authRequired) return;
-  localStorage.setItem(TRANSACTIONS_KEY, JSON.stringify(transactions));
+  localStorage.setItem(userStorageKey(TRANSACTIONS_KEY), JSON.stringify(transactions));
 }
 
 function loadSettings() {
-  return { dailyGoal: 0, includeSundays: false, ...loadJSON(SETTINGS_KEY, {}) };
+  return { dailyGoal: 0, includeSundays: false, ...loadJSON(userStorageKey(SETTINGS_KEY), {}) };
 }
 
 function saveSettings() {
-  if (authRequired) return;
-  localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+  localStorage.setItem(userStorageKey(SETTINGS_KEY), JSON.stringify(settings));
 }
 
 function loadSavingsGoals() {
-  return loadJSON(SAVINGS_GOALS_KEY, []);
+  return loadJSON(userStorageKey(SAVINGS_GOALS_KEY), []);
 }
 
 function saveSavingsGoals() {
-  if (authRequired) return;
-  localStorage.setItem(SAVINGS_GOALS_KEY, JSON.stringify(savingsGoals));
+  localStorage.setItem(userStorageKey(SAVINGS_GOALS_KEY), JSON.stringify(savingsGoals));
+}
+
+function loadCategories() {
+  return loadJSON(userStorageKey(CATEGORIES_KEY), []);
+}
+
+function saveCategories() {
+  localStorage.setItem(userStorageKey(CATEGORIES_KEY), JSON.stringify(customCategories));
+}
+
+function loadLocalSnapshot() {
+  transactions = loadTransactions();
+  settings = loadSettings();
+  savingsGoals = loadSavingsGoals().map(normalizeSavingsGoal);
+  customCategories = loadCategories();
+}
+
+function showOfflineSession(firebaseUser) {
+  if (!firebaseUser) {
+    showAuth("Conecte-se a internet para entrar pela primeira vez neste aparelho.");
+    return false;
+  }
+  if (!firebaseUser.emailVerified) {
+    showAuth("Conecte-se a internet para confirmar seu email.");
+    return false;
+  }
+  loadLocalSnapshot();
+  showApp(loadCachedAccount(firebaseUser));
+  render();
+  refreshIcons();
+  showToast("Modo offline: seus dados salvos continuam disponiveis.", "info", 5000);
+  return true;
+}
+
+function loadSyncQueue() {
+  return loadJSON(userStorageKey(SYNC_QUEUE_KEY), []);
+}
+
+function saveSyncQueue(queue) {
+  localStorage.setItem(userStorageKey(SYNC_QUEUE_KEY), JSON.stringify(queue));
+}
+
+function isRetryableSyncError(error) {
+  return !error?.status || error.status === 429 || error.status >= 500;
+}
+
+function queueMutation(path, options = {}) {
+  const queue = loadSyncQueue();
+  queue.push({
+    id: crypto.randomUUID(),
+    path,
+    method: options.method || "POST",
+    body: options.body || null,
+    createdAt: new Date().toISOString(),
+  });
+  saveSyncQueue(queue);
+  showToast("Alteracao salva no celular. A sincronizacao sera automatica.", "info", 4200);
+}
+
+async function requestOrQueue(path, options = {}) {
+  try {
+    return { data: await api.request(path, options), queued: false };
+  } catch (error) {
+    if (!isRetryableSyncError(error)) throw error;
+    queueMutation(path, options);
+    return { data: null, queued: true };
+  }
+}
+
+async function flushSyncQueue() {
+  if (syncInProgress || !firebaseAuth?.currentUser) return 0;
+  syncInProgress = true;
+  let queue = loadSyncQueue();
+  let synchronized = 0;
+  try {
+    while (queue.length) {
+      const operation = queue[0];
+      try {
+        await api.request(operation.path, {
+          method: operation.method,
+          body: operation.body,
+        });
+        queue.shift();
+        saveSyncQueue(queue);
+        synchronized += 1;
+      } catch (error) {
+        if (error.status === 409) {
+          queue.shift();
+          saveSyncQueue(queue);
+          synchronized += 1;
+          continue;
+        }
+        if (error.status && error.status < 500 && error.status !== 429) {
+          queue.shift();
+          saveSyncQueue(queue);
+          continue;
+        }
+        break;
+      }
+    }
+  } finally {
+    syncInProgress = false;
+  }
+  if (synchronized) showToast(`${synchronized} alteracao(oes) sincronizada(s) com o servidor.`);
+  return synchronized;
 }
 
 function normalizeSavingsGoal(goal) {
@@ -60,14 +170,15 @@ async function loadFromApi() {
     saveTransactions();
     saveSettings();
     saveSavingsGoals();
+    saveCategories();
   } catch (error) {
     if (error.status === 401) {
       showAuth("Entre ou crie um cadastro para acessar seus dados.");
       return false;
     }
-    if (authRequired) throw error;
-    transactions = loadTransactions();
-    savingsGoals = loadSavingsGoals().map(normalizeSavingsGoal);
+    loadLocalSnapshot();
+    showToast("Mostrando os dados salvos neste dispositivo.", "info", 4200);
+    return false;
   }
   return true;
 }
@@ -76,13 +187,12 @@ async function saveSetting(key, value) {
   settings[key] = value;
   saveSettings();
   try {
-    await api.request(`/api/settings/${key}`, {
+    const result = await requestOrQueue(`/api/settings/${key}`, {
       method: "PUT",
       body: JSON.stringify({ value }),
     });
     return true;
   } catch {
-    api.enabled = false;
     return false;
   }
 }
@@ -93,16 +203,16 @@ async function createTransaction(transaction) {
   render();
 
   try {
-    const saved = await api.request("/api/transactions", {
+    const result = await requestOrQueue("/api/transactions", {
       method: "POST",
       body: JSON.stringify(transaction),
     });
-    transactions = transactions.map((item) => (item.id === transaction.id ? saved : item));
+    if (result.queued) return true;
+    transactions = transactions.map((item) => (item.id === transaction.id ? result.data : item));
     saveTransactions();
     render();
     return true;
   } catch {
-    api.enabled = false;
     return false;
   }
 }
@@ -113,10 +223,9 @@ async function deleteTransaction(id) {
   render();
 
   try {
-    await api.request(`/api/transactions/${id}`, { method: "DELETE" });
+    await requestOrQueue(`/api/transactions/${id}`, { method: "DELETE" });
     return true;
   } catch {
-    api.enabled = false;
     return false;
   }
 }
@@ -127,47 +236,63 @@ async function createSavingsGoal(goal) {
   render();
 
   try {
-    const saved = await api.request("/api/savings-goals", {
+    const result = await requestOrQueue("/api/savings-goals", {
       method: "POST",
       body: JSON.stringify(goal),
     });
-    savingsGoals = savingsGoals.map((item) => (item.id === goal.id ? normalizeSavingsGoal(saved) : item));
+    if (result.queued) return true;
+    savingsGoals = savingsGoals.map((item) => (item.id === goal.id ? normalizeSavingsGoal(result.data) : item));
     saveSavingsGoals();
     render();
     return true;
   } catch {
-    api.enabled = false;
     return false;
   }
 }
 
 async function createCustomCategory(type, name) {
-  const category = await api.request("/api/categories", {
+  const draft = { id: crypto.randomUUID(), type, name };
+  customCategories.push(draft);
+  saveCategories();
+  const result = await requestOrQueue("/api/categories", {
     method: "POST",
-    body: JSON.stringify({ id: crypto.randomUUID(), type, name }),
+    body: JSON.stringify(draft),
   });
-  customCategories.push(category);
-  return category;
+  if (!result.queued) {
+    customCategories = customCategories.map((item) => (item.id === draft.id ? result.data : item));
+    saveCategories();
+    return result.data;
+  }
+  return draft;
 }
 
 async function updateCustomCategory(id, name) {
   const previous = customCategories.find((candidate) => candidate.id === id);
-  const category = await api.request(`/api/categories/${id}`, {
+  const draft = { ...previous, name };
+  customCategories = customCategories.map((item) => (item.id === id ? draft : item));
+  transactions = transactions.map((item) => {
+    return item.type === draft.type && item.category === previous?.name
+      ? { ...item, category: draft.name }
+      : item;
+  });
+  saveCategories();
+  saveTransactions();
+  const result = await requestOrQueue(`/api/categories/${id}`, {
     method: "PUT",
     body: JSON.stringify({ name }),
   });
-  customCategories = customCategories.map((item) => (item.id === id ? category : item));
-  transactions = transactions.map((item) => {
-    return item.type === category.type && item.category === previous?.name
-      ? { ...item, category: category.name }
-      : item;
-  });
-  return category;
+  if (!result.queued) {
+    customCategories = customCategories.map((item) => (item.id === id ? result.data : item));
+    saveCategories();
+    return result.data;
+  }
+  return draft;
 }
 
 async function deleteCustomCategory(id) {
-  await api.request(`/api/categories/${id}`, { method: "DELETE" });
   customCategories = customCategories.filter((item) => item.id !== id);
+  saveCategories();
+  await requestOrQueue(`/api/categories/${id}`, { method: "DELETE" });
 }
 
 async function updateSavingsGoal(id, updates) {
@@ -176,16 +301,16 @@ async function updateSavingsGoal(id, updates) {
   render();
 
   try {
-    const saved = await api.request(`/api/savings-goals/${id}`, {
+    const result = await requestOrQueue(`/api/savings-goals/${id}`, {
       method: "PUT",
       body: JSON.stringify(updates),
     });
-    savingsGoals = savingsGoals.map((goal) => (goal.id === id ? normalizeSavingsGoal(saved) : goal));
+    if (result.queued) return true;
+    savingsGoals = savingsGoals.map((goal) => (goal.id === id ? normalizeSavingsGoal(result.data) : goal));
     saveSavingsGoals();
     render();
     return true;
   } catch {
-    api.enabled = false;
     return false;
   }
 }
@@ -204,16 +329,16 @@ async function addSavingsDeposit(goalId, amount) {
   render();
 
   try {
-    const saved = await api.request(`/api/savings-goals/${goalId}/deposits`, {
+    const result = await requestOrQueue(`/api/savings-goals/${goalId}/deposits`, {
       method: "POST",
       body: JSON.stringify(deposit),
     });
-    savingsGoals = savingsGoals.map((goal) => (goal.id === goalId ? normalizeSavingsGoal(saved) : goal));
+    if (result.queued) return true;
+    savingsGoals = savingsGoals.map((goal) => (goal.id === goalId ? normalizeSavingsGoal(result.data) : goal));
     saveSavingsGoals();
     render();
     return true;
   } catch {
-    api.enabled = false;
     return false;
   }
 }
@@ -224,10 +349,9 @@ async function deleteSavingsGoal(id) {
   render();
 
   try {
-    await api.request(`/api/savings-goals/${id}`, { method: "DELETE" });
+    await requestOrQueue(`/api/savings-goals/${id}`, { method: "DELETE" });
     return true;
   } catch {
-    api.enabled = false;
     return false;
   }
 }
@@ -243,13 +367,13 @@ async function completeSavingsGoal(id) {
   render();
 
   try {
-    const saved = await api.request(`/api/savings-goals/${id}/complete`, { method: "POST" });
-    savingsGoals = savingsGoals.map((goal) => (goal.id === id ? normalizeSavingsGoal(saved) : goal));
+    const result = await requestOrQueue(`/api/savings-goals/${id}/complete`, { method: "POST" });
+    if (result.queued) return true;
+    savingsGoals = savingsGoals.map((goal) => (goal.id === id ? normalizeSavingsGoal(result.data) : goal));
     saveSavingsGoals();
     render();
     return true;
   } catch {
-    api.enabled = false;
     return false;
   }
 }

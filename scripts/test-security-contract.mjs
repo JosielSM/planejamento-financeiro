@@ -8,6 +8,8 @@ const privacy = await readFile(new URL("../public/privacidade.html", import.meta
 const activity = await readFile(new URL("../android/app/src/main/java/com/planejamentofinanceiro/app/MainActivity.java", import.meta.url), "utf8");
 const pwaManifest = JSON.parse(await readFile(new URL("../public/manifest.webmanifest", import.meta.url), "utf8"));
 const platform = await readFile(new URL("../public/js/08-platform.js", import.meta.url), "utf8");
+const runtime = await readFile(new URL("../public/js/00-runtime.js", import.meta.url), "utf8");
+const packageMetadata = JSON.parse(await readFile(new URL("../package.json", import.meta.url), "utf8"));
 
 assert.match(server, /app\.delete\("\/api\/account"/);
 assert.match(server, /DELETE FROM users WHERE id = \$1/);
@@ -23,4 +25,8 @@ assert.equal(pwaManifest.display, "standalone");
 assert.ok(pwaManifest.icons.some((icon) => icon.sizes === "512x512" && icon.purpose === "maskable"));
 assert.match(platform, /Instalar no iPhone/);
 assert.match(platform, /serviceWorker\.register/);
+assert.match(platform, /checkAndroidUpdate/);
+assert.match(server, /\/api\/app-version/);
+assert.match(runtime, new RegExp(`APP_VERSION = "${packageMetadata.version.replaceAll(".", "\\.")}"`));
+assert.match(gradle, new RegExp(`versionName "${packageMetadata.version.replaceAll(".", "\\.")}"`));
 console.log("Contrato de segurança, privacidade e release validado.");

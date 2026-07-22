@@ -173,6 +173,7 @@ function finishStartupSplash() {
   startupResolved = true;
   startupSplash?.classList.add("leaving");
   setTimeout(() => { if (startupSplash) startupSplash.hidden = true; }, 300);
+  window.dispatchEvent(new Event("appready"));
 }
 
 function applyTheme(theme, savePreference = false) {

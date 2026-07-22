@@ -1138,7 +1138,17 @@ O manifesto define nome, orientação, cores e ícones comuns e maskable. O HTML
 
 O botão superior detecta o ambiente. No Android/navegador, oferece o APK. No iPhone, exibe “Instalar no iPhone” e orienta Compartilhar → Adicionar à Tela de Início. Dentro do APK ou do PWA já instalado, o botão fica oculto.
 
-## 34. Resumo final
+## 34. Atualizações do aplicativo Android
+
+A versão 1.3.0 introduz verificação automática de atualização. O APK contém `APP_VERSION`, enquanto `GET /api/app-version` informa a versão publicada pelo `package.json` e o endereço oficial do APK. O aplicativo compara versões semânticas ao concluir a abertura e ao voltar do segundo plano.
+
+Quando o servidor anuncia uma versão superior, um diálogo apresenta a versão instalada e a nova, com “Atualizar agora” e “Cancelar”. Confirmar abre o APK oficial no navegador do sistema. Adiar silencia somente aquela versão por seis horas. Falhas de rede são tentadas novamente depois de trinta segundos, e consultas normais são limitadas a uma a cada cinco minutos.
+
+Toda alteração que precise chegar ao Android deve atualizar conjuntamente: `package.json`, `package-lock.json`, `APP_VERSION` em `00-runtime.js`, `versionName` e `versionCode` no Gradle, versão do cache PWA, documentação e APK em `downloads/`. Os testes conferem que `package.json`, JavaScript e Gradle possuem a mesma versão.
+
+Um deploy apenas do servidor pode corrigir API e site sem exigir APK. Mudanças de interface ou lógica empacotada exigem nova versão e recompilação do APK; caso contrário, o servidor não deve anunciar uma versão que ainda não esteja disponível para download.
+
+## 35. Resumo final
 
 O Planejamento Financeiro é uma aplicação web autenticada, organizada por telas no servidor e por responsabilidades no navegador. O Firebase identifica as pessoas, o servidor Express valida cada requisição e o Neon preserva os dados financeiros. O projeto suporta controle mensal, médias, meta diária, categorias, metas com depósitos, histórico de conclusão, análises e relatórios.
 

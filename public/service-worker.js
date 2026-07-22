@@ -1,4 +1,4 @@
-const CACHE_VERSION = "planejamento-financeiro-pwa-v1.2.0";
+const CACHE_VERSION = "planejamento-financeiro-pwa-v1.3.0";
 const APP_SHELL = [
   "/", "/manifest.webmanifest", "/icons/apple-touch-icon.png", "/icons/favicon-64.png",
   "/icons/icon-192.png", "/icons/icon-512.png", "/icons/icon-maskable-512.png",

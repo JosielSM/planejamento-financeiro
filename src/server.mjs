@@ -15,6 +15,7 @@ const projectRoot = join(__dirname, "..");
 const publicDirectory = join(projectRoot, "public");
 const viewsDirectory = join(__dirname, "views");
 const androidApkPath = join(projectRoot, "downloads", "planejamento-financeiro.apk");
+const packageMetadata = JSON.parse(readFileSync(join(projectRoot, "package.json"), "utf8"));
 
 function loadView(relativePath) {
   return readFileSync(join(viewsDirectory, relativePath), "utf8").trim();
@@ -783,6 +784,15 @@ app.get("/download/android", (_request, response, next) => {
   response.type("application/vnd.android.package-archive");
   response.download(androidApkPath, "Planejamento-Financeiro.apk", (error) => {
     if (error && !response.headersSent) next(error);
+  });
+});
+
+app.get("/api/app-version", (_request, response) => {
+  response.setHeader("Cache-Control", "no-store");
+  response.json({
+    version: packageMetadata.version,
+    platform: "android",
+    downloadUrl: "/download/android",
   });
 });
 

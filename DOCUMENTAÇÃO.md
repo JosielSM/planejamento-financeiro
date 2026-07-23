@@ -1160,7 +1160,13 @@ Na versão 1.5.0, cada movimentação preserva `createdAt` desde o momento em qu
 
 Registros antigos recebem o `created_at` já existente no PostgreSQL ao serem carregados. O endpoint continua usando `ORDER BY date DESC, created_at DESC`, e a mesma regra é aplicada à tabela completa e ao resumo dos três registros recentes.
 
-## 37. Resumo final
+## 37. Reconexão estável no Android
+
+A versão 1.6.0 elimina o efeito de tela piscando durante a hibernação do Render. Depois que uma sessão offline é exibida, as tentativas periódicas não executam novamente o fluxo completo de inicialização nem ocultam `appShell`. Somente o pequeno indicador de conexão muda de estado enquanto `checkServerConnection()` consulta o servidor a cada quinze segundos.
+
+Quando Render, Neon e Firebase voltam a responder, a fila é enviada. Os dados remotos são recarregados apenas se não restar nenhuma operação pendente, evitando que uma resposta antiga substitua alterações locais ainda não sincronizadas. O fluxo completo de autenticação continua sendo repetido somente quando não existe usuário local autenticado.
+
+## 38. Resumo final
 
 O Planejamento Financeiro é uma aplicação web autenticada, organizada por telas no servidor e por responsabilidades no navegador. O Firebase identifica as pessoas, o servidor Express valida cada requisição e o Neon preserva os dados financeiros. O projeto suporta controle mensal, médias, meta diária, categorias, metas com depósitos, histórico de conclusão, análises e relatórios.
 

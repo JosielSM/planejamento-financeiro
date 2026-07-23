@@ -11,6 +11,7 @@ const platform = await readFile(new URL("../public/js/08-platform.js", import.me
 const runtime = await readFile(new URL("../public/js/00-runtime.js", import.meta.url), "utf8");
 const packageMetadata = JSON.parse(await readFile(new URL("../package.json", import.meta.url), "utf8"));
 const dashboard = await readFile(new URL("../public/js/03-dashboard.js", import.meta.url), "utf8");
+const events = await readFile(new URL("../public/js/07-events.js", import.meta.url), "utf8");
 
 assert.match(server, /app\.delete\("\/api\/account"/);
 assert.match(server, /DELETE FROM users WHERE id = \$1/);
@@ -35,4 +36,6 @@ assert.match(runtime, new RegExp(`APP_VERSION = "${packageMetadata.version.repla
 assert.match(gradle, new RegExp(`versionName "${packageMetadata.version.replaceAll(".", "\\.")}"`));
 assert.match(dashboard, /compareTransactionsNewestFirst/);
 assert.match(dashboard, /b\.createdAt/);
+assert.match(events, /if \(!startupResolved\)/);
+assert.match(events, /offlineSessionLoaded/);
 console.log("Contrato de segurança, privacidade e release validado.");

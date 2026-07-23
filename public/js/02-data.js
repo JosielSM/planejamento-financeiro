@@ -113,6 +113,10 @@ async function checkServerConnection({ notify = false } = {}) {
     serverConnectionState = "online";
     updateSyncStatus();
     await flushSyncQueue();
+    if (!loadSyncQueue().length && !appShell.hidden) {
+      await loadFromApi();
+      render();
+    }
     return true;
   } catch {
     serverConnectionState = "unavailable";

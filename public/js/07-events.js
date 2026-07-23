@@ -683,8 +683,10 @@ async function start() {
   monthFilter.value = monthISO();
   resetForm();
   pdfMonthInput.value = monthISO();
-  authScreen.hidden = true;
-  appShell.hidden = true;
+  if (!startupResolved) {
+    authScreen.hidden = true;
+    appShell.hidden = true;
+  }
   setAuthenticationControlsEnabled(false);
 
   try {
@@ -726,8 +728,15 @@ async function start() {
     });
     const authenticatedUser = redirectResult?.user || initialUser;
     if (!health) {
-      showOfflineSession(authenticatedUser);
-      authenticationRetryTimer = setTimeout(start, 15000);
+      serverConnectionState = "unavailable";
+      const offlineSessionLoaded = showOfflineSession(authenticatedUser);
+      updateSyncStatus();
+      if (offlineSessionLoaded) {
+        clearTimeout(serverWakeRetryTimer);
+        serverWakeRetryTimer = setTimeout(() => checkServerConnection(), 15000);
+      } else {
+        authenticationRetryTimer = setTimeout(start, 15000);
+      }
       return;
     }
     const loaded = await loadAuthenticatedUser(authenticatedUser);

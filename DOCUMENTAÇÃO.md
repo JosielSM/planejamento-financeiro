@@ -1164,6 +1164,10 @@ Registros antigos recebem o `created_at` já existente no PostgreSQL ao serem ca
 
 A versão 1.6.0 elimina o efeito de tela piscando durante a hibernação do Render. Depois que uma sessão offline é exibida, as tentativas periódicas não executam novamente o fluxo completo de inicialização nem ocultam `appShell`. Somente o pequeno indicador de conexão muda de estado enquanto `checkServerConnection()` consulta o servidor a cada quinze segundos.
 
+### 37.1 Saldo acumulado entre meses
+
+A partir da versão 1.7.0, o cartão **Saldo acumulado** não é zerado na mudança do mês. Ganhos, despesas, registros recentes, gráficos e médias continuam filtrados pelo mês escolhido, mas o saldo soma todo o histórico financeiro até o último dia desse período. Registros ocasionais entram uma vez no cálculo; registros mensais fixos entram uma vez por mês desde a data inicial. A área de metas usa o mesmo saldo acumulado para calcular quanto permanece livre depois dos valores reservados.
+
 Quando Render, Neon e Firebase voltam a responder, a fila é enviada. Os dados remotos são recarregados apenas se não restar nenhuma operação pendente, evitando que uma resposta antiga substitua alterações locais ainda não sincronizadas. O fluxo completo de autenticação continua sendo repetido somente quando não existe usuário local autenticado.
 
 ## 38. Resumo final

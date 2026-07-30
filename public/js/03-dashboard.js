@@ -68,6 +68,23 @@ function getMonthTransactions() {
   return transactions.filter(isInSelectedMonth);
 }
 
+function getTransactionOccurrenceCountThroughMonth(item, monthValue) {
+  const targetMonthIndex = (Number(monthValue.slice(0, 4)) * 12) + Number(monthValue.slice(5, 7));
+  const itemMonth = String(item.date || "").slice(0, 7);
+  const itemMonthIndex = (Number(itemMonth.slice(0, 4)) * 12) + Number(itemMonth.slice(5, 7));
+
+  if (!itemMonth || !Number.isFinite(itemMonthIndex) || itemMonthIndex > targetMonthIndex) return 0;
+  return item.frequency === "monthly" ? (targetMonthIndex - itemMonthIndex) + 1 : 1;
+}
+
+function getAccumulatedBalance(monthValue = monthFilter.value) {
+  return transactions.reduce((total, item) => {
+    const occurrences = getTransactionOccurrenceCountThroughMonth(item, monthValue);
+    const amount = Number(item.amount || 0) * occurrences;
+    return total + (item.type === "income" ? amount : -amount);
+  }, 0);
+}
+
 function getTodayIncome() {
   const today = todayISO();
   return transactions
@@ -96,14 +113,15 @@ function renderSummary() {
   const monthItems = getMonthTransactions();
   const income = monthItems.filter((item) => item.type === "income").reduce((sum, item) => sum + item.amount, 0);
   const expense = monthItems.filter((item) => item.type === "expense").reduce((sum, item) => sum + item.amount, 0);
-  const balance = income - expense;
+  const monthBalance = income - expense;
+  const accumulatedBalance = getAccumulatedBalance();
   const dayCount = getAverageDayCount(monthFilter.value);
   includeSundaysToggle.checked = Boolean(settings.includeSundays);
 
   document.querySelector("#totalIncome").textContent = money(income);
   document.querySelector("#totalExpense").textContent = money(expense);
-  document.querySelector("#balance").textContent = money(balance);
-  document.querySelector("#dailyAverage").textContent = money(balance / Math.max(dayCount, 1));
+  document.querySelector("#balance").textContent = money(accumulatedBalance);
+  document.querySelector("#dailyAverage").textContent = money(monthBalance / Math.max(dayCount, 1));
   document.querySelector("#incomeDailyAverage").textContent = money(income / Math.max(dayCount, 1));
   renderIncomeExpenseChart(income, expense);
   renderRegisterOverview(monthItems, income, expense);
@@ -183,20 +201,20 @@ function renderSavingsOverview() {
   const monthItems = getMonthTransactions();
   const income = monthItems.filter((item) => item.type === "income").reduce((sum, item) => sum + item.amount, 0);
   const expenses = monthItems.filter((item) => item.type === "expense").reduce((sum, item) => sum + item.amount, 0);
-  const monthBalance = income - expenses;
+  const accumulatedBalance = getAccumulatedBalance();
   const totalReserved = activeGoals.reduce((sum, goal) => sum + Number(goal.savedAmount || 0), 0);
   const totalTargets = activeGoals.reduce((sum, goal) => sum + Number(goal.targetAmount || 0), 0);
-  const availableBalance = monthBalance - totalReserved;
-  const reservedPercentOfBalance = monthBalance > 0 ? Math.min((totalReserved / monthBalance) * 100, 100) : 0;
-  const freePercent = monthBalance > 0 ? Math.max(100 - reservedPercentOfBalance, 0) : 0;
+  const availableBalance = accumulatedBalance - totalReserved;
+  const reservedPercentOfBalance = accumulatedBalance > 0 ? Math.min((totalReserved / accumulatedBalance) * 100, 100) : 0;
+  const freePercent = accumulatedBalance > 0 ? Math.max(100 - reservedPercentOfBalance, 0) : 0;
   const overallPercent = totalTargets > 0 ? Math.min((totalReserved / totalTargets) * 100, 100) : 0;
 
-  goalsMonthBalance.textContent = money(monthBalance);
+  goalsMonthBalance.textContent = money(accumulatedBalance);
   goalsReservedAmount.textContent = money(totalReserved);
   goalsAvailableBalance.textContent = money(availableBalance);
   goalsAvailableBalance.classList.toggle("negative-value", availableBalance < 0);
   reserveChartPercent.textContent = `${Math.round(freePercent)}%`;
-  reserveChart.style.background = monthBalance > 0
+  reserveChart.style.background = accumulatedBalance > 0
     ? `conic-gradient(var(--green) 0 ${freePercent}%, var(--purple) ${freePercent}% 100%)`
     : "var(--line)";
   reserveChart.setAttribute(
@@ -206,8 +224,8 @@ function renderSavingsOverview() {
 
   if (!activeGoals.length) {
     reserveChartMessage.textContent = "Crie um objetivo e registre depositos para acompanhar seu dinheiro reservado.";
-  } else if (monthBalance <= 0) {
-    reserveChartMessage.textContent = "O saldo do mes nao esta positivo. Revise ganhos e despesas antes de aumentar as reservas.";
+  } else if (accumulatedBalance <= 0) {
+    reserveChartMessage.textContent = "O saldo acumulado nao esta positivo. Revise ganhos e despesas antes de aumentar as reservas.";
   } else if (availableBalance < 0) {
     reserveChartMessage.textContent = "O valor reservado esta acima do saldo deste mes. Isso pode incluir dinheiro guardado em meses anteriores.";
   } else {

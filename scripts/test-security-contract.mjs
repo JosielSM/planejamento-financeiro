@@ -11,6 +11,7 @@ const platform = await readFile(new URL("../public/js/08-platform.js", import.me
 const runtime = await readFile(new URL("../public/js/00-runtime.js", import.meta.url), "utf8");
 const packageMetadata = JSON.parse(await readFile(new URL("../package.json", import.meta.url), "utf8"));
 const dashboard = await readFile(new URL("../public/js/03-dashboard.js", import.meta.url), "utf8");
+const data = await readFile(new URL("../public/js/02-data.js", import.meta.url), "utf8");
 const events = await readFile(new URL("../public/js/07-events.js", import.meta.url), "utf8");
 
 assert.match(server, /app\.delete\("\/api\/account"/);
@@ -32,6 +33,10 @@ assert.match(privacy, /confirmando o e-mail cadastrado/);
 assert.equal(pwaManifest.display, "standalone");
 assert.ok(pwaManifest.icons.some((icon) => icon.sizes === "512x512" && icon.purpose === "maskable"));
 assert.match(platform, /Instalar no iPhone/);
+assert.match(platform, /beforeinstallprompt/);
+assert.match(platform, /Instalar no PC/);
+assert.match(data, /showAndroidOfflineWarning/);
+assert.match(events, /isNativeRuntime\(\) && firebaseAuth\?\.currentUser/);
 assert.match(platform, /serviceWorker\.register/);
 assert.match(platform, /checkAndroidUpdate/);
 assert.match(server, /\/api\/app-version/);

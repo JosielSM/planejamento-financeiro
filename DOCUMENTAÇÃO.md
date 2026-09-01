@@ -1129,7 +1129,7 @@ A versão 1.2.0 mantém duas distribuições. No Android, o Capacitor empacota t
 
 O manifesto define nome, orientação, cores e ícones comuns e maskable. O HTML também declara `apple-touch-icon`, título e estilo da barra do iOS. O service worker preserva HTML, CSS, JavaScript, ícones e bibliotecas locais; requisições `/api/` e downloads nunca são armazenados em cache. Assim, autenticação e dados continuam vindo do Firebase, Cloudflare e Neon, enquanto a interface consegue abrir sem rede após a primeira visita.
 
-O botão superior detecta o ambiente. No Android/navegador, oferece o APK. No iPhone, exibe “Instalar no iPhone” e orienta Compartilhar → Adicionar à Tela de Início. Dentro do APK ou do PWA já instalado, o botão fica oculto.
+O botão superior detecta o ambiente. No navegador Android, oferece o APK. No iPhone, exibe “Instalar no iPhone” e orienta Compartilhar → Adicionar à Tela de Início. No computador, exibe “Instalar no PC” e usa o evento nativo `beforeinstallprompt` do Chrome ou Edge; quando o navegador não disponibiliza o evento, apresenta a orientação pelo menu. Dentro do APK ou do PWA já instalado, o botão fica oculto.
 
 ## 34. Atualizações do aplicativo Android
 
@@ -1199,7 +1199,11 @@ Os valores reais ficam fora do Git. Produção requer os secrets `FIREBASE_PROJE
 - atualização: `/api/app-version` anuncia 2.0.0 e `/download/android` fornece o APK correspondente;
 - cache PWA: `planejamento-financeiro-pwa-v2.0.0`, provocando substituição segura dos recursos anteriores.
 
-### 38.6 Retorno temporário
+### 38.6 Versão 2.0.1
+
+A versão 2.0.1 adiciona a instalação do PWA em computadores e simplifica o estado de conectividade. O indicador de sincronização deixa de aparecer durante o funcionamento normal. No Android Capacitor, ele surge somente quando o aparelho está sem internet, acompanhado de um aviso temporário; quando a conexão retorna, a fila é processada silenciosamente. O PWA no iPhone não exibe esse indicador. O Android passa a usar `versionCode 10`, `versionName 2.0.1`, e o cache PWA passa a ser `planejamento-financeiro-pwa-v2.0.1`.
+
+### 38.7 Retorno temporário
 
 Durante a confirmação em aparelhos reais, o serviço e o arquivo `render.yaml` podem ser mantidos como retorno. Um rollback do Worker pode ser feito com `wrangler rollback`, e o endereço antigo pode ser restaurado em `REMOTE_API_ORIGIN` somente se necessário. Nenhuma dessas operações altera ou copia os dados do Neon.
 

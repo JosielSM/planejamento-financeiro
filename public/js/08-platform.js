@@ -7,6 +7,14 @@ function isStandaloneApp() {
   return window.matchMedia?.("(display-mode: standalone)").matches || navigator.standalone === true;
 }
 
+function isAndroidDevice() {
+  return /Android/i.test(navigator.userAgent);
+}
+
+function isDesktopDevice() {
+  return !isIosDevice() && !isAndroidDevice();
+}
+
 function compareVersions(left, right) {
   const leftParts = String(left).split(".").map(Number);
   const rightParts = String(right).split(".").map(Number);
@@ -88,6 +96,40 @@ if (downloadAppButton) {
         "Instalar no iPhone",
         "info",
       );
+    });
+    refreshIcons();
+  } else if (isDesktopDevice()) {
+    let deferredInstallPrompt = null;
+    downloadAppButton.href = "#instalar-no-computador";
+    downloadAppButton.setAttribute("aria-label", "Instalar aplicativo no computador");
+    downloadAppButton.querySelector("span").textContent = "Instalar no PC";
+    downloadAppButton.querySelector("[data-lucide]")?.setAttribute("data-lucide", "monitor-down");
+
+    window.addEventListener("beforeinstallprompt", (event) => {
+      event.preventDefault();
+      deferredInstallPrompt = event;
+      downloadAppButton.hidden = false;
+    });
+
+    window.addEventListener("appinstalled", () => {
+      deferredInstallPrompt = null;
+      downloadAppButton.hidden = true;
+      showToast("Aplicativo instalado no computador.", "success");
+    });
+
+    downloadAppButton.addEventListener("click", async (event) => {
+      event.preventDefault();
+      if (!deferredInstallPrompt) {
+        await showNotice(
+          "Use o Google Chrome ou Microsoft Edge. No menu do navegador, escolha Instalar Planejamento Financeiro ou Aplicativos > Instalar este site como aplicativo.",
+          "Instalar no computador",
+          "info",
+        );
+        return;
+      }
+      await deferredInstallPrompt.prompt();
+      await deferredInstallPrompt.userChoice;
+      deferredInstallPrompt = null;
     });
     refreshIcons();
   }

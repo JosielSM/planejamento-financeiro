@@ -756,17 +756,20 @@ async function start() {
 start();
 
 window.addEventListener("online", () => {
-  checkServerConnection({ notify: true });
+  checkServerConnection();
   if (isNativeRuntime() && !firebaseAuth?.currentUser) start();
 });
 
 window.addEventListener("offline", () => {
   serverConnectionState = "unavailable";
   updateSyncStatus();
+  if (isNativeRuntime() && firebaseAuth?.currentUser) {
+    showToast("Sem internet. Você pode continuar usando os dados salvos no celular.", "info", 4500);
+  }
 });
 
 document.addEventListener("visibilitychange", () => {
-  if (!document.hidden && firebaseAuth?.currentUser) checkServerConnection({ notify: true });
+  if (!document.hidden && firebaseAuth?.currentUser) checkServerConnection();
 });
 
 window.addEventListener("pageshow", () => {

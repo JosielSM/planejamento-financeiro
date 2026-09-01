@@ -80,13 +80,14 @@ function updateSyncStatus(state = "") {
   const failed = queue.some((item) => item.lastError && item.lastStatus && item.lastStatus < 500 && item.lastStatus !== 429);
   const connecting = state === "syncing" || serverConnectionState === "checking";
   const unavailable = !navigator.onLine || serverConnectionState === "unavailable";
-  syncStatusButton.hidden = !firebaseAuth?.currentUser;
+  const showAndroidOfflineWarning = isNativeRuntime() && Boolean(firebaseAuth?.currentUser) && !navigator.onLine;
+  syncStatusButton.hidden = !showAndroidOfflineWarning;
   syncStatusButton.classList.toggle("syncing", connecting);
   syncStatusButton.classList.toggle("pending", !connecting && !unavailable && queue.length > 0 && !failed);
   syncStatusButton.classList.toggle("error", !connecting && (failed || unavailable));
   syncPendingCount.hidden = queue.length === 0;
   syncPendingCount.textContent = String(queue.length);
-  syncStatusText.textContent = connecting ? "Conectando..." : !navigator.onLine ? "Sem internet" : serverConnectionState === "unavailable" ? "Servidor iniciando" : failed ? "Ação necessária" : queue.length ? `${queue.length} pendente${queue.length > 1 ? "s" : ""}` : "Sincronizado";
+  syncStatusText.textContent = "Sem internet";
   syncStatusButton.querySelector("[data-lucide]")?.setAttribute("data-lucide", connecting ? "loader-circle" : failed ? "cloud-alert" : unavailable ? "cloud-off" : queue.length ? "cloud-upload" : "cloud-check");
   refreshIcons();
 }

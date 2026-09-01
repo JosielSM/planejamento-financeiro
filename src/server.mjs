@@ -1,7 +1,5 @@
 import express from "express";
 import rateLimit from "express-rate-limit";
-import { applicationDefault, cert, getApps, initializeApp } from "firebase-admin/app";
-import { getAuth } from "firebase-admin/auth";
 import helmet from "helmet";
 import pg from "pg";
 import { readFileSync } from "node:fs";
@@ -10,18 +8,23 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const { Pool } = pg;
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const projectRoot = join(__dirname, "..");
-const publicDirectory = join(projectRoot, "public");
-const viewsDirectory = join(__dirname, "views");
-const androidApkPath = join(projectRoot, "downloads", "planejamento-financeiro.apk");
-const packageMetadata = JSON.parse(readFileSync(join(projectRoot, "package.json"), "utf8"));
+const cloudflareEnv = globalThis.__CLOUDFLARE_ENV__ || null;
+const runtimeEnv = cloudflareEnv || process.env;
+const isCloudflareWorker = Boolean(cloudflareEnv);
+const moduleDirectory = isCloudflareWorker ? "" : dirname(fileURLToPath(import.meta.url));
+const projectRoot = isCloudflareWorker ? "" : join(moduleDirectory, "..");
+const publicDirectory = isCloudflareWorker ? "" : join(projectRoot, "public");
+const viewsDirectory = isCloudflareWorker ? "" : join(moduleDirectory, "views");
+const androidApkPath = isCloudflareWorker ? "" : join(projectRoot, "downloads", "planejamento-financeiro.apk");
+const packageMetadata = isCloudflareWorker
+  ? { version: runtimeEnv.APP_VERSION || "2.0.0" }
+  : JSON.parse(readFileSync(join(projectRoot, "package.json"), "utf8"));
 
 function loadView(relativePath) {
   return readFileSync(join(viewsDirectory, relativePath), "utf8").trim();
 }
 
-const indexDocument = Object.entries({
+const indexDocument = isCloudflareWorker ? "" : Object.entries({
   topbar: "partials/topbar.html",
   auth: "auth/index.html",
   navigation: "screens/navigation.html",
@@ -41,42 +44,34 @@ const indexDocument = Object.entries({
   loadView("layout.html"),
 );
 const app = express();
-if (process.env.NODE_ENV === "production") app.set("trust proxy", 1);
-const port = Number(process.env.PORT || 5500);
-const databaseUrl = process.env.DATABASE_URL;
-const firebaseProjectId = process.env.FIREBASE_PROJECT_ID;
+if (runtimeEnv.NODE_ENV === "production") app.set("trust proxy", 1);
+const port = Number(runtimeEnv.PORT || 5500);
+const databaseUrl = cloudflareEnv?.HYPERDRIVE?.connectionString || runtimeEnv.DATABASE_URL;
+const firebaseProjectId = runtimeEnv.FIREBASE_PROJECT_ID;
 const firebaseClientConfig = {
-  apiKey: process.env.FIREBASE_API_KEY,
-  authDomain: process.env.FIREBASE_AUTH_DOMAIN,
+  apiKey: runtimeEnv.FIREBASE_API_KEY,
+  authDomain: runtimeEnv.FIREBASE_AUTH_DOMAIN,
   projectId: firebaseProjectId,
-  appId: process.env.FIREBASE_APP_ID,
+  appId: runtimeEnv.FIREBASE_APP_ID,
 };
 const firebaseClientConfigured = Object.values(firebaseClientConfig).every(Boolean);
+const firebaseServerConfigured = Boolean(firebaseProjectId && runtimeEnv.FIREBASE_API_KEY);
+let pool = null;
 
-function initializeFirebaseAdmin() {
-  if (!firebaseProjectId) return null;
-  if (getApps().length) return getAuth();
-
-  const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
-  const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n");
-  const credential = clientEmail && privateKey
-    ? cert({ projectId: firebaseProjectId, clientEmail, privateKey })
-    : applicationDefault();
-
-  initializeApp({ credential, projectId: firebaseProjectId });
-  return getAuth();
+function ensureRuntimeServices() {
+  if (!pool && databaseUrl) {
+    pool = new Pool({
+      connectionString: databaseUrl,
+      ssl: isCloudflareWorker ? undefined : runtimeEnv.NODE_ENV === "production" ? { rejectUnauthorized: false } : false,
+    });
+  }
 }
 
-const firebaseAdminAuth = initializeFirebaseAdmin();
-
-const pool = databaseUrl
-  ? new Pool({
-      connectionString: databaseUrl,
-      ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : false,
-    })
-  : null;
-
 app.disable("x-powered-by");
+app.use((_request, _response, next) => {
+  ensureRuntimeServices();
+  next();
+});
 app.use((request, response, next) => {
   const requestId = request.get("X-Request-ID") || randomUUID();
   response.setHeader("X-Request-ID", requestId);
@@ -124,29 +119,33 @@ app.use("/api", (request, response, next) => {
   }
   next();
 });
-app.use("/api", rateLimit({
-  windowMs: 15 * 60 * 1000,
-  limit: 600,
-  standardHeaders: "draft-7",
-  legacyHeaders: false,
-  message: { error: "Muitas solicitacoes. Aguarde alguns minutos e tente novamente." },
-}));
-app.use("/vendor/firebase", express.static(join(projectRoot, "node_modules", "firebase"), {
-  fallthrough: false,
-  setHeaders(response) {
-    response.setHeader("Cache-Control", "public, max-age=31536000, immutable");
-  },
-}));
-app.use("/vendor/lucide", express.static(join(projectRoot, "node_modules", "lucide", "dist", "umd")));
-app.use("/vendor/jspdf", express.static(join(projectRoot, "node_modules", "jspdf", "dist")));
-app.use("/vendor/jspdf-autotable", express.static(join(projectRoot, "node_modules", "jspdf-autotable", "dist")));
-app.use("/vendor/exceljs", express.static(join(projectRoot, "node_modules", "exceljs", "dist")));
-app.use(express.static(publicDirectory, {
-  extensions: ["html"],
-  setHeaders(response, filePath) {
-    response.setHeader("Cache-Control", "no-store");
-  },
-}));
+if (!isCloudflareWorker) {
+  app.use("/api", rateLimit({
+    windowMs: 15 * 60 * 1000,
+    limit: 600,
+    standardHeaders: "draft-7",
+    legacyHeaders: false,
+    message: { error: "Muitas solicitacoes. Aguarde alguns minutos e tente novamente." },
+  }));
+}
+if (!isCloudflareWorker) {
+  app.use("/vendor/firebase", express.static(join(projectRoot, "node_modules", "firebase"), {
+    fallthrough: false,
+    setHeaders(response) {
+      response.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+    },
+  }));
+  app.use("/vendor/lucide", express.static(join(projectRoot, "node_modules", "lucide", "dist", "umd")));
+  app.use("/vendor/jspdf", express.static(join(projectRoot, "node_modules", "jspdf", "dist")));
+  app.use("/vendor/jspdf-autotable", express.static(join(projectRoot, "node_modules", "jspdf-autotable", "dist")));
+  app.use("/vendor/exceljs", express.static(join(projectRoot, "node_modules", "exceljs", "dist")));
+  app.use(express.static(publicDirectory, {
+    extensions: ["html"],
+    setHeaders(response) {
+      response.setHeader("Cache-Control", "no-store");
+    },
+  }));
+}
 
 function requireDatabase(response) {
   if (pool) return true;
@@ -288,8 +287,8 @@ function mapSavingsGoal(row) {
 
 async function requireAuth(request, response) {
   if (!requireDatabase(response)) return null;
-  if (!firebaseAdminAuth) {
-    response.status(503).json({ error: "Firebase Admin nao configurado" });
+  if (!firebaseServerConfigured) {
+    response.status(503).json({ error: "Firebase nao configurado" });
     return null;
   }
 
@@ -302,11 +301,30 @@ async function requireAuth(request, response) {
 
   let firebaseUser;
   try {
-    firebaseUser = await firebaseAdminAuth.verifyIdToken(idToken);
+    const verificationResponse = await fetch(
+      `https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${encodeURIComponent(runtimeEnv.FIREBASE_API_KEY)}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ idToken }),
+      },
+    );
+    if (!verificationResponse.ok) throw new Error("Token Firebase invalido");
+    const verification = await verificationResponse.json();
+    const verifiedUser = verification.users?.[0];
+    if (!verifiedUser?.localId) throw new Error("Usuario Firebase nao encontrado");
+    firebaseUser = {
+      uid: verifiedUser.localId,
+      email: verifiedUser.email,
+      email_verified: Boolean(verifiedUser.emailVerified),
+      name: verifiedUser.displayName || "",
+    };
   } catch {
     response.status(401).json({ error: "Login necessario" });
     return null;
   }
+
+  request.firebaseIdToken = idToken;
 
   if (!firebaseUser.email || !firebaseUser.email_verified) {
     response.status(403).json({ error: "Confirme seu email antes de acessar seus dados" });
@@ -390,13 +408,13 @@ async function findSavingsGoal(id, userId) {
 
 app.get("/api/health", async (_request, response) => {
   if (!pool) {
-    response.json({ ok: true, database: "not_configured", firebase: firebaseAdminAuth ? "configured" : "not_configured" });
+    response.json({ ok: true, database: "not_configured", firebase: firebaseServerConfigured ? "configured" : "not_configured" });
     return;
   }
 
   try {
     await pool.query("SELECT 1");
-    response.json({ ok: true, database: "connected", firebase: firebaseAdminAuth ? "configured" : "not_configured" });
+    response.json({ ok: true, database: "connected", firebase: firebaseServerConfigured ? "configured" : "not_configured" });
   } catch (error) {
     console.error("Erro ao verificar conexao com o banco:", error);
     response.status(503).json({ error: "Banco de dados temporariamente indisponivel" });
@@ -434,7 +452,15 @@ app.delete("/api/account", async (request, response) => {
       return;
     }
     await pool.query("DELETE FROM users WHERE id = $1", [user.id]);
-    if (user.firebase_uid) await firebaseAdminAuth.deleteUser(user.firebase_uid);
+    const deleteResponse = await fetch(
+      `https://identitytoolkit.googleapis.com/v1/accounts:delete?key=${encodeURIComponent(runtimeEnv.FIREBASE_API_KEY)}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ idToken: request.firebaseIdToken }),
+      },
+    );
+    if (!deleteResponse.ok) throw new Error("Nao foi possivel excluir a credencial Firebase");
     response.status(204).end();
   } catch (error) {
     console.error("Erro ao excluir conta:", error);
@@ -787,12 +813,14 @@ app.put("/api/settings/:key", async (request, response) => {
   response.json(result.rows[0]);
 });
 
-app.get("/download/android", (_request, response, next) => {
-  response.type("application/vnd.android.package-archive");
-  response.download(androidApkPath, "Planejamento-Financeiro.apk", (error) => {
-    if (error && !response.headersSent) next(error);
+if (!isCloudflareWorker) {
+  app.get("/download/android", (_request, response, next) => {
+    response.type("application/vnd.android.package-archive");
+    response.download(androidApkPath, "Planejamento-Financeiro.apk", (error) => {
+      if (error && !response.headersSent) next(error);
+    });
   });
-});
+}
 
 app.get("/api/app-version", (_request, response) => {
   response.setHeader("Cache-Control", "no-store");
@@ -803,17 +831,24 @@ app.get("/api/app-version", (_request, response) => {
   });
 });
 
-app.get("*", (_request, response) => {
-  response.type("html").send(indexDocument);
-});
-
-migrate()
-  .then(() => {
-    app.listen(port, "0.0.0.0", () => {
-      console.log(`Planejamento Financeiro em http://127.0.0.1:${port}`);
-    });
-  })
-  .catch((error) => {
-    console.error("Erro ao iniciar banco de dados:", error);
-    process.exit(1);
+if (!isCloudflareWorker) {
+  app.use((_request, response) => {
+    response.type("html").send(indexDocument);
   });
+}
+
+if (!isCloudflareWorker) {
+  ensureRuntimeServices();
+  migrate()
+    .then(() => {
+      app.listen(port, "0.0.0.0", () => {
+        console.log(`Planejamento Financeiro em http://127.0.0.1:${port}`);
+      });
+    })
+    .catch((error) => {
+      console.error("Erro ao iniciar banco de dados:", error);
+      process.exit(1);
+    });
+}
+
+export { app, migrate };

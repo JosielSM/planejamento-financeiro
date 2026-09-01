@@ -1,4 +1,4 @@
-import { cp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -8,6 +8,20 @@ const outputDirectory = join(projectRoot, "dist");
 
 async function loadView(relativePath) {
   return (await readFile(join(viewsDirectory, relativePath), "utf8")).trim();
+}
+
+async function copyDirectory(sourceDirectory, destinationDirectory) {
+  await mkdir(destinationDirectory, { recursive: true });
+  const entries = await readdir(sourceDirectory, { withFileTypes: true });
+  for (const entry of entries) {
+    const sourcePath = join(sourceDirectory, entry.name);
+    const destinationPath = join(destinationDirectory, entry.name);
+    if (entry.isDirectory()) {
+      await copyDirectory(sourcePath, destinationPath);
+    } else if (entry.isFile()) {
+      await writeFile(destinationPath, await readFile(sourcePath));
+    }
+  }
 }
 
 const parts = {
@@ -33,7 +47,12 @@ for (const [placeholder, relativePath] of Object.entries(parts)) {
 }
 
 await rm(outputDirectory, { recursive: true, force: true });
-await cp(join(projectRoot, "public"), outputDirectory, { recursive: true });
+await copyDirectory(join(projectRoot, "public"), outputDirectory);
+await mkdir(join(outputDirectory, "downloads"), { recursive: true });
+await writeFile(
+  join(outputDirectory, "downloads", "planejamento-financeiro.apk"),
+  await readFile(join(projectRoot, "downloads", "planejamento-financeiro.apk")),
+);
 await writeFile(join(outputDirectory, "index.html"), document, "utf8");
 // O OneDrive pode representar arquivos novos como reparse points. Regravar o HTML
 // garante um arquivo regular aceito pelo empacotador de assets do Android.

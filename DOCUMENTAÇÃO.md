@@ -19,13 +19,14 @@ Navegador do usuário
           │
           │ HTTPS + token Firebase no cabeçalho Authorization
           ▼
-Servidor Node.js no Render
+Cloudflare Worker
   ├─ Express
   ├─ Helmet
-  ├─ Limitador de requisições
-  ├─ Firebase Admin
+  ├─ Assets estáticos
+  ├─ Validação pela API Firebase Identity Toolkit
   └─ API REST
           │
+          │ Hyperdrive
           ▼
 PostgreSQL / Neon
   ├─ usuários
@@ -38,11 +39,11 @@ PostgreSQL / Neon
 
 ### 2.1 Responsabilidade do navegador
 
-O navegador exibe a interface, captura as ações do usuário, calcula valores para apresentação, gera gráficos com CSS ou Canvas, produz arquivos PDF/Excel e chama a API. O cliente não recebe a senha do banco nem as credenciais administrativas do Firebase.
+O navegador exibe a interface, captura as ações do usuário, calcula valores para apresentação, gera gráficos com CSS ou Canvas, produz arquivos PDF/Excel e chama a API. O cliente não recebe a senha do banco nem qualquer segredo do Neon.
 
 ### 2.2 Responsabilidade do servidor
 
-O servidor monta o documento HTML, entrega os arquivos públicos, valida tokens Firebase, associa a identidade Firebase ao usuário interno, aplica o isolamento por usuário e executa consultas no PostgreSQL.
+O Worker entrega o build estático, encaminha `/api/*` ao aplicativo Express, valida tokens Firebase pela API oficial Identity Toolkit, associa a identidade Firebase ao usuário interno, aplica o isolamento por usuário e consulta o PostgreSQL pelo Hyperdrive.
 
 ### 2.3 Responsabilidade do Firebase
 
@@ -54,13 +55,13 @@ O Neon mantém os dados permanentes do aplicativo em PostgreSQL. A remoção do 
 
 ### 2.5 Aplicativo Android com Capacitor
 
-O instalável oficial é um aplicativo Android criado com Capacitor. O HTML, CSS, JavaScript, Firebase Web, Lucide, jsPDF, AutoTable, ExcelJS, ícones e telas de abertura são copiados para dentro do APK. Por isso, a interface abre sem aguardar o Render.
+O instalável oficial é um aplicativo Android criado com Capacitor. O HTML, CSS, JavaScript, Firebase Web, Lucide, jsPDF, AutoTable, ExcelJS, ícones e telas de abertura são copiados para dentro do APK. Por isso, a interface abre sem aguardar o servidor.
 
-Quando executado no Android, o arquivo `public/js/00-runtime.js` direciona as chamadas de API para `https://planejamento-financeiro-0b29.onrender.com`. O Neon continua sendo a fonte permanente dos dados e o Render continua validando a identidade e executando a API.
+Quando executado no Android, o arquivo `public/js/00-runtime.js` direciona as chamadas de API para `https://planejamento-financeiro.santosjosiel2003.workers.dev`. O Neon continua sendo a fonte permanente dos dados e a Cloudflare executa a API sem a hibernação que existia no serviço gratuito anterior.
 
 Cada usuário possui uma cópia local isolada de movimentações, configurações, categorias e metas. Se uma gravação falhar por ausência de rede, erro 5xx ou indisponibilidade temporária, a operação é colocada em uma fila durável. Ao recuperar a conexão, o aplicativo envia a fila na ordem original e depois atualiza a cópia local com o estado do servidor.
 
-O PWA foi desativado. `08-platform.js` remove registros e caches antigos do Service Worker nos navegadores que instalaram versões anteriores.
+No iPhone, o mesmo projeto funciona como PWA: o Safari registra `service-worker.js`, utiliza `manifest.webmanifest`, mantém os recursos visuais em cache e permite adicionar o aplicativo à Tela de Início. API, autenticação e dados financeiros nunca são armazenados pelo service worker.
 
 ## 3. Tecnologias e dependências
 
@@ -69,11 +70,12 @@ O PWA foi desativado. `08-platform.js` remove registros e caches antigos do Serv
 | Tecnologia | Uso atual |
 |---|---|
 | Node.js 22+ | Runtime do servidor. |
-| Express 4 | Servidor HTTP, arquivos públicos e API REST. |
+| Express 5 | Rotas e regras da API REST, adaptadas ao runtime Workers. |
 | PostgreSQL | Banco relacional. |
 | Neon | Hospedagem PostgreSQL usada em produção. |
-| Render | Hospedagem do processo Node.js. |
-| Firebase Admin | Verificação segura dos tokens no servidor. |
+| Cloudflare Workers | Hospedagem da API e dos assets estáticos. |
+| Hyperdrive | Pool e aceleração das conexões entre Worker e Neon. |
+| Firebase Identity Toolkit | Verificação de token e exclusão da credencial autenticada. |
 | Helmet | Cabeçalhos de segurança e Content Security Policy. |
 | express-rate-limit | Limitação das chamadas realizadas em `/api`. |
 | pg | Driver PostgreSQL do Node.js. |
@@ -141,8 +143,12 @@ planejamento-financeiro/
 │     └─ partials/
 │        ├─ topbar.html
 │        └─ scripts.html
+├─ worker/
+│  └─ index.mjs           Entrada e roteamento do Cloudflare Worker
 ├─ android/                Projeto Android nativo
 ├─ capacitor.config.json  Configuração Capacitor
+├─ wrangler.jsonc         Bindings, assets, secrets e observabilidade
+├─ worker-configuration.d.ts Tipos gerados pelo Wrangler
 ├─ scripts/
 │  ├─ build-mobile.mjs
 │  └─ migrate-users-to-firebase.mjs
@@ -448,7 +454,7 @@ O Firebase envia o link de redefinição para o e-mail informado. No perfil, a m
 
 ### 7.7 Associação Firebase → banco interno
 
-O servidor verifica o token com Firebase Admin. Em seguida:
+O servidor envia o ID token para `accounts:lookup` da API oficial Firebase Identity Toolkit. Após a validação, normaliza UID, e-mail, confirmação e nome e então:
 
 1. procura `users.firebase_uid`;
 2. se não encontrar, procura o e-mail em minúsculas dentro de uma transação com bloqueio;
@@ -489,7 +495,7 @@ Operações sem conexão atualizam a interface imediatamente e são gravadas em 
 
 O diretório `dist/` contém a interface móvel montada e todas as dependências de navegador. Ele é gerado por `scripts/build-mobile.mjs`, não é versionado e é copiado pelo Capacitor para `android/app/src/main/assets/public`.
 
-No Android, a interface não depende de uma resposta do Render para abrir. Se houver sessão Firebase e cache local, o aplicativo mostra os últimos dados imediatamente. O Render e o Neon continuam necessários para autenticar uma nova instalação, renovar a comunicação e preservar ou compartilhar dados entre aparelhos.
+No Android, a interface não depende de uma resposta do servidor para abrir. Se houver sessão Firebase e cache local, o aplicativo mostra os últimos dados imediatamente. Cloudflare, Firebase e Neon continuam necessários para autenticar uma nova instalação, renovar a comunicação e preservar ou compartilhar dados entre aparelhos.
 
 Antes de baixar o estado remoto, `flushSyncQueue()` envia as alterações pendentes. Criações de movimentações, metas e depósitos usam identificadores UUID e endpoints idempotentes, evitando duplicidade caso o servidor tenha processado uma requisição cuja resposta não chegou ao celular.
 
@@ -662,7 +668,7 @@ Na inicialização, o servidor:
 6. remove a antiga chave primária simples de `settings`, se existir;
 7. cria índices de unicidade e consulta.
 
-Se qualquer etapa falhar, o processo registra “Erro ao iniciar banco de dados” e encerra com código 1. O Render considera isso falha de inicialização.
+No modo Node/Render legado, qualquer falha encerra a inicialização. No Worker, as tabelas já existentes no Neon são reutilizadas e a conexão é criada sob demanda pelo Hyperdrive; migrações estruturais continuam sendo executadas deliberadamente pelo modo Node antes de mudanças de esquema.
 
 ## 13. Relatórios
 
@@ -732,26 +738,23 @@ Em produção, o pool utiliza SSL com `rejectUnauthorized: false`, compatível c
 ### 14.7 Dados que nunca devem ir para o Git
 
 - `DATABASE_URL` real;
-- `FIREBASE_PRIVATE_KEY`;
-- `FIREBASE_CLIENT_EMAIL` quando tratado como credencial administrativa operacional;
 - qualquer arquivo `.env` real;
+- qualquer arquivo `.dev.vars` real;
 - tokens de usuários.
 
 ## 15. Variáveis de ambiente
 
 | Variável | Obrigatória em produção | Descrição |
 |---|---:|---|
-| `NODE_ENV` | Sim | `production` no Render; ativa proxy confiável e SSL do banco. |
-| `PORT` | Fornecida pelo Render | Porta HTTP; padrão local 5500. |
-| `DATABASE_URL` | Sim | Conexão PostgreSQL/Neon. |
+| `NODE_ENV` | Sim | `production`; ativa proxy confiável. |
+| `PORT` | Apenas modo Node | Porta HTTP; padrão local 5500. |
+| `DATABASE_URL` | Apenas modo Node/local | Conexão PostgreSQL/Neon; em produção o Worker usa `HYPERDRIVE.connectionString`. |
 | `FIREBASE_PROJECT_ID` | Sim | Projeto Firebase. |
 | `FIREBASE_API_KEY` | Sim | Chave pública do aplicativo Web Firebase. |
 | `FIREBASE_AUTH_DOMAIN` | Sim | Domínio de autenticação Firebase. |
 | `FIREBASE_APP_ID` | Sim | ID do aplicativo Web. |
-| `FIREBASE_CLIENT_EMAIL` | Recomendável | Conta de serviço do Firebase Admin. |
-| `FIREBASE_PRIVATE_KEY` | Recomendável | Chave privada da conta de serviço. |
 
-Quando e-mail e chave privada não são fornecidos, o servidor tenta `applicationDefault()`. No Render, normalmente devem ser fornecidos explicitamente.
+No Worker, `FIREBASE_PROJECT_ID`, `FIREBASE_API_KEY`, `FIREBASE_AUTH_DOMAIN` e `FIREBASE_APP_ID` são secrets criptografados. O binding `HYPERDRIVE` é declarado em `wrangler.jsonc`; sua credencial de origem fica gerenciada pela Cloudflare e não é gravada no código.
 
 ## 16. Execução local
 
@@ -780,8 +783,6 @@ $env:FIREBASE_PROJECT_ID="meu-projeto"
 $env:FIREBASE_API_KEY="chave-publica"
 $env:FIREBASE_AUTH_DOMAIN="meu-projeto.firebaseapp.com"
 $env:FIREBASE_APP_ID="app-id"
-$env:FIREBASE_CLIENT_EMAIL="conta-de-servico@meu-projeto.iam.gserviceaccount.com"
-$env:FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
 npm start
 ```
 
@@ -805,48 +806,40 @@ Resultados possíveis incluem banco conectado/não configurado e Firebase config
 2. Ative Authentication.
 3. Ative E-mail/Senha.
 4. Ative Google e configure o e-mail de suporte.
-5. Cadastre o domínio do Render em Authorized domains.
+5. Cadastre o domínio `planejamento-financeiro.santosjosiel2003.workers.dev` em Authorized domains para login Google no site.
 6. Crie um aplicativo Web.
 7. copie `apiKey`, `authDomain`, `projectId` e `appId`.
-8. Em contas de serviço, gere as credenciais administrativas.
-9. Cadastre todas as variáveis no Render.
+8. Cadastre as quatro variáveis públicas do aplicativo Web como secrets do Worker.
 
-Sem o domínio autorizado, login Google pode falhar. Sem Firebase Admin, a interface pode carregar, mas a API protegida responde 503.
+Sem o domínio autorizado, o login Google no navegador pode falhar. A API valida cada ID token com `accounts:lookup`; tokens ausentes, inválidos ou expirados recebem 401.
 
 ## 18. Neon — configuração operacional
 
 1. Crie um projeto Neon.
 2. obtenha a connection string PostgreSQL.
-3. cadastre-a como `DATABASE_URL` no Render.
-4. mantenha SSL habilitado em produção.
-5. faça o primeiro deploy; `migrate()` criará e ajustará as estruturas.
-6. confirme `/api/health` com `database: "connected"`.
+3. crie um Hyperdrive com essa connection string;
+4. declare o ID como binding `HYPERDRIVE` em `wrangler.jsonc`;
+5. execute as migrações pelo modo Node quando houver mudança estrutural;
+6. publique o Worker e confirme `/api/health` com `database: "connected"`.
 
 O arquivo `schema.sql` pode ser usado para leitura ou preparação manual, mas a inicialização do servidor continua sendo a fonte operacional das migrações incrementais.
 
-## 19. Render — implantação
+## 19. Cloudflare Workers — implantação
 
-O arquivo `render.yaml` declara:
-
-- serviço do tipo `web`;
-- ambiente Node;
-- build `npm install`;
-- início `npm start`;
-- `NODE_ENV=production`;
-- demais segredos com `sync: false`.
+O arquivo `wrangler.jsonc` declara o Worker, a data de compatibilidade, `nodejs_compat`, assets de `dist/`, binding `ASSETS`, binding `HYPERDRIVE`, versão do aplicativo, secrets obrigatórios e observabilidade. `worker/index.mjs` entrega assets, trata o APK e inicializa a ponte Express sob demanda somente para `/api/*`.
 
 Fluxo de implantação:
 
-1. um commit é enviado à branch monitorada;
-2. o Render clona o repositório;
-3. executa `npm install`;
-4. executa `npm start`;
-5. `src/server.mjs` monta as telas;
-6. conecta ao Neon;
-7. executa as migrações;
-8. começa a escutar em `0.0.0.0:$PORT`.
+1. execute `npm test`;
+2. execute `npm run deploy:cloudflare:check`;
+3. execute `npm run deploy:cloudflare`;
+4. o build monta `dist/` e copia o APK;
+5. o Wrangler envia Worker e assets;
+6. a Cloudflare injeta secrets e Hyperdrive;
+7. valide `/`, `/api/health`, `/api/config/firebase`, `/api/app-version` e `/download/android`;
+8. acompanhe logs e traces na observabilidade do Worker.
 
-Se o deploy falhar, verifique primeiro logs, variáveis, credenciais Firebase, conexão Neon e a versão do Node.
+O `render.yaml` permanece apenas como opção temporária de retorno durante a migração. O cliente Android 2.0.0 e o PWA usam a Cloudflare como origem principal.
 
 ## 20. Script de migração Firebase
 
@@ -1027,7 +1020,7 @@ Há feedback para criação e exclusão de registros, atualização da meta diá
 10. revise `git diff --check`;
 11. faça commit descritivo;
 12. envie ao GitHub;
-13. acompanhe o deploy no Render.
+13. acompanhe o deploy e os logs na Cloudflare.
 
 ## 28. Diagnóstico de problemas
 
@@ -1037,7 +1030,7 @@ Verifique configuração pública Firebase, domínio autorizado, provedores habi
 
 ### API responde 401
 
-O token está ausente, expirado ou inválido. Saia e entre novamente e confira o projeto Firebase usado pelo cliente e pelo Admin.
+O token está ausente, expirado ou inválido. Saia e entre novamente e confira o projeto Firebase usado pelo cliente e pelos secrets do Worker.
 
 ### API responde 403
 
@@ -1045,11 +1038,11 @@ O e-mail não está confirmado.
 
 ### API responde 503
 
-`DATABASE_URL`, Firebase Admin ou configuração Web Firebase não estão disponíveis.
+Hyperdrive, Neon ou configuração Web Firebase não estão disponíveis.
 
-### Render não inicia
+### Worker não inicia ou responde 1101
 
-Confirme `npm start`, Node 22+, variáveis, conexão Neon e formatação da chave privada com `\n`.
+Confirme `wrangler.jsonc`, versão atual do Wrangler, data de compatibilidade, secrets, binding Hyperdrive e logs estruturados da Cloudflare. Rode também `npx wrangler check startup`.
 
 ### Meta não pode ser concluída
 
@@ -1088,12 +1081,12 @@ Verifique se `npm install` foi executado e se os arquivos locais em `/vendor/jsp
 
 ## 31. Checklist de produção
 
-- [ ] Render conectado à branch correta.
+- [ ] Worker publicado na conta Cloudflare correta.
 - [ ] `NODE_ENV=production`.
-- [ ] `DATABASE_URL` do Neon configurada.
+- [ ] Hyperdrive conectado ao Neon.
 - [ ] Firebase Web configurado.
-- [ ] Firebase Admin configurado.
-- [ ] domínio do Render autorizado no Firebase.
+- [ ] secrets Firebase configurados no Worker.
+- [ ] domínio `workers.dev` autorizado no Firebase.
 - [ ] E-mail/Senha habilitado.
 - [ ] Google habilitado.
 - [ ] `/api/health` retorna banco conectado.
@@ -1111,7 +1104,7 @@ Verifique se `npm install` foi executado e se os arquivos locais em `/vendor/jsp
 - [ ] reconexão e sincronização conferidas no Neon.
 - [ ] chave de assinatura de release guardada fora do Git.
 - [ ] SHA-1 do aplicativo registrada no Firebase para login Google nativo.
-- [ ] logs do Render sem erros de migração.
+- [ ] logs e traces da Cloudflare sem erros.
 - [ ] segredos ausentes do Git.
 
 ## 32. Melhorias da versão 1.1.0
@@ -1120,21 +1113,21 @@ Verifique se `npm install` foi executado e se os arquivos locais em `/vendor/jsp
 - Tocar no indicador tenta reenviar a fila e apresenta o motivo de uma falha persistente.
 - Operações rejeitadas não são mais descartadas silenciosamente; tentativa, horário, status e mensagem ficam preservados.
 - O perfil oferece política de privacidade e exclusão definitiva da conta.
-- `DELETE /api/account` apaga o usuário no PostgreSQL; as chaves estrangeiras removem configurações, registros, categorias, metas e depósitos, e o Firebase Admin remove a identidade.
-- Toda resposta da API recebe `X-Request-ID`; método, rota, status e duração são registrados no Render sem conteúdo financeiro ou token.
+- `DELETE /api/account` apaga o usuário no PostgreSQL; as chaves estrangeiras removem configurações, registros, categorias, metas e depósitos, e a API Identity Toolkit remove a identidade Firebase usando o token confirmado.
+- Toda resposta da API recebe `X-Request-ID`; método, rota, status e duração são registrados sem conteúdo financeiro ou token.
 - O Android passou para versão 1.1.0, código 2, ofuscação e redução de recursos em release.
 - `npm run android:release` exige assinatura externa, testa, gera APK/AAB e registra versão, tamanho e SHA-256.
 - Chaves JKS, credenciais de release e `google-services.json` estão explicitamente fora do Git.
 - O Android usa `FLAG_SECURE` para impedir capturas de tela e prévias do conteúdo financeiro na tela de aplicativos recentes; o backup do aplicativo permanece desativado.
 - `npm test` cobre cache por usuário, reenvio, retenção de erro permanente, contrato de exclusão, privacidade, segurança Android e sintaxe.
 
-A assinatura definitiva, o `google-services.json`, o SHA-1/SHA-256 no Firebase, o teste em aparelho físico e eventual mudança do plano do Render dependem das contas e credenciais do proprietário. O projeto bloqueia release sem essas credenciais. O procedimento completo está em `RELEASE_ANDROID.md`.
+A assinatura definitiva, o `google-services.json`, o SHA-1/SHA-256 no Firebase e o teste em aparelho físico dependem das contas e credenciais do proprietário. O projeto bloqueia release sem essas credenciais. O procedimento completo está em `RELEASE_ANDROID.md`.
 
 ## 33. PWA para iPhone e convivência com Capacitor
 
 A versão 1.2.0 mantém duas distribuições. No Android, o Capacitor empacota todos os recursos no APK e não registra service worker. No iPhone, o Safari registra `service-worker.js`, lê `manifest.webmanifest` e permite adicionar o aplicativo à Tela de Início.
 
-O manifesto define nome, orientação, cores e ícones comuns e maskable. O HTML também declara `apple-touch-icon`, título e estilo da barra do iOS. O service worker preserva HTML, CSS, JavaScript, ícones e bibliotecas locais; requisições `/api/` e downloads nunca são armazenados em cache. Assim, autenticação e dados continuam vindo do Firebase, Render e Neon, enquanto a interface consegue abrir sem rede após a primeira visita.
+O manifesto define nome, orientação, cores e ícones comuns e maskable. O HTML também declara `apple-touch-icon`, título e estilo da barra do iOS. O service worker preserva HTML, CSS, JavaScript, ícones e bibliotecas locais; requisições `/api/` e downloads nunca são armazenados em cache. Assim, autenticação e dados continuam vindo do Firebase, Cloudflare e Neon, enquanto a interface consegue abrir sem rede após a primeira visita.
 
 O botão superior detecta o ambiente. No Android/navegador, oferece o APK. No iPhone, exibe “Instalar no iPhone” e orienta Compartilhar → Adicionar à Tela de Início. Dentro do APK ou do PWA já instalado, o botão fica oculto.
 
@@ -1162,15 +1155,53 @@ Registros antigos recebem o `created_at` já existente no PostgreSQL ao serem ca
 
 ## 37. Reconexão estável no Android
 
-A versão 1.6.0 elimina o efeito de tela piscando durante a hibernação do Render. Depois que uma sessão offline é exibida, as tentativas periódicas não executam novamente o fluxo completo de inicialização nem ocultam `appShell`. Somente o pequeno indicador de conexão muda de estado enquanto `checkServerConnection()` consulta o servidor a cada quinze segundos.
+A versão 1.6.0 eliminou o efeito de tela piscando durante indisponibilidades do servidor antigo. Depois que uma sessão offline é exibida, as tentativas periódicas não executam novamente o fluxo completo de inicialização nem ocultam `appShell`. Somente o pequeno indicador de conexão muda de estado enquanto `checkServerConnection()` consulta o servidor a cada quinze segundos.
 
 ### 37.1 Saldo acumulado entre meses
 
 A partir da versão 1.7.0, o cartão **Saldo acumulado** não é zerado na mudança do mês. Ganhos, despesas, registros recentes, gráficos e médias continuam filtrados pelo mês escolhido, mas o saldo soma todo o histórico financeiro até o último dia desse período. Registros ocasionais entram uma vez no cálculo; registros mensais fixos entram uma vez por mês desde a data inicial. A área de metas usa o mesmo saldo acumulado para calcular quanto permanece livre depois dos valores reservados.
 
-Quando Render, Neon e Firebase voltam a responder, a fila é enviada. Os dados remotos são recarregados apenas se não restar nenhuma operação pendente, evitando que uma resposta antiga substitua alterações locais ainda não sincronizadas. O fluxo completo de autenticação continua sendo repetido somente quando não existe usuário local autenticado.
+Quando Cloudflare, Neon e Firebase voltam a responder, a fila é enviada. Os dados remotos são recarregados apenas se não restar nenhuma operação pendente, evitando que uma resposta antiga substitua alterações locais ainda não sincronizadas. O fluxo completo de autenticação continua sendo repetido somente quando não existe usuário local autenticado.
 
-## 38. Resumo final
+## 38. Migração Cloudflare e versão 2.0.0
+
+A versão 2.0.0 substitui a hospedagem principal do Render por Cloudflare Workers sem trocar os serviços de identidade ou dados. O Firebase Authentication continua mantendo as contas e emitindo ID tokens. O Neon continua armazenando todo o histórico financeiro. O Hyperdrive mantém a credencial PostgreSQL e fornece a connection string apropriada ao Worker.
+
+### 38.1 Arquivos da integração
+
+- `wrangler.jsonc`: nome do Worker, compatibilidade, assets, variáveis não sigilosas, Hyperdrive, observabilidade e nomes dos secrets obrigatórios;
+- `worker/index.mjs`: entrega assets, APK e requisições Express;
+- `worker-configuration.d.ts`: tipos gerados pelo Wrangler para bindings e variáveis;
+- `.dev.vars.example`: nomes necessários no ambiente local, sem valores reais;
+- `scripts/build-mobile.mjs`: monta `dist/`, dependências do navegador e APK sem depender da cópia recursiva problemática do OneDrive.
+
+### 38.2 Roteamento
+
+- `/api/*` executa o Express por meio da ponte HTTP do runtime Node da Cloudflare;
+- `/download/android` entrega `dist/downloads/planejamento-financeiro.apk` com tipo e nome de download corretos;
+- todas as demais rotas são atendidas pelo binding `ASSETS`;
+- a ponte Express é criada somente no primeiro acesso à API, evitando operações de I/O no escopo global do Worker.
+
+### 38.3 Autenticação no servidor
+
+O servidor não incorpora a biblioteca Firebase Admin no bundle do Worker. `requireAuth()` envia o token recebido para `accounts:lookup`, exige UID, e-mail e confirmação, e depois aplica o mesmo vínculo entre Firebase e a tabela `users`. Na exclusão, a confirmação digitada continua obrigatória e `accounts:delete` remove a credencial Firebase autenticada.
+
+### 38.4 Segredos e bindings
+
+Os valores reais ficam fora do Git. Produção requer os secrets `FIREBASE_PROJECT_ID`, `FIREBASE_API_KEY`, `FIREBASE_AUTH_DOMAIN` e `FIREBASE_APP_ID`. O Hyperdrive utilizado pela aplicação é `planejamento-financeiro-neon`; seu identificador fica no Wrangler, mas usuário, senha e connection string do Neon permanecem protegidos na infraestrutura Cloudflare.
+
+### 38.5 Distribuições
+
+- Site/PWA: servido diretamente pela Cloudflare e instalável no iPhone pelo Safari;
+- Android: Capacitor 8, `versionCode 9`, `versionName 2.0.0`, interface local e API remota Cloudflare;
+- atualização: `/api/app-version` anuncia 2.0.0 e `/download/android` fornece o APK correspondente;
+- cache PWA: `planejamento-financeiro-pwa-v2.0.0`, provocando substituição segura dos recursos anteriores.
+
+### 38.6 Retorno temporário
+
+Durante a confirmação em aparelhos reais, o serviço e o arquivo `render.yaml` podem ser mantidos como retorno. Um rollback do Worker pode ser feito com `wrangler rollback`, e o endereço antigo pode ser restaurado em `REMOTE_API_ORIGIN` somente se necessário. Nenhuma dessas operações altera ou copia os dados do Neon.
+
+## 39. Resumo final
 
 O Planejamento Financeiro é uma aplicação web autenticada, organizada por telas no servidor e por responsabilidades no navegador. O Firebase identifica as pessoas, o servidor Express valida cada requisição e o Neon preserva os dados financeiros. O projeto suporta controle mensal, médias, meta diária, categorias, metas com depósitos, histórico de conclusão, análises e relatórios.
 

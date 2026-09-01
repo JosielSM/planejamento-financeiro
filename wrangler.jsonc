@@ -1,0 +1,36 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "planejamento-financeiro",
+  "main": "./worker/index.mjs",
+  "compatibility_date": "2026-09-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": true,
+  "preview_urls": true,
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "run_worker_first": ["/api/*", "/download/android"]
+  },
+  "vars": {
+    "NODE_ENV": "production",
+    "APP_VERSION": "2.0.0"
+  },
+  "hyperdrive": [
+    {
+      "binding": "HYPERDRIVE",
+      "id": "62ea48de74e540e6be40b01c77403d26"
+    }
+  ],
+  "secrets": {
+    "required": [
+      "FIREBASE_PROJECT_ID",
+      "FIREBASE_API_KEY",
+      "FIREBASE_AUTH_DOMAIN",
+      "FIREBASE_APP_ID"
+    ]
+  },
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  }
+}

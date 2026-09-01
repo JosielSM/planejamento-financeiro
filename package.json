@@ -1,11 +1,15 @@
 {
   "name": "planejamento-financeiro",
-  "version": "1.7.0",
+  "version": "2.0.0",
   "private": true,
   "type": "module",
   "scripts": {
     "start": "node src/server.mjs",
     "dev": "node src/server.mjs",
+    "dev:cloudflare": "npm run build:mobile && wrangler dev",
+    "deploy:cloudflare:check": "npm run build:mobile && wrangler deploy --dry-run",
+    "deploy:cloudflare": "npm run build:mobile && wrangler deploy",
+    "cloudflare:types": "wrangler types worker-configuration.d.ts",
     "build:mobile": "node scripts/build-mobile.mjs",
     "cap:sync": "npm run build:mobile && cap sync android",
     "cap:open": "cap open android",
@@ -19,10 +23,9 @@
     "@capacitor/android": "^8.0.0",
     "@capacitor/core": "^8.0.0",
     "exceljs": "^4.4.0",
-    "express": "^4.19.2",
+    "express": "^5.2.1",
     "express-rate-limit": "^8.6.0",
     "firebase": "^12.16.0",
-    "firebase-admin": "^14.2.0",
     "helmet": "^8.3.0",
     "jspdf": "^4.2.1",
     "jspdf-autotable": "^5.0.8",
@@ -33,6 +36,9 @@
     "node": ">=22"
   },
   "devDependencies": {
-    "@capacitor/cli": "^8.0.0"
+    "@capacitor/cli": "^8.0.0",
+    "@cloudflare/workers-types": "^5.20260901.1",
+    "firebase-admin": "^14.3.0",
+    "wrangler": "^4.128.0"
   }
 }

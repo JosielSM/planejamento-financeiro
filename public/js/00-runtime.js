@@ -1,5 +1,5 @@
-const REMOTE_API_ORIGIN = "https://planejamento-financeiro-0b29.onrender.com";
-const APP_VERSION = "1.7.0";
+const REMOTE_API_ORIGIN = "https://planejamento-financeiro.santosjosiel2003.workers.dev";
+const APP_VERSION = "2.0.0";
 
 function isNativeRuntime() {
   return Boolean(window.Capacitor?.isNativePlatform?.());

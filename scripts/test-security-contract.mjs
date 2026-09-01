@@ -15,7 +15,8 @@ const events = await readFile(new URL("../public/js/07-events.js", import.meta.u
 
 assert.match(server, /app\.delete\("\/api\/account"/);
 assert.match(server, /DELETE FROM users WHERE id = \$1/);
-assert.match(server, /firebaseAdminAuth\.deleteUser/);
+assert.match(server, /accounts:delete\?key=/);
+assert.match(server, /idToken: request\.firebaseIdToken/);
 assert.match(server, /emailConfirmation/);
 assert.match(server, /createdAt: row\.created_at/);
 assert.match(server, /X-Request-ID/);

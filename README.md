@@ -15,14 +15,15 @@ Aplicação web para controle financeiro pessoal, com autenticação individual,
 - Exportação de relatórios em PDF e Excel.
 - Tema claro e escuro.
 - Feedback temporário para ações concluídas e falhas de sincronização.
-- Aplicativo Android nativo com Capacitor, interface empacotada e abertura independente do Render.
+- Aplicativo Android nativo com Capacitor, interface empacotada e abertura independente do servidor.
 - PWA instalável no iPhone pelo Safari, com ícone, tela de abertura e cache do aplicativo.
 - Botão adaptável: baixa o APK no Android e ensina a instalação na Tela de Início no iPhone.
 - Verificação de versão no Android, com aviso e download quando existe um APK mais recente.
 - Download direto do APK pelo botão “Baixar para Android” no site.
 - Cache local separado por usuário e fila de sincronização automática para alterações feitas sem conexão.
-- Persistência no PostgreSQL/Neon por meio de uma API Express.
-- Hospedagem preparada para o Render.
+- Persistência no PostgreSQL/Neon por meio de uma API Express executada em Cloudflare Workers.
+- Hyperdrive entre a Cloudflare e o Neon para conexões PostgreSQL estáveis e eficientes.
+- Hospedagem principal na Cloudflare, sem hibernação do antigo servidor gratuito do Render.
 
 ## Documentação completa
 
@@ -58,6 +59,10 @@ Acesse `http://127.0.0.1:5500`.
 |---|---|
 | `npm start` | Inicia o servidor principal. |
 | `npm run dev` | Inicia o mesmo servidor para desenvolvimento local. |
+| `npm run dev:cloudflare` | Gera os arquivos estáticos e inicia o Worker local. |
+| `npm run cloudflare:types` | Atualiza os tipos dos bindings declarados no Wrangler. |
+| `npm run deploy:cloudflare:check` | Valida o pacote Cloudflare sem publicar. |
+| `npm run deploy:cloudflare` | Gera os arquivos e publica o Worker. |
 | `npm run build:mobile` | Gera a interface estática do aplicativo em `dist/`. |
 | `npm run cap:sync` | Gera a interface e sincroniza o projeto Android. |
 | `npm run cap:open` | Abre o projeto no Android Studio. |
@@ -76,13 +81,16 @@ android/                Projeto Android nativo gerado pelo Capacitor
 capacitor.config.json   Identidade e configuração do aplicativo Android
 dist/                   Build móvel gerado; não é versionado
 src/server.mjs          Servidor Express, API e migrações automáticas
+worker/index.mjs        Entrada Cloudflare Worker e roteamento de API/assets
 src/views/              Telas, modais e partes HTML
 scripts/                Utilitários administrativos
 schema.sql              Esquema de referência do PostgreSQL
-render.yaml             Configuração de implantação no Render
+wrangler.jsonc          Configuração do Worker, assets e Hyperdrive
+render.yaml             Configuração legada usada como opção temporária de retorno
 .env.example            Modelo das variáveis de ambiente
+.dev.vars.example       Modelo dos segredos para desenvolvimento local do Worker
 ```
 
 ## Segurança
 
-Nunca envie `.env`, credenciais administrativas do Firebase ou a conexão real do Neon ao GitHub. As chaves privadas devem existir somente nas variáveis protegidas do ambiente local ou do Render.
+Nunca envie `.env`, `.dev.vars`, credenciais administrativas do Firebase ou a conexão real do Neon ao GitHub. Os segredos de produção ficam criptografados na Cloudflare; o Worker recebe o PostgreSQL exclusivamente pelo binding Hyperdrive.

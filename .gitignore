@@ -1,5 +1,9 @@
 node_modules/
 .env
+.dev.vars
+.wrangler/
+.wrangler-build/
+*.cpuprofile
 .DS_Store
 npm-debug.log*
 dist/

@@ -13,6 +13,8 @@ const packageMetadata = JSON.parse(await readFile(new URL("../package.json", imp
 const dashboard = await readFile(new URL("../public/js/03-dashboard.js", import.meta.url), "utf8");
 const data = await readFile(new URL("../public/js/02-data.js", import.meta.url), "utf8");
 const events = await readFile(new URL("../public/js/07-events.js", import.meta.url), "utf8");
+const responsiveStyles = await readFile(new URL("../public/css/responsive.css", import.meta.url), "utf8");
+const mobileBuild = await readFile(new URL("./build-mobile.mjs", import.meta.url), "utf8");
 
 assert.match(server, /app\.delete\("\/api\/account"/);
 assert.match(server, /DELETE FROM users WHERE id = \$1/);
@@ -46,4 +48,8 @@ assert.match(dashboard, /compareTransactionsNewestFirst/);
 assert.match(dashboard, /b\.createdAt/);
 assert.match(events, /if \(!startupResolved\)/);
 assert.match(events, /offlineSessionLoaded/);
+assert.match(responsiveStyles, /\.register-actions\s*\{\s*grid-template-columns:\s*repeat\(2,/);
+assert.match(mobileBuild, /process\.argv\.includes\("--capacitor"\)/);
+assert.match(mobileBuild, /if \(!isCapacitorBuild\)/);
+assert.match(mobileBuild, /if \(isCapacitorBuild\) await rm\(capacitorAssetsDirectory/);
 console.log("Contrato de segurança, privacidade e release validado.");

@@ -146,11 +146,15 @@
   .form-grid,
   .goal-form,
   .quick-actions,
-  .register-actions,
   .chart-card,
   .donut-wrap,
   .savings-values {
     grid-template-columns: 1fr;
+  }
+
+  .register-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
   }
 
   .month-control,
@@ -222,6 +226,22 @@
 
   .register-card {
     min-height: 104px;
+    gap: 6px;
+    padding: 12px;
+  }
+
+  .register-card svg {
+    width: 23px;
+    height: 23px;
+  }
+
+  .register-card span {
+    font-size: 0.8rem;
+  }
+
+  .register-card strong {
+    overflow-wrap: anywhere;
+    font-size: 1rem;
   }
 
   .donut-wrap {

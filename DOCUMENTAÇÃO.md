@@ -1203,7 +1203,11 @@ Os valores reais ficam fora do Git. Produção requer os secrets `FIREBASE_PROJE
 
 A versão 2.0.1 adiciona a instalação do PWA em computadores e simplifica o estado de conectividade. O indicador de sincronização deixa de aparecer durante o funcionamento normal. No Android Capacitor, ele surge somente quando o aparelho está sem internet, acompanhado de um aviso temporário; quando a conexão retorna, a fila é processada silenciosamente. O PWA no iPhone não exibe esse indicador. O Android passa a usar `versionCode 10`, `versionName 2.0.1`, e o cache PWA passa a ser `planejamento-financeiro-pwa-v2.0.1`.
 
-### 38.7 Retorno temporário
+### 38.7 Versão 2.0.2
+
+A versão 2.0.2 mantém os cartões “Registrar ganho” e “Registrar despesa” lado a lado em telas de celular. O espaçamento, os ícones, os textos e os valores ficam menores nesse breakpoint para preservar a leitura mesmo em aparelhos estreitos. A compilação Capacitor usa `build-mobile.mjs --capacitor`, limpa os assets Android anteriormente gerados e não incorpora o APK disponível para download dentro do próprio pacote, impedindo crescimento recursivo do arquivo. O Android passa a usar `versionCode 11`, `versionName 2.0.2`, e o cache PWA passa a ser `planejamento-financeiro-pwa-v2.0.2`.
+
+### 38.8 Retorno temporário
 
 Durante a confirmação em aparelhos reais, o serviço e o arquivo `render.yaml` podem ser mantidos como retorno. Um rollback do Worker pode ser feito com `wrangler rollback`, e o endereço antigo pode ser restaurado em `REMOTE_API_ORIGIN` somente se necessário. Nenhuma dessas operações altera ou copia os dados do Neon.
 

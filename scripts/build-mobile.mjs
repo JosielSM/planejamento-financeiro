@@ -5,6 +5,8 @@ import { fileURLToPath } from "node:url";
 const projectRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 const viewsDirectory = join(projectRoot, "src", "views");
 const outputDirectory = join(projectRoot, "dist");
+const isCapacitorBuild = process.argv.includes("--capacitor");
+const capacitorAssetsDirectory = join(projectRoot, "android", "app", "src", "main", "assets", "public");
 
 async function loadView(relativePath) {
   return (await readFile(join(viewsDirectory, relativePath), "utf8")).trim();
@@ -47,12 +49,15 @@ for (const [placeholder, relativePath] of Object.entries(parts)) {
 }
 
 await rm(outputDirectory, { recursive: true, force: true });
+if (isCapacitorBuild) await rm(capacitorAssetsDirectory, { recursive: true, force: true });
 await copyDirectory(join(projectRoot, "public"), outputDirectory);
-await mkdir(join(outputDirectory, "downloads"), { recursive: true });
-await writeFile(
-  join(outputDirectory, "downloads", "planejamento-financeiro.apk"),
-  await readFile(join(projectRoot, "downloads", "planejamento-financeiro.apk")),
-);
+if (!isCapacitorBuild) {
+  await mkdir(join(outputDirectory, "downloads"), { recursive: true });
+  await writeFile(
+    join(outputDirectory, "downloads", "planejamento-financeiro.apk"),
+    await readFile(join(projectRoot, "downloads", "planejamento-financeiro.apk")),
+  );
+}
 await writeFile(join(outputDirectory, "index.html"), document, "utf8");
 // O OneDrive pode representar arquivos novos como reparse points. Regravar o HTML
 // garante um arquivo regular aceito pelo empacotador de assets do Android.
@@ -76,4 +81,4 @@ for (const [source, destination] of vendorFiles) {
   await writeFile(outputPath, await readFile(join(projectRoot, source)));
 }
 
-console.log("Aplicativo mobile gerado em dist/.");
+console.log(`${isCapacitorBuild ? "Aplicativo Capacitor" : "Aplicativo web"} gerado em dist/.`);

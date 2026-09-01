@@ -1,6 +1,6 @@
 # Publicação Android
 
-O aplicativo usa `versionCode 10` e `versionName 2.0.1`. O APK disponível no site é compilado para testes diretos. Uma publicação pública deve usar uma chave privada definitiva e um Android App Bundle.
+O aplicativo usa `versionCode 11` e `versionName 2.0.2`. O APK disponível no site é compilado para testes diretos. Uma publicação pública deve usar uma chave privada definitiva e um Android App Bundle.
 
 ## Preparação única
 

@@ -1,6 +1,6 @@
 {
   "name": "planejamento-financeiro",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "private": true,
   "type": "module",
   "scripts": {
@@ -11,7 +11,7 @@
     "deploy:cloudflare": "npm run build:mobile && wrangler deploy",
     "cloudflare:types": "wrangler types worker-configuration.d.ts",
     "build:mobile": "node scripts/build-mobile.mjs",
-    "cap:sync": "npm run build:mobile && cap sync android",
+    "cap:sync": "npm run build:mobile -- --capacitor && cap sync android",
     "cap:open": "cap open android",
     "android:debug": "npm run cap:sync && cd android && gradlew.bat assembleDebug",
     "android:release": "node scripts/release-android.mjs",

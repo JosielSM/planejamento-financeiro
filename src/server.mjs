@@ -2,12 +2,13 @@ import express from "express";
 import rateLimit from "express-rate-limit";
 import helmet from "helmet";
 import pg from "pg";
+import { AsyncLocalStorage } from "node:async_hooks";
 import { readFileSync } from "node:fs";
 import { randomUUID } from "node:crypto";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const { Pool } = pg;
+const { Client, Pool } = pg;
 const cloudflareEnv = globalThis.__CLOUDFLARE_ENV__ || null;
 const runtimeEnv = cloudflareEnv || process.env;
 const isCloudflareWorker = Boolean(cloudflareEnv);
@@ -56,10 +57,28 @@ const firebaseClientConfig = {
 };
 const firebaseClientConfigured = Object.values(firebaseClientConfig).every(Boolean);
 const firebaseServerConfigured = Boolean(firebaseProjectId && runtimeEnv.FIREBASE_API_KEY);
-let pool = null;
+const databaseContext = isCloudflareWorker ? new AsyncLocalStorage() : null;
+const workerDatabase = isCloudflareWorker && databaseUrl
+  ? {
+      query(...args) {
+        const client = databaseContext.getStore();
+        if (!client) throw new Error("Cliente PostgreSQL indisponivel nesta requisicao");
+        return client.query(...args);
+      },
+      async connect() {
+        const client = databaseContext.getStore();
+        if (!client) throw new Error("Cliente PostgreSQL indisponivel nesta requisicao");
+        return {
+          query: (...args) => client.query(...args),
+          release() {},
+        };
+      },
+    }
+  : null;
+let pool = workerDatabase;
 
 function ensureRuntimeServices() {
-  if (!pool && databaseUrl) {
+  if (!isCloudflareWorker && !pool && databaseUrl) {
     pool = new Pool({
       connectionString: databaseUrl,
       ssl: isCloudflareWorker ? undefined : runtimeEnv.NODE_ENV === "production" ? { rejectUnauthorized: false } : false,
@@ -68,7 +87,18 @@ function ensureRuntimeServices() {
 }
 
 app.disable("x-powered-by");
-app.use((_request, _response, next) => {
+app.use(async (_request, response, next) => {
+  if (isCloudflareWorker && databaseUrl) {
+    const client = new Client({ connectionString: databaseUrl });
+    try {
+      await client.connect();
+      databaseContext.run(client, next);
+    } catch (error) {
+      console.error("Erro ao conectar ao banco nesta requisicao:", error);
+      response.status(503).json({ error: "Banco de dados temporariamente indisponivel" });
+    }
+    return;
+  }
   ensureRuntimeServices();
   next();
 });

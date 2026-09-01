@@ -1182,6 +1182,8 @@ A versão 2.0.0 substitui a hospedagem principal do Render por Cloudflare Worker
 - todas as demais rotas são atendidas pelo binding `ASSETS`;
 - a ponte Express é criada somente no primeiro acesso à API, evitando operações de I/O no escopo global do Worker.
 
+Cada requisição de API cria seu próprio `pg.Client` e o associa ao fluxo Express com `AsyncLocalStorage`. A conexão nunca é reutilizada diretamente por outra requisição, pois o runtime do Workers não permite compartilhar I/O entre contextos diferentes. O Hyperdrive mantém o pool subjacente e faz com que essa abertura por requisição continue eficiente.
+
 ### 38.3 Autenticação no servidor
 
 O servidor não incorpora a biblioteca Firebase Admin no bundle do Worker. `requireAuth()` envia o token recebido para `accounts:lookup`, exige UID, e-mail e confirmação, e depois aplica o mesmo vínculo entre Firebase e a tabela `users`. Na exclusão, a confirmação digitada continua obrigatória e `accounts:delete` remove a credencial Firebase autenticada.

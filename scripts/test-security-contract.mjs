@@ -20,6 +20,8 @@ assert.match(server, /idToken: request\.firebaseIdToken/);
 assert.match(server, /emailConfirmation/);
 assert.match(server, /createdAt: row\.created_at/);
 assert.match(server, /X-Request-ID/);
+assert.match(server, /new Client\(\{ connectionString: databaseUrl \}\)/);
+assert.match(server, /databaseContext\.run\(client, next\)/);
 assert.match(androidManifest, /android:allowBackup="false"/);
 assert.match(androidManifest, /android:usesCleartextTraffic="false"/);
 assert.match(gradle, /PF_RELEASE_STORE_FILE/);

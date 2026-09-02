@@ -23,7 +23,7 @@ Aplicação web para controle financeiro pessoal, com autenticação individual,
 - Cache local separado por usuário e fila de sincronização automática para alterações feitas sem conexão.
 - Persistência no PostgreSQL/Neon por meio de uma API Express executada em Cloudflare Workers.
 - Hyperdrive entre a Cloudflare e o Neon para conexões PostgreSQL estáveis e eficientes.
-- Hospedagem principal na Cloudflare, sem hibernação do antigo servidor gratuito do Render.
+- Hospedagem exclusiva na Cloudflare Workers, sem hibernação do servidor.
 
 ## Documentação completa
 
@@ -86,7 +86,6 @@ src/views/              Telas, modais e partes HTML
 scripts/                Utilitários administrativos
 schema.sql              Esquema de referência do PostgreSQL
 wrangler.jsonc          Configuração do Worker, assets e Hyperdrive
-render.yaml             Configuração legada usada como opção temporária de retorno
 .env.example            Modelo das variáveis de ambiente
 .dev.vars.example       Modelo dos segredos para desenvolvimento local do Worker
 ```

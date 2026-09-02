@@ -157,7 +157,6 @@ planejamento-financeiro/
 ├─ package.json
 ├─ package-lock.json
 ├─ README.md
-├─ render.yaml
 └─ schema.sql
 ```
 
@@ -668,7 +667,7 @@ Na inicialização, o servidor:
 6. remove a antiga chave primária simples de `settings`, se existir;
 7. cria índices de unicidade e consulta.
 
-No modo Node/Render legado, qualquer falha encerra a inicialização. No Worker, as tabelas já existentes no Neon são reutilizadas e a conexão é criada sob demanda pelo Hyperdrive; migrações estruturais continuam sendo executadas deliberadamente pelo modo Node antes de mudanças de esquema.
+No modo Node local, qualquer falha encerra a inicialização. No Worker, as tabelas já existentes no Neon são reutilizadas e a conexão é criada sob demanda pelo Hyperdrive; migrações estruturais continuam sendo executadas deliberadamente pelo modo Node antes de mudanças de esquema.
 
 ## 13. Relatórios
 
@@ -839,7 +838,7 @@ Fluxo de implantação:
 7. valide `/`, `/api/health`, `/api/config/firebase`, `/api/app-version` e `/download/android`;
 8. acompanhe logs e traces na observabilidade do Worker.
 
-O `render.yaml` permanece apenas como opção temporária de retorno durante a migração. O cliente Android 2.0.0 e o PWA usam a Cloudflare como origem principal.
+O cliente Android e o PWA usam a Cloudflare como origem exclusiva da aplicação.
 
 ## 20. Script de migração Firebase
 
@@ -1163,9 +1162,9 @@ A partir da versão 1.7.0, o cartão **Saldo acumulado** não é zerado na mudan
 
 Quando Cloudflare, Neon e Firebase voltam a responder, a fila é enviada. Os dados remotos são recarregados apenas se não restar nenhuma operação pendente, evitando que uma resposta antiga substitua alterações locais ainda não sincronizadas. O fluxo completo de autenticação continua sendo repetido somente quando não existe usuário local autenticado.
 
-## 38. Migração Cloudflare e versão 2.0.0
+## 38. Cloudflare e versão 2.0.0
 
-A versão 2.0.0 substitui a hospedagem principal do Render por Cloudflare Workers sem trocar os serviços de identidade ou dados. O Firebase Authentication continua mantendo as contas e emitindo ID tokens. O Neon continua armazenando todo o histórico financeiro. O Hyperdrive mantém a credencial PostgreSQL e fornece a connection string apropriada ao Worker.
+A versão 2.0.0 centraliza a hospedagem na Cloudflare Workers sem trocar os serviços de identidade ou dados. O Firebase Authentication continua mantendo as contas e emitindo ID tokens. O Neon continua armazenando todo o histórico financeiro. O Hyperdrive mantém a credencial PostgreSQL e fornece a connection string apropriada ao Worker.
 
 ### 38.1 Arquivos da integração
 
@@ -1207,9 +1206,9 @@ A versão 2.0.1 adiciona a instalação do PWA em computadores e simplifica o es
 
 A versão 2.0.2 mantém os cartões “Registrar ganho” e “Registrar despesa” lado a lado em telas de celular. O espaçamento, os ícones, os textos e os valores ficam menores nesse breakpoint para preservar a leitura mesmo em aparelhos estreitos. A compilação Capacitor usa `build-mobile.mjs --capacitor`, limpa os assets Android anteriormente gerados e não incorpora o APK disponível para download dentro do próprio pacote, impedindo crescimento recursivo do arquivo. O Android passa a usar `versionCode 11`, `versionName 2.0.2`, e o cache PWA passa a ser `planejamento-financeiro-pwa-v2.0.2`.
 
-### 38.8 Retorno temporário
+### 38.8 Hospedagem definitiva
 
-Durante a confirmação em aparelhos reais, o serviço e o arquivo `render.yaml` podem ser mantidos como retorno. Um rollback do Worker pode ser feito com `wrangler rollback`, e o endereço antigo pode ser restaurado em `REMOTE_API_ORIGIN` somente se necessário. Nenhuma dessas operações altera ou copia os dados do Neon.
+A aplicação utiliza exclusivamente a Cloudflare Workers. Um rollback de versão pode ser feito com `wrangler rollback`; essa operação não altera nem copia os dados do Neon. Não existe configuração de hospedagem alternativa no repositório.
 
 ## 39. Resumo final
 

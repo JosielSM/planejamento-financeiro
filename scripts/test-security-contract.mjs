@@ -24,6 +24,7 @@ const themeStyles = await readFile(new URL("../public/css/themes.css", import.me
 const reportScripts = await readFile(new URL("../public/js/05-reports.js", import.meta.url), "utf8");
 const scriptLayout = await readFile(new URL("../src/views/partials/scripts.html", import.meta.url), "utf8");
 const serviceWorker = await readFile(new URL("../public/service-worker.js", import.meta.url), "utf8");
+const dashboardView = await readFile(new URL("../src/views/screens/dashboard.html", import.meta.url), "utf8");
 
 assert.match(server, /app\.delete\("\/api\/account"/);
 assert.match(server, /DELETE FROM users WHERE id = \$1/);
@@ -71,6 +72,9 @@ assert.doesNotMatch(scriptLayout, /src="\/vendor\/(?:exceljs|jspdf)/);
 assert.match(scriptLayout, /<script defer/);
 assert.match(serviceWorker, /event\.waitUntil\(refresh\.catch/);
 assert.match(serviceWorker, /cached \|\| refresh/);
+assert.doesNotMatch(dashboardView, /data-tab-target=/);
+assert.match(dashboardView, /class="quick-actions report-only"/);
+assert.match(dashboardView, /<strong>Excel<\/strong>/);
 assert.match(responsiveStyles, /\.register-actions\s*\{\s*grid-template-columns:\s*repeat\(2,/);
 assert.match(mobileBuild, /process\.argv\.includes\("--capacitor"\)/);
 assert.match(mobileBuild, /if \(!isCapacitorBuild\)/);

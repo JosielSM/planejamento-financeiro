@@ -297,6 +297,14 @@ label {
   margin-bottom: 20px;
 }
 
+.quick-actions.report-only {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.report-only .report-action {
+  width: 100%;
+}
+
 .action-tile {
   display: grid;
   gap: 6px;

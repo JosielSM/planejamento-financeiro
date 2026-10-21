@@ -1238,7 +1238,11 @@ A versão 2.5.0 torna mensal o histórico de metas concluídas. A tela de metas 
 
 A versão 2.6.0 simplifica o painel inicial e elimina atalhos duplicados. Os quatro cartões que levavam a ganhos e despesas, metas, destino dos gastos e registros foram removidos, pois essas áreas já estão disponíveis na barra de navegação principal. O painel mantém somente o cartão em largura total **Baixar relatório — Excel**, que abre a seleção do período de exportação. O Android usa `versionCode 17`, `versionName 2.6.0`, e o cache PWA usa `planejamento-financeiro-pwa-v2.6.0`.
 
-### 38.14 Hospedagem definitiva
+### 38.14 Versão 2.7.0
+
+A versão 2.7.0 mantém o cabeçalho superior visível durante toda a rolagem. A barra com a identificação do sistema, instalação, tema e perfil usa posicionamento aderente, prioridade de empilhamento abaixo dos modais e a sombra do tema ativo. A navegação principal deixa de disputar a mesma posição no topo em telas maiores e continua fixa na parte inferior dos celulares. O Android usa `versionCode 18`, `versionName 2.7.0`, e o cache PWA usa `planejamento-financeiro-pwa-v2.7.0`.
+
+### 38.15 Hospedagem definitiva
 
 A aplicação utiliza exclusivamente a Cloudflare Workers. Um rollback de versão pode ser feito com `wrangler rollback`; essa operação não altera nem copia os dados do Neon. Não existe configuração de hospedagem alternativa no repositório.
 

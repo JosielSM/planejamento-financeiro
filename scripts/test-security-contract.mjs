@@ -20,6 +20,7 @@ const authAction = await readFile(new URL("../public/js/09-auth-action.js", impo
 const capacitorConfig = await readFile(new URL("../capacitor.config.json", import.meta.url), "utf8");
 const gradleVariables = await readFile(new URL("../android/variables.gradle", import.meta.url), "utf8");
 const baseStyles = await readFile(new URL("../public/css/base.css", import.meta.url), "utf8");
+const dashboardStyles = await readFile(new URL("../public/css/dashboard.css", import.meta.url), "utf8");
 const themeStyles = await readFile(new URL("../public/css/themes.css", import.meta.url), "utf8");
 const reportScripts = await readFile(new URL("../public/js/05-reports.js", import.meta.url), "utf8");
 const scriptLayout = await readFile(new URL("../src/views/partials/scripts.html", import.meta.url), "utf8");
@@ -88,6 +89,8 @@ assert.match(server, /AbortSignal\.timeout\(10000\)/);
 assert.match(baseStyles, /--bg: #f5f7f6/);
 assert.match(baseStyles, /--surface: #19242e/);
 assert.match(baseStyles, /--green: #48d9a6/);
+assert.match(baseStyles, /\.topbar\s*\{[^}]*position:\s*sticky;[^}]*top:\s*0;[^}]*z-index:\s*20;/s);
+assert.match(dashboardStyles, /\.app-tabs\s*\{[^}]*position:\s*static;/s);
 assert.match(themeStyles, /background: var\(--highlight\)/);
 assert.match(foundation, /prefers-color-scheme: dark/);
 console.log("Contrato de segurança, privacidade e release validado.");

@@ -1224,7 +1224,13 @@ A versão 2.3.0 reduz o caminho crítico de abertura. As bibliotecas de PDF e Ex
 
 O aplicativo agora restaura imediatamente a sessão e os dados locais validados, exibe a interface e atualiza conta, registros e fila de sincronização em segundo plano. A configuração pública do Firebase é reutilizada do cache local e atualizada silenciosamente. O PWA usa a estratégia *stale-while-revalidate* para navegações: abre o conteúdo instalado imediatamente e busca uma versão nova sem bloquear a tela. Endpoints públicos de configuração e versão não abrem conexão desnecessária com o banco. O Android usa `versionCode 14`, `versionName 2.3.0`, e o cache PWA usa `planejamento-financeiro-pwa-v2.3.0`.
 
-### 38.11 Hospedagem definitiva
+### 38.11 Versão 2.4.0
+
+A versão 2.4.0 adiciona o botão **Zerar mês** à tela de registros. A ação considera o mês selecionado no painel, informa quantos lançamentos e depósitos em metas serão afetados e exige confirmação antes da exclusão. Ao confirmar, o sistema remove todos os ganhos e despesas datados naquele mês, remove os depósitos em metas do mesmo período e reabre automaticamente qualquer meta concluída que deixe de atingir o valor planejado.
+
+Além da exclusão, o sistema grava um marco de reinício do saldo acumulado. Os lançamentos anteriores permanecem disponíveis no histórico, mas deixam de compor o saldo do mês zerado e dos meses seguintes. A operação é atômica no servidor e também pode entrar na fila offline como uma única ação idempotente. O Android usa `versionCode 15`, `versionName 2.4.0`, e o cache PWA usa `planejamento-financeiro-pwa-v2.4.0`.
+
+### 38.12 Hospedagem definitiva
 
 A aplicação utiliza exclusivamente a Cloudflare Workers. Um rollback de versão pode ser feito com `wrangler rollback`; essa operação não altera nem copia os dados do Neon. Não existe configuração de hospedagem alternativa no repositório.
 

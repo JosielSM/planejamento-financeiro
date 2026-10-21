@@ -319,6 +319,10 @@
     grid-template-columns: 1fr;
   }
 
+  .month-reset-button {
+    width: 100%;
+  }
+
   .table-wrap {
     overflow: visible;
   }

@@ -496,6 +496,21 @@ button:focus {
   min-width: 160px;
 }
 
+.month-reset-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 42px;
+  border-color: var(--red-line);
+  white-space: nowrap;
+}
+
+.month-reset-button svg {
+  width: 17px;
+  height: 17px;
+}
+
 .table-wrap {
   overflow-x: auto;
 }

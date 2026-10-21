@@ -78,7 +78,14 @@ function getTransactionOccurrenceCountThroughMonth(item, monthValue) {
 }
 
 function getAccumulatedBalance(monthValue = monthFilter.value) {
+  const resetMonth = Object.entries(settings)
+    .filter(([key, value]) => key.startsWith("balanceReset:") && (value === true || value === "true"))
+    .map(([key]) => key.slice("balanceReset:".length))
+    .filter((candidate) => candidate <= monthValue)
+    .sort()
+    .at(-1) || "";
   return transactions.reduce((total, item) => {
+    if (resetMonth && String(item.date || "").slice(0, 7) < resetMonth) return total;
     const occurrences = getTransactionOccurrenceCountThroughMonth(item, monthValue);
     const amount = Number(item.amount || 0) * occurrences;
     return total + (item.type === "income" ? amount : -amount);

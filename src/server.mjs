@@ -18,7 +18,7 @@ const publicDirectory = isCloudflareWorker ? "" : join(projectRoot, "public");
 const viewsDirectory = isCloudflareWorker ? "" : join(moduleDirectory, "views");
 const androidApkPath = isCloudflareWorker ? "" : join(projectRoot, "downloads", "planejamento-financeiro.apk");
 const packageMetadata = isCloudflareWorker
-  ? { version: runtimeEnv.APP_VERSION || "2.3.0" }
+  ? { version: runtimeEnv.APP_VERSION || "2.4.0" }
   : JSON.parse(readFileSync(join(projectRoot, "package.json"), "utf8"));
 
 function loadView(relativePath) {
@@ -661,6 +661,66 @@ app.delete("/api/transactions/:id", async (request, response) => {
   if (!user) return;
   await pool.query("DELETE FROM transactions WHERE id = $1 AND user_id = $2", [request.params.id, user.id]);
   response.status(204).end();
+});
+
+app.delete("/api/months/:month", async (request, response) => {
+  const user = await requireAuth(request, response);
+  if (!user) return;
+  const month = String(request.params.month || "");
+  if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) {
+    response.status(400).json({ error: "Mes invalido" });
+    return;
+  }
+
+  const startDate = `${month}-01`;
+  const [year, monthNumber] = month.split("-").map(Number);
+  const endDate = new Date(Date.UTC(year, monthNumber, 1)).toISOString().slice(0, 10);
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const deletedTransactions = await client.query(
+      "DELETE FROM transactions WHERE user_id = $1 AND date >= $2 AND date < $3 RETURNING id",
+      [user.id, startDate, endDate],
+    );
+    const deletedDeposits = await client.query(
+      `DELETE FROM savings_deposits deposit
+       USING savings_goals goal
+       WHERE deposit.goal_id = goal.id
+         AND goal.user_id = $1
+         AND deposit.date >= $2
+         AND deposit.date < $3
+       RETURNING deposit.id`,
+      [user.id, startDate, endDate],
+    );
+    const reopenedGoals = await client.query(
+      `UPDATE savings_goals goal
+       SET completed_at = NULL
+       WHERE goal.user_id = $1
+         AND goal.completed_at IS NOT NULL
+         AND (SELECT COALESCE(SUM(amount), 0) FROM savings_deposits WHERE goal_id = goal.id) < goal.target_amount
+       RETURNING goal.id`,
+      [user.id],
+    );
+    await client.query(
+      `INSERT INTO settings (user_id, key, value, updated_at)
+       VALUES ($1, $2, 'true', NOW())
+       ON CONFLICT (user_id, key)
+       DO UPDATE SET value = 'true', updated_at = NOW()`,
+      [user.id, `balanceReset:${month}`],
+    );
+    await client.query("COMMIT");
+    response.json({
+      month,
+      deletedTransactions: deletedTransactions.rowCount,
+      deletedDeposits: deletedDeposits.rowCount,
+      reopenedGoals: reopenedGoals.rowCount,
+    });
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
 });
 
 app.get("/api/savings-goals", async (request, response) => {

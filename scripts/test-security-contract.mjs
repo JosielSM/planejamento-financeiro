@@ -30,6 +30,9 @@ assert.match(server, /DELETE FROM users WHERE id = \$1/);
 assert.match(server, /accounts:delete\?key=/);
 assert.match(server, /idToken: request\.firebaseIdToken/);
 assert.match(server, /emailConfirmation/);
+assert.match(server, /app\.delete\("\/api\/months\/:month"/);
+assert.match(server, /balanceReset:\$\{month\}/);
+assert.match(server, /DELETE FROM savings_deposits deposit/);
 assert.match(server, /createdAt: row\.created_at/);
 assert.match(server, /X-Request-ID/);
 assert.match(server, /new Client\(\{ connectionString: databaseUrl \}\)/);
@@ -56,6 +59,8 @@ assert.match(runtime, new RegExp(`APP_VERSION = "${packageMetadata.version.repla
 assert.match(gradle, new RegExp(`versionName "${packageMetadata.version.replaceAll(".", "\\.")}"`));
 assert.match(dashboard, /compareTransactionsNewestFirst/);
 assert.match(dashboard, /b\.createdAt/);
+assert.match(dashboard, /key\.startsWith\("balanceReset:"\)/);
+assert.match(events, /resetMonthData\(selectedMonth\)/);
 assert.match(events, /if \(!startupResolved\)/);
 assert.match(events, /initializeFirebase\(\{ allowCachedConfig: true \}\)/);
 assert.doesNotMatch(events, /loadHealthWithRetry/);

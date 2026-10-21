@@ -269,6 +269,35 @@ recordsBody.addEventListener("click", async (event) => {
   showToast(deleted ? "Registro excluido." : "Nao foi possivel excluir o registro.", deleted ? "success" : "error");
 });
 
+resetMonthButton.addEventListener("click", async () => {
+  const selectedMonth = monthFilter.value;
+  const label = monthName(selectedMonth);
+  const monthTransactionCount = transactions.filter((item) => String(item.date || "").slice(0, 7) === selectedMonth).length;
+  const monthDepositCount = savingsGoals.reduce((total, goal) => (
+    total + (goal.deposits || []).filter((deposit) => String(deposit.date || "").slice(0, 7) === selectedMonth).length
+  ), 0);
+  const confirmed = await askConfirmation({
+    title: `Zerar ${label}?`,
+    message: `Isso excluirá ${monthTransactionCount} registro(s), ${monthDepositCount} depósito(s) em metas e zerará o saldo acumulado a partir deste mês. Os meses anteriores continuarão disponíveis no histórico. Esta ação não pode ser desfeita.`,
+    confirmLabel: "Zerar mês",
+  });
+  if (!confirmed) return;
+
+  resetMonthButton.disabled = true;
+  try {
+    const result = await resetMonthData(selectedMonth);
+    showToast(
+      result.queued ? "Mês zerado neste aparelho. A exclusão será sincronizada quando a conexão voltar." : "Mês zerado completamente.",
+      result.queued ? "info" : "success",
+      4800,
+    );
+  } catch (error) {
+    await showNotice(error.message || "Não foi possível zerar o mês.", "Mês não zerado", "error");
+  } finally {
+    resetMonthButton.disabled = false;
+  }
+});
+
 monthFilter.addEventListener("change", render);
 typeFilter.addEventListener("change", render);
 frequencyFilter.addEventListener("change", render);

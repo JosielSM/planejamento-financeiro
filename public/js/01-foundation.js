@@ -74,6 +74,7 @@ const monthFilter = document.querySelector("#monthFilter");
 const typeFilter = document.querySelector("#typeFilter");
 const frequencyFilter = document.querySelector("#frequencyFilter");
 const recordsBody = document.querySelector("#recordsBody");
+const resetMonthButton = document.querySelector("#resetMonthButton");
 const emptyState = document.querySelector("#emptyState");
 const dailyGoalInput = document.querySelector("#dailyGoal");
 const savingsGoalsList = document.querySelector("#savingsGoalsList");

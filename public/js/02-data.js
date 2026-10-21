@@ -240,6 +240,7 @@ async function loadFromApi() {
     transactions = remoteTransactions;
     settings = {
       ...settings,
+      ...remoteSettings,
       dailyGoal: parseAmount(remoteSettings.dailyGoal || 0),
       includeSundays: remoteSettings.includeSundays === "true",
     };
@@ -300,6 +301,29 @@ async function deleteTransaction(id) {
   } catch {
     return false;
   }
+}
+
+async function resetMonthData(monthValue) {
+  if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(monthValue)) throw new Error("Mes invalido");
+  transactions = transactions.filter((item) => String(item.date || "").slice(0, 7) !== monthValue);
+  savingsGoals = savingsGoals.map((goal) => {
+    const deposits = (goal.deposits || []).filter((deposit) => String(deposit.date || "").slice(0, 7) !== monthValue);
+    const savedAmount = deposits.reduce((sum, deposit) => sum + Number(deposit.amount || 0), 0);
+    return normalizeSavingsGoal({
+      ...goal,
+      deposits,
+      savedAmount,
+      completedAt: savedAmount >= Number(goal.targetAmount || 0) ? goal.completedAt : null,
+    });
+  });
+  settings[`balanceReset:${monthValue}`] = true;
+  saveTransactions();
+  saveSavingsGoals();
+  saveSettings();
+  render();
+
+  const result = await requestOrQueue(`/api/months/${monthValue}`, { method: "DELETE" });
+  return { queued: result.queued };
 }
 
 async function createSavingsGoal(goal) {

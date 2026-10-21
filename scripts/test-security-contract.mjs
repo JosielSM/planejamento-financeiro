@@ -21,6 +21,7 @@ const capacitorConfig = await readFile(new URL("../capacitor.config.json", impor
 const gradleVariables = await readFile(new URL("../android/variables.gradle", import.meta.url), "utf8");
 const baseStyles = await readFile(new URL("../public/css/base.css", import.meta.url), "utf8");
 const dashboardStyles = await readFile(new URL("../public/css/dashboard.css", import.meta.url), "utf8");
+const transactionStyles = await readFile(new URL("../public/css/transactions.css", import.meta.url), "utf8");
 const themeStyles = await readFile(new URL("../public/css/themes.css", import.meta.url), "utf8");
 const reportScripts = await readFile(new URL("../public/js/05-reports.js", import.meta.url), "utf8");
 const scriptLayout = await readFile(new URL("../src/views/partials/scripts.html", import.meta.url), "utf8");
@@ -91,6 +92,8 @@ assert.match(baseStyles, /--surface: #19242e/);
 assert.match(baseStyles, /--green: #48d9a6/);
 assert.match(baseStyles, /\.topbar\s*\{[^}]*position:\s*sticky;[^}]*top:\s*0;[^}]*z-index:\s*20;/s);
 assert.match(dashboardStyles, /\.app-tabs\s*\{[^}]*position:\s*static;/s);
+assert.match(transactionStyles, /\.records-band\s*\{[^}]*background:\s*linear-gradient\(145deg, var\(--surface\), var\(--surface-subtle\)\);/s);
+assert.match(themeStyles, /:root\[data-theme="dark"\] \.records-band \{ background-image: none; \}/);
 assert.match(themeStyles, /background: var\(--highlight\)/);
 assert.match(foundation, /prefers-color-scheme: dark/);
 console.log("Contrato de segurança, privacidade e release validado.");

@@ -1242,7 +1242,11 @@ A versão 2.6.0 simplifica o painel inicial e elimina atalhos duplicados. Os qua
 
 A versão 2.7.0 mantém o cabeçalho superior visível durante toda a rolagem. A barra com a identificação do sistema, instalação, tema e perfil usa posicionamento aderente, prioridade de empilhamento abaixo dos modais e a sombra do tema ativo. A navegação principal deixa de disputar a mesma posição no topo em telas maiores e continua fixa na parte inferior dos celulares. O Android usa `versionCode 18`, `versionName 2.7.0`, e o cache PWA usa `planejamento-financeiro-pwa-v2.7.0`.
 
-### 38.15 Hospedagem definitiva
+### 38.15 Versão 2.7.1
+
+A versão 2.7.1 corrige a adaptação visual da tela **Registros** ao modo escuro. O painel de registros, a navegação móvel, as linhas da tabela em celular, divisórias, etiquetas e botões de exclusão passam a consumir exclusivamente os tokens semânticos de superfície, borda e estado do tema. No modo escuro, o painel remove explicitamente o gradiente claro residual. O Android usa `versionCode 19`, `versionName 2.7.1`, e o cache PWA usa `planejamento-financeiro-pwa-v2.7.1`.
+
+### 38.16 Hospedagem definitiva
 
 A aplicação utiliza exclusivamente a Cloudflare Workers. Um rollback de versão pode ser feito com `wrangler rollback`; essa operação não altera nem copia os dados do Neon. Não existe configuração de hospedagem alternativa no repositório.
 

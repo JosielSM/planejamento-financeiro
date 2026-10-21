@@ -69,7 +69,8 @@ tbody tr:hover { background: var(--highlight); }
 :root[data-theme="dark"] .insights-panel,
 :root[data-theme="dark"] .category-manager,
 :root[data-theme="dark"] .goal-band,
-:root[data-theme="dark"] .savings-band { background-image: none; }
+:root[data-theme="dark"] .savings-band,
+:root[data-theme="dark"] .records-band { background-image: none; }
 :root[data-theme="dark"] .account-box span { color: var(--text); }
 :root[data-theme="dark"] .bar,
 :root[data-theme="dark"] .reserve-chart { box-shadow: inset 0 0 0 1px var(--line); }

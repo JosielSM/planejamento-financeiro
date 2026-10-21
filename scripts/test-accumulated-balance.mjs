@@ -47,4 +47,15 @@ assert.equal(
   "ao excluir os registros do mes reiniciado, o saldo acumulado deve ficar zerado",
 );
 
+assert.equal(
+  vm.runInContext('isGoalCompletedInMonth({ completedAt: "2026-07-18T10:00:00.000Z" }, "2026-07")', context),
+  true,
+  "a meta concluida deve aparecer no mes da conclusao",
+);
+assert.equal(
+  vm.runInContext('isGoalCompletedInMonth({ completedAt: "2026-06-30T10:00:00.000Z" }, "2026-07")', context),
+  false,
+  "a meta concluida em outro mes deve sumir do historico mensal",
+);
+
 console.log("Saldo acumulado entre meses validado.");

@@ -1230,7 +1230,11 @@ A versão 2.4.0 adiciona o botão **Zerar mês** à tela de registros. A ação 
 
 Além da exclusão, o sistema grava um marco de reinício do saldo acumulado. Os lançamentos anteriores permanecem disponíveis no histórico, mas deixam de compor o saldo do mês zerado e dos meses seguintes. A operação é atômica no servidor e também pode entrar na fila offline como uma única ação idempotente. O Android usa `versionCode 15`, `versionName 2.4.0`, e o cache PWA usa `planejamento-financeiro-pwa-v2.4.0`.
 
-### 38.12 Hospedagem definitiva
+### 38.12 Versão 2.5.0
+
+A versão 2.5.0 torna mensal o histórico de metas concluídas. A tela de metas usa o mês selecionado no painel e mostra apenas as metas cuja conclusão ocorreu naquele período. Ao avançar para um novo mês, as metas concluídas anteriormente deixam de aparecer; para consultá-las novamente, o usuário seleciona o mês em que foram concluídas. Metas ainda ativas continuam visíveis independentemente do mês, preservando seu acompanhamento até a conclusão. O Android usa `versionCode 16`, `versionName 2.5.0`, e o cache PWA usa `planejamento-financeiro-pwa-v2.5.0`.
+
+### 38.13 Hospedagem definitiva
 
 A aplicação utiliza exclusivamente a Cloudflare Workers. Um rollback de versão pode ser feito com `wrangler rollback`; essa operação não altera nem copia os dados do Neon. Não existe configuração de hospedagem alternativa no repositório.
 

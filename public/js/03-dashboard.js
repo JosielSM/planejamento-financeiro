@@ -246,15 +246,20 @@ function renderSavingsOverview() {
     : "Nenhum objetivo criado.";
 }
 
+function isGoalCompletedInMonth(goal, monthValue = monthFilter.value) {
+  return Boolean(goal.completedAt) && String(goal.completedAt).slice(0, 7) === monthValue;
+}
+
 function renderSavingsGoals() {
   renderSavingsOverview();
   savingsGoalsList.innerHTML = "";
   completedGoalsList.innerHTML = "";
   const activeGoals = savingsGoals.filter((goal) => !goal.completedAt);
-  const completedGoals = savingsGoals.filter((goal) => goal.completedAt);
+  const allCompletedGoals = savingsGoals.filter((goal) => goal.completedAt);
+  const completedGoals = allCompletedGoals.filter((goal) => isGoalCompletedInMonth(goal));
   savingsEmptyState.style.display = activeGoals.length ? "none" : "block";
-  savingsEmptyState.textContent = completedGoals.length
-    ? "Todas as suas metas estao concluidas. Crie uma nova quando quiser."
+  savingsEmptyState.textContent = allCompletedGoals.length
+    ? "Nenhuma meta ativa. Selecione outro mes para consultar metas concluidas anteriormente."
     : "Nenhuma meta cadastrada ainda.";
   completedGoalsSection.hidden = !completedGoals.length;
   completedGoalsCount.textContent = `${completedGoals.length} ${completedGoals.length === 1 ? "concluida" : "concluidas"}`;

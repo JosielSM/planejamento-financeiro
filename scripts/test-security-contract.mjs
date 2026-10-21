@@ -60,6 +60,7 @@ assert.match(gradle, new RegExp(`versionName "${packageMetadata.version.replaceA
 assert.match(dashboard, /compareTransactionsNewestFirst/);
 assert.match(dashboard, /b\.createdAt/);
 assert.match(dashboard, /key\.startsWith\("balanceReset:"\)/);
+assert.match(dashboard, /isGoalCompletedInMonth\(goal\)/);
 assert.match(events, /resetMonthData\(selectedMonth\)/);
 assert.match(events, /if \(!startupResolved\)/);
 assert.match(events, /initializeFirebase\(\{ allowCachedConfig: true \}\)/);

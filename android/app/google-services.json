@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "265360560081",
+    "project_id": "planejamento-financeiro-santo",
+    "storage_bucket": "planejamento-financeiro-santo.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:265360560081:android:39d0e07144df459c4e9af0",
+        "android_client_info": {
+          "package_name": "com.planejamentofinanceiro.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "265360560081-h45q31eogmij03n0ovkcruq31dt9srje.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.planejamentofinanceiro.app",
+            "certificate_hash": "e0aef35bc4674df6721b9e50144b2b026ffd57b4"
+          }
+        },
+        {
+          "client_id": "265360560081-phti1e8546iv95tjbtiuq43uqlbqls9v.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCBWYTeMV37zKZ4-6SayUZehw2GntlTVdI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "265360560081-phti1e8546iv95tjbtiuq43uqlbqls9v.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

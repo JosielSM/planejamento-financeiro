@@ -332,30 +332,32 @@ loginForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   authError.textContent = "";
   if (!authenticationReady()) return;
-  const enteredPassword = document.querySelector("#loginPassword").value;
-  let credential;
-  try {
-    credential = await firebaseAuth.signInWithEmailAndPassword(
-      document.querySelector("#loginEmail").value.trim(),
-      enteredPassword,
-    );
-  } catch (error) {
-    authError.textContent = firebaseErrorMessage(error);
-    return;
-  }
-
-  try {
-    const loaded = await loadAuthenticatedUser(credential.user);
-    if (loaded && !isStrongPassword(enteredPassword)) {
-      await showNotice(
-        "Sua senha atual não atende aos novos requisitos de segurança. Você ainda pode usar o sistema, mas recomendamos alterá-la agora em Perfil > Alterar senha.",
-        "Atualize sua senha",
-        "warning",
+  await withBusyButton(event.submitter, "Entrando...", async () => {
+    const enteredPassword = document.querySelector("#loginPassword").value;
+    let credential;
+    try {
+      credential = await firebaseAuth.signInWithEmailAndPassword(
+        document.querySelector("#loginEmail").value.trim(),
+        enteredPassword,
       );
+    } catch (error) {
+      authError.textContent = firebaseErrorMessage(error);
+      return;
     }
-  } catch (error) {
-    authError.textContent = firebaseErrorMessage(error);
-  }
+
+    try {
+      const loaded = await loadAuthenticatedUser(credential.user);
+      if (loaded && !isStrongPassword(enteredPassword)) {
+        await showNotice(
+          "Sua senha atual não atende aos novos requisitos de segurança. Você ainda pode usar o sistema, mas recomendamos alterá-la agora em Perfil > Alterar senha.",
+          "Atualize sua senha",
+          "warning",
+        );
+      }
+    } catch (error) {
+      authError.textContent = firebaseErrorMessage(error);
+    }
+  });
 });
 
 googleSignInButtons.forEach((button) => {
@@ -364,16 +366,9 @@ googleSignInButtons.forEach((button) => {
     if (!authenticationReady()) return;
     googleSignInButtons.forEach((item) => { item.disabled = true; });
     try {
-      const provider = new window.firebase.auth.GoogleAuthProvider();
-      provider.setCustomParameters({ prompt: "select_account" });
-      const credential = await firebaseAuth.signInWithPopup(provider);
+      const credential = await authenticateWithGoogle();
       await loadAuthenticatedUser(credential.user);
     } catch (error) {
-      if (error.code === "auth/internal-error") {
-        sessionStorage.setItem("googleAuthAction", "signin");
-        await firebaseAuth.signInWithRedirect(provider);
-        return;
-      }
       authError.textContent = firebaseErrorMessage(error);
     } finally {
       googleSignInButtons.forEach((item) => { item.disabled = false; });
@@ -400,14 +395,16 @@ signupForm.addEventListener("submit", async (event) => {
     return;
   }
 
-  try {
-    const credential = await firebaseAuth.createUserWithEmailAndPassword(email, password);
-    await credential.user.updateProfile({ displayName: name });
-    await credential.user.sendEmailVerification();
-    showVerification(credential.user);
-  } catch (error) {
-    authError.textContent = firebaseErrorMessage(error);
-  }
+  await withBusyButton(event.submitter, "Criando conta...", async () => {
+    try {
+      const credential = await firebaseAuth.createUserWithEmailAndPassword(email, password);
+      await credential.user.updateProfile({ displayName: name });
+      await credential.user.sendEmailVerification(firebaseActionSettings());
+      showVerification(credential.user);
+    } catch (error) {
+      authError.textContent = firebaseErrorMessage(error);
+    }
+  });
 });
 
 signupPassword.addEventListener("input", updatePasswordGuidance);
@@ -431,16 +428,18 @@ forgotPasswordForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   authError.textContent = "";
   const email = document.querySelector("#forgotPasswordEmail").value.trim();
-  try {
-    await firebaseAuth.sendPasswordResetEmail(email);
-  } catch (error) {
-    if (error.code !== "auth/user-not-found") {
-      authError.textContent = firebaseErrorMessage(error);
-      return;
+  await withBusyButton(event.submitter, "Enviando...", async () => {
+    try {
+      await firebaseAuth.sendPasswordResetEmail(email, firebaseActionSettings());
+    } catch (error) {
+      if (error.code !== "auth/user-not-found") {
+        authError.textContent = firebaseErrorMessage(error);
+        return;
+      }
     }
-  }
-  setAuthMode("login");
-  authError.textContent = "Se existir uma conta com esse email, enviaremos o link de recuperacao.";
+    setAuthMode("login");
+    authError.textContent = "Se existir uma conta com esse email, enviaremos o link de recuperacao.";
+  });
 });
 
 showSignupButton.addEventListener("click", () => {
@@ -471,23 +470,25 @@ checkVerificationButton.addEventListener("click", async () => {
 
 resendVerificationButton.addEventListener("click", async () => {
   authError.textContent = "";
-  try {
-    await firebaseAuth.currentUser?.sendEmailVerification();
-    verificationMessage.textContent = `Enviamos um novo link de confirmacao para ${firebaseAuth.currentUser?.email}.`;
-    showToast("Novo link de confirmacao enviado.", "info");
-  } catch (error) {
-    authError.textContent = firebaseErrorMessage(error);
-  }
+  await withBusyButton(resendVerificationButton, "Enviando...", async () => {
+    try {
+      await firebaseAuth.currentUser?.sendEmailVerification(firebaseActionSettings());
+      verificationMessage.textContent = `Enviamos um novo link de confirmacao para ${firebaseAuth.currentUser?.email}.`;
+      showToast("Novo link de confirmacao enviado.", "info");
+    } catch (error) {
+      authError.textContent = firebaseErrorMessage(error);
+    }
+  });
 });
 
 verificationLogoutButton.addEventListener("click", async () => {
-  await firebaseAuth.signOut();
+  await signOutEverywhere();
   showAuth("Entre com outra conta.");
 });
 
 logoutButton.addEventListener("click", async () => {
   closeProfileModal();
-  await firebaseAuth.signOut();
+  await signOutEverywhere();
   transactions = [];
   savingsGoals = [];
   customCategories = [];
@@ -544,7 +545,7 @@ deleteAccountButton.addEventListener("click", async () => {
       body: JSON.stringify({ emailConfirmation: deleteAccountEmail.value.trim() }),
     });
     clearCurrentUserLocalData();
-    await firebaseAuth.signOut();
+    await signOutEverywhere();
     closeProfileModal();
     transactions = [];
     savingsGoals = [];
@@ -596,7 +597,7 @@ profilePasswordResetButton.addEventListener("click", async () => {
   profilePasswordResetButton.disabled = true;
   profilePasswordResetButton.textContent = "Enviando...";
   try {
-    await firebaseAuth.sendPasswordResetEmail(currentUser.email);
+    await firebaseAuth.sendPasswordResetEmail(currentUser.email, firebaseActionSettings());
     await showNotice(
       `Enviamos um link seguro para ${currentUser.email}. Abra o e-mail e siga as instruções para definir uma nova senha.`,
       "Confira seu e-mail",
@@ -616,10 +617,10 @@ linkGoogleButton.addEventListener("click", async () => {
 
   linkGoogleButton.disabled = true;
   try {
-    const provider = new window.firebase.auth.GoogleAuthProvider();
-    provider.setCustomParameters({ prompt: "select_account" });
-    sessionStorage.setItem("googleAuthAction", "link");
-    await currentUser.linkWithRedirect(provider);
+    await authenticateWithGoogle({ link: true });
+    await currentUser.reload();
+    showApp(loadCachedAccount(currentUser));
+    await showNotice("Sua conta Google foi vinculada com sucesso.", "Google vinculado", "success");
   } catch (error) {
     if (error.code === "auth/provider-already-linked") {
       linkGoogleButton.hidden = true;

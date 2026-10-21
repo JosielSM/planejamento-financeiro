@@ -18,7 +18,7 @@ const publicDirectory = isCloudflareWorker ? "" : join(projectRoot, "public");
 const viewsDirectory = isCloudflareWorker ? "" : join(moduleDirectory, "views");
 const androidApkPath = isCloudflareWorker ? "" : join(projectRoot, "downloads", "planejamento-financeiro.apk");
 const packageMetadata = isCloudflareWorker
-  ? { version: runtimeEnv.APP_VERSION || "2.0.2" }
+  ? { version: runtimeEnv.APP_VERSION || "2.2.0" }
   : JSON.parse(readFileSync(join(projectRoot, "package.json"), "utf8"));
 
 function loadView(relativePath) {
@@ -337,6 +337,7 @@ async function requireAuth(request, response) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ idToken }),
+        signal: AbortSignal.timeout(10000),
       },
     );
     if (!verificationResponse.ok) throw new Error("Token Firebase invalido");

@@ -15,6 +15,12 @@ const data = await readFile(new URL("../public/js/02-data.js", import.meta.url),
 const events = await readFile(new URL("../public/js/07-events.js", import.meta.url), "utf8");
 const responsiveStyles = await readFile(new URL("../public/css/responsive.css", import.meta.url), "utf8");
 const mobileBuild = await readFile(new URL("./build-mobile.mjs", import.meta.url), "utf8");
+const foundation = await readFile(new URL("../public/js/01-foundation.js", import.meta.url), "utf8");
+const authAction = await readFile(new URL("../public/js/09-auth-action.js", import.meta.url), "utf8");
+const capacitorConfig = await readFile(new URL("../capacitor.config.json", import.meta.url), "utf8");
+const gradleVariables = await readFile(new URL("../android/variables.gradle", import.meta.url), "utf8");
+const baseStyles = await readFile(new URL("../public/css/base.css", import.meta.url), "utf8");
+const themeStyles = await readFile(new URL("../public/css/themes.css", import.meta.url), "utf8");
 
 assert.match(server, /app\.delete\("\/api\/account"/);
 assert.match(server, /DELETE FROM users WHERE id = \$1/);
@@ -52,4 +58,15 @@ assert.match(responsiveStyles, /\.register-actions\s*\{\s*grid-template-columns:
 assert.match(mobileBuild, /process\.argv\.includes\("--capacitor"\)/);
 assert.match(mobileBuild, /if \(!isCapacitorBuild\)/);
 assert.match(mobileBuild, /if \(isCapacitorBuild\) await rm\(capacitorAssetsDirectory/);
+assert.match(foundation, /nativeAuthentication\.signInWithGoogle\(\)/);
+assert.match(foundation, /firebaseAuth\.signInWithCredential\(credential\)/);
+assert.match(authAction, /auth\.confirmPasswordReset\(code, password\.value\)/);
+assert.match(capacitorConfig, /"providers": \["google\.com"\]/);
+assert.match(gradleVariables, /rgcfaIncludeGoogle = true/);
+assert.match(server, /AbortSignal\.timeout\(10000\)/);
+assert.match(baseStyles, /--bg: #f5f7f6/);
+assert.match(baseStyles, /--surface: #19242e/);
+assert.match(baseStyles, /--green: #48d9a6/);
+assert.match(themeStyles, /background: var\(--highlight\)/);
+assert.match(foundation, /prefers-color-scheme: dark/);
 console.log("Contrato de segurança, privacidade e release validado.");

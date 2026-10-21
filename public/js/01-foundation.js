@@ -186,8 +186,14 @@ function applyTheme(theme, savePreference = false) {
   themeToggleText.textContent = isDark ? "Modo claro" : "Modo escuro";
   themeToggleButton.querySelector("[data-lucide]")?.setAttribute("data-lucide", isDark ? "sun" : "moon");
   if (savePreference) localStorage.setItem(THEME_KEY, isDark ? "dark" : "light");
+  document.querySelector('meta[name="theme-color"]')?.setAttribute("content", isDark ? "#101820" : "#079668");
   refreshIcons();
 }
+
+const systemThemeQuery = window.matchMedia?.("(prefers-color-scheme: dark)");
+systemThemeQuery?.addEventListener?.("change", (event) => {
+  if (!localStorage.getItem(THEME_KEY)) applyTheme(event.matches ? "dark" : "light");
+});
 
 function todayISO() {
   const date = new Date();
@@ -472,12 +478,15 @@ function firebaseErrorMessage(error) {
     "auth/too-many-requests": "Muitas tentativas. Aguarde alguns minutos e tente novamente.",
     "auth/weak-password": "A senha não atende à política de segurança. Complete todos os requisitos indicados.",
     "auth/network-request-failed": "Nao foi possivel conectar ao servico de autenticacao.",
-    "auth/operation-not-allowed": "O login por email e senha ainda nao foi ativado no Firebase.",
-    "auth/popup-closed-by-user": "A janela do Google foi fechada antes da conclusao.",
-    "auth/popup-blocked": "O navegador bloqueou a janela do Google. Libere pop-ups e tente novamente.",
-    "auth/cancelled-popup-request": "A tentativa anterior foi cancelada. Tente novamente.",
-    "auth/account-exists-with-different-credential": "Este email ja usa outro modo de acesso. Entre com sua senha primeiro para preservar a mesma conta.",
     "auth/unauthorized-domain": "Este endereco ainda nao esta autorizado no Firebase.",
+    "auth/operation-not-allowed": "O acesso com Google ainda não está habilitado. Tente novamente em instantes.",
+    "auth/popup-blocked": "O navegador bloqueou a janela do Google. Permita pop-ups para este site e tente novamente.",
+    "auth/popup-closed-by-user": "O acesso com Google foi cancelado antes da conclusão.",
+    "auth/cancelled-popup-request": "Já existe uma tentativa de acesso com Google em andamento.",
+    "auth/account-exists-with-different-credential": "Este e-mail já está cadastrado. Entre com sua senha e vincule o Google pelo Perfil.",
+    "auth/credential-already-in-use": "Esta conta Google já está vinculada a outro cadastro.",
+    "auth/native-google-unavailable": "O acesso nativo com Google não está disponível nesta versão. Atualize o aplicativo.",
+    "auth/native-google-token": "O Google não devolveu uma credencial válida. Tente novamente.",
     "auth/web-storage-unsupported": "O navegador esta bloqueando o armazenamento necessario para o login.",
     "auth/internal-error": "O Firebase encontrou um erro interno ao concluir o login.",
     "api/401": "Sua sessao expirou. Entre novamente.",
@@ -491,6 +500,71 @@ function firebaseErrorMessage(error) {
     return `Nao foi possivel concluir a autenticacao. Codigo: ${error.code}.`;
   }
   return error?.message || "Nao foi possivel concluir a autenticacao. Tente novamente.";
+}
+
+function nativeFirebaseAuthentication() {
+  return window.Capacitor?.Plugins?.FirebaseAuthentication || null;
+}
+
+async function authenticateWithGoogle({ link = false } = {}) {
+  const provider = new window.firebase.auth.GoogleAuthProvider();
+  provider.setCustomParameters({ prompt: "select_account" });
+
+  if (!isNativeRuntime()) {
+    return link
+      ? firebaseAuth.currentUser.linkWithPopup(provider)
+      : firebaseAuth.signInWithPopup(provider);
+  }
+
+  const nativeAuthentication = nativeFirebaseAuthentication();
+  if (!nativeAuthentication?.signInWithGoogle) {
+    const error = new Error("Plugin Firebase Authentication indisponível");
+    error.code = "auth/native-google-unavailable";
+    throw error;
+  }
+
+  const result = await nativeAuthentication.signInWithGoogle();
+  const idToken = result?.credential?.idToken;
+  if (!idToken) {
+    const error = new Error("Credencial Google não recebida");
+    error.code = "auth/native-google-token";
+    throw error;
+  }
+  const credential = window.firebase.auth.GoogleAuthProvider.credential(
+    idToken,
+    result?.credential?.accessToken || null,
+  );
+  return link
+    ? firebaseAuth.currentUser.linkWithCredential(credential)
+    : firebaseAuth.signInWithCredential(credential);
+}
+
+async function signOutEverywhere() {
+  await Promise.allSettled([
+    firebaseAuth?.signOut(),
+    isNativeRuntime() ? nativeFirebaseAuthentication()?.signOut?.() : Promise.resolve(),
+  ]);
+}
+
+function firebaseActionSettings() {
+  const origin = isNativeRuntime() ? REMOTE_API_ORIGIN : window.location.origin;
+  return {
+    url: `${origin}/?authAction=completed`,
+    handleCodeInApp: false,
+  };
+}
+
+async function withBusyButton(button, busyLabel, operation) {
+  if (!button || button.disabled) return undefined;
+  const originalLabel = button.textContent;
+  button.disabled = true;
+  button.textContent = busyLabel;
+  try {
+    return await operation();
+  } finally {
+    button.disabled = false;
+    button.textContent = originalLabel;
+  }
 }
 
 function authenticationReady() {

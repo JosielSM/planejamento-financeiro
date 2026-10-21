@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#079668" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#101820" media="(prefers-color-scheme: dark)" />
+    <title>Segurança da conta | Planejamento Financeiro</title>
+    <link rel="icon" href="/icons/favicon-64.png" />
+    <link rel="stylesheet" href="/css/auth-action.css" />
+  </head>
+  <body>
+    <main class="action-shell">
+      <section class="action-card" aria-live="polite">
+        <img src="/icons/icon-192.png" alt="" width="72" height="72" />
+        <p class="eyebrow">Planejamento Financeiro</p>
+        <h1 id="actionTitle">Validando seu link seguro</h1>
+        <p id="actionMessage">Aguarde enquanto confirmamos as informações com segurança.</p>
+        <div class="action-loader" id="actionLoader" aria-label="Carregando"></div>
+        <form id="resetPasswordForm" hidden>
+          <label for="newPassword">Nova senha</label>
+          <input id="newPassword" type="password" minlength="10" maxlength="128" autocomplete="new-password" required />
+          <label for="newPasswordConfirmation">Confirme a nova senha</label>
+          <input id="newPasswordConfirmation" type="password" minlength="10" maxlength="128" autocomplete="new-password" required />
+          <button type="submit">Salvar nova senha</button>
+        </form>
+        <a class="action-link" id="returnToApp" href="/" hidden>Voltar para o Planejamento Financeiro</a>
+      </section>
+    </main>
+    <script src="/vendor/firebase/firebase-app-compat.js"></script>
+    <script src="/vendor/firebase/firebase-auth-compat.js"></script>
+    <script src="/js/09-auth-action.js"></script>
+  </body>
+</html>

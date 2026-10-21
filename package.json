@@ -1,6 +1,6 @@
 {
   "name": "planejamento-financeiro",
-  "version": "2.0.2",
+  "version": "2.2.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -15,11 +15,12 @@
     "cap:open": "cap open android",
     "android:debug": "npm run cap:sync && cd android && gradlew.bat assembleDebug",
     "android:release": "node scripts/release-android.mjs",
-    "test": "npm run test:offline && node scripts/test-accumulated-balance.mjs && node scripts/test-security-contract.mjs && node --check src/server.mjs && node --check public/js/02-data.js && node --check public/js/03-dashboard.js && node --check public/js/07-events.js && node --check public/js/08-platform.js && node --check public/service-worker.js",
+    "test": "npm run test:offline && node scripts/test-accumulated-balance.mjs && node scripts/test-security-contract.mjs && node --check src/server.mjs && node --check public/js/01-foundation.js && node --check public/js/02-data.js && node --check public/js/03-dashboard.js && node --check public/js/07-events.js && node --check public/js/08-platform.js && node --check public/js/09-auth-action.js && node --check public/service-worker.js",
     "test:offline": "node scripts/test-offline-sync.mjs",
     "migrate:firebase-users": "node scripts/migrate-users-to-firebase.mjs"
   },
   "dependencies": {
+    "@capacitor-firebase/authentication": "^8.5.1",
     "@capacitor/android": "^8.0.0",
     "@capacitor/core": "^8.0.0",
     "exceljs": "^4.4.0",

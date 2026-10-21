@@ -1,11 +1,11 @@
-const CACHE_VERSION = "planejamento-financeiro-pwa-v2.0.2";
+const CACHE_VERSION = "planejamento-financeiro-pwa-v2.2.0";
 const APP_SHELL = [
   "/", "/manifest.webmanifest", "/icons/apple-touch-icon.png", "/icons/favicon-64.png",
   "/icons/icon-192.png", "/icons/icon-512.png", "/icons/icon-maskable-512.png",
-  "/css/base.css", "/css/dashboard.css", "/css/dialogs.css", "/css/goals.css",
+  "/css/base.css", "/css/auth-action.css", "/css/dashboard.css", "/css/dialogs.css", "/css/goals.css",
   "/css/responsive.css", "/css/themes.css", "/css/transactions.css",
   "/js/00-runtime.js", "/js/01-foundation.js", "/js/02-data.js", "/js/03-dashboard.js",
-  "/js/04-ui.js", "/js/05-reports.js", "/js/06-goal-form.js", "/js/07-events.js", "/js/08-platform.js",
+  "/js/04-ui.js", "/js/05-reports.js", "/js/06-goal-form.js", "/js/07-events.js", "/js/08-platform.js", "/js/09-auth-action.js",
   "/vendor/firebase/firebase-app-compat.js", "/vendor/firebase/firebase-auth-compat.js",
   "/vendor/lucide/lucide.min.js", "/vendor/jspdf/jspdf.umd.min.js",
   "/vendor/jspdf-autotable/jspdf.plugin.autotable.min.js", "/vendor/exceljs/exceljs.min.js"

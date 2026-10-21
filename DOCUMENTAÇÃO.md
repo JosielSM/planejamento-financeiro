@@ -1206,7 +1206,19 @@ A versão 2.0.1 adiciona a instalação do PWA em computadores e simplifica o es
 
 A versão 2.0.2 mantém os cartões “Registrar ganho” e “Registrar despesa” lado a lado em telas de celular. O espaçamento, os ícones, os textos e os valores ficam menores nesse breakpoint para preservar a leitura mesmo em aparelhos estreitos. A compilação Capacitor usa `build-mobile.mjs --capacitor`, limpa os assets Android anteriormente gerados e não incorpora o APK disponível para download dentro do próprio pacote, impedindo crescimento recursivo do arquivo. O Android passa a usar `versionCode 11`, `versionName 2.0.2`, e o cache PWA passa a ser `planejamento-financeiro-pwa-v2.0.2`.
 
-### 38.8 Hospedagem definitiva
+### 38.8 Versão 2.1.0
+
+A versão 2.1.0 integra o login Google nativo no Android por meio do Firebase Authentication e mantém o fluxo por janela segura no navegador e nos PWAs. O aplicativo Android passa a trocar a credencial nativa do Google por uma sessão Firebase Web, preservando o mesmo token usado pela API e evitando contas paralelas. A saída encerra as duas sessões. Os formulários de login, cadastro, recuperação e reenvio de confirmação bloqueiam cliques repetidos enquanto uma solicitação está em andamento.
+
+O projeto inclui uma página de ação própria em `/auth-action.html`, com a identidade visual do Planejamento Financeiro, pronta para confirmação de endereço, recuperação de endereço e redefinição de senha. Enquanto o plano do Firebase não permite alterar o URL acionável, os e-mails continuam usando o manipulador seguro oficial do Firebase em português. A API também limita a espera da validação do token Firebase a dez segundos, evitando solicitações presas quando o provedor estiver indisponível. O Android usa `versionCode 12`, `versionName 2.1.0`, e o cache PWA usa `planejamento-financeiro-pwa-v2.1.0`.
+
+### 38.9 Versão 2.2.0
+
+A versão 2.2.0 centraliza a identidade visual em tokens semânticos e aplica uma nova paleta aos modos claro e escuro. O modo claro usa fundo `#F5F7F6`, superfícies `#FFFFFF`, texto `#17211D`, texto secundário `#738079`, bordas `#E7EBE8`, cor principal `#079668`, hover `#057955`, destaque `#E5F6EF` e sombra `0 12px 35px #1A36200D`. O modo escuro usa fundo `#101820`, superfícies `#19242E`, texto `#F2F7FA`, texto secundário `#AEBCC7`, bordas `#334552`, cor principal `#48D9A6`, hover `#2ABD87`, destaque `#173A34` e sombra `0 14px 36px #03080E45`.
+
+Formulários, menus, abas, cartões, tabelas, tooltips, badges e modais consomem os mesmos tokens. O seletor mantém a escolha do usuário no armazenamento local; sem preferência gravada, o aplicativo acompanha o tema do sistema, inclusive quando ele muda durante o uso. A cor da interface do navegador também acompanha o tema. O Android usa `versionCode 13`, `versionName 2.2.0`, e o cache PWA usa `planejamento-financeiro-pwa-v2.2.0`.
+
+### 38.10 Hospedagem definitiva
 
 A aplicação utiliza exclusivamente a Cloudflare Workers. Um rollback de versão pode ser feito com `wrangler rollback`; essa operação não altera nem copia os dados do Neon. Não existe configuração de hospedagem alternativa no repositório.
 

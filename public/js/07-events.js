@@ -316,7 +316,7 @@ pdfSummaryForm.addEventListener("submit", async (event) => {
   if (exportFormat === "xlsx") {
     await generateMonthlyExcel(selectedMonth);
   } else {
-    generateMonthlyPdf(selectedMonth);
+    await generateMonthlyPdf(selectedMonth);
   }
   closePdfSummaryModal();
   showToast(`Relatorio ${exportFormat === "xlsx" ? "Excel" : "PDF"} gerado.`);
@@ -694,18 +694,8 @@ async function start() {
     if (window.location.protocol === "file:") {
       throw new Error("Abra o sistema pelo endereco online ou pelo servidor local, nao diretamente pelo arquivo index.html");
     }
-    let health = null;
-    try {
-      health = await loadHealthWithRetry(isNativeRuntime() ? 2 : 8);
-    } catch (error) {
-      if (!isNativeRuntime()) throw error;
-    }
     authRequired = true;
-    if (health && (health.database !== "connected" || health.firebase !== "configured")) {
-      throw new Error("Banco de dados ou Firebase ainda nao configurado");
-    }
-
-    await initializeFirebase({ allowCachedConfig: isNativeRuntime() });
+    await initializeFirebase({ allowCachedConfig: true });
     setAuthenticationControlsEnabled(true);
     const googleAuthAction = sessionStorage.getItem("googleAuthAction");
     let redirectResult = null;
@@ -728,18 +718,6 @@ async function start() {
       );
     });
     const authenticatedUser = redirectResult?.user || initialUser;
-    if (!health) {
-      serverConnectionState = "unavailable";
-      const offlineSessionLoaded = showOfflineSession(authenticatedUser);
-      updateSyncStatus();
-      if (offlineSessionLoaded) {
-        clearTimeout(serverWakeRetryTimer);
-        serverWakeRetryTimer = setTimeout(() => checkServerConnection(), 15000);
-      } else {
-        authenticationRetryTimer = setTimeout(start, 15000);
-      }
-      return;
-    }
     const loaded = await loadAuthenticatedUser(authenticatedUser);
     if (loaded && googleAuthAction === "link") {
       await showNotice("Conta Google vinculada. Agora voce pode entrar com Google ou com sua senha.", "Google vinculado", "success");

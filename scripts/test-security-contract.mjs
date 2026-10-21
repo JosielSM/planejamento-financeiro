@@ -21,6 +21,9 @@ const capacitorConfig = await readFile(new URL("../capacitor.config.json", impor
 const gradleVariables = await readFile(new URL("../android/variables.gradle", import.meta.url), "utf8");
 const baseStyles = await readFile(new URL("../public/css/base.css", import.meta.url), "utf8");
 const themeStyles = await readFile(new URL("../public/css/themes.css", import.meta.url), "utf8");
+const reportScripts = await readFile(new URL("../public/js/05-reports.js", import.meta.url), "utf8");
+const scriptLayout = await readFile(new URL("../src/views/partials/scripts.html", import.meta.url), "utf8");
+const serviceWorker = await readFile(new URL("../public/service-worker.js", import.meta.url), "utf8");
 
 assert.match(server, /app\.delete\("\/api\/account"/);
 assert.match(server, /DELETE FROM users WHERE id = \$1/);
@@ -31,6 +34,7 @@ assert.match(server, /createdAt: row\.created_at/);
 assert.match(server, /X-Request-ID/);
 assert.match(server, /new Client\(\{ connectionString: databaseUrl \}\)/);
 assert.match(server, /databaseContext\.run\(client, next\)/);
+assert.match(server, /response\.once\("finish", releaseClient\)/);
 assert.match(androidManifest, /android:allowBackup="false"/);
 assert.match(androidManifest, /android:usesCleartextTraffic="false"/);
 assert.match(gradle, /PF_RELEASE_STORE_FILE/);
@@ -53,7 +57,14 @@ assert.match(gradle, new RegExp(`versionName "${packageMetadata.version.replaceA
 assert.match(dashboard, /compareTransactionsNewestFirst/);
 assert.match(dashboard, /b\.createdAt/);
 assert.match(events, /if \(!startupResolved\)/);
-assert.match(events, /offlineSessionLoaded/);
+assert.match(events, /initializeFirebase\(\{ allowCachedConfig: true \}\)/);
+assert.doesNotMatch(events, /loadHealthWithRetry/);
+assert.match(foundation, /loadLocalSnapshot\(\);\s*showApp\(loadCachedAccount\(firebaseUser\)\)/);
+assert.match(reportScripts, /loadReportScript\("\/vendor\/exceljs\/exceljs\.min\.js"\)/);
+assert.doesNotMatch(scriptLayout, /src="\/vendor\/(?:exceljs|jspdf)/);
+assert.match(scriptLayout, /<script defer/);
+assert.match(serviceWorker, /event\.waitUntil\(refresh\.catch/);
+assert.match(serviceWorker, /cached \|\| refresh/);
 assert.match(responsiveStyles, /\.register-actions\s*\{\s*grid-template-columns:\s*repeat\(2,/);
 assert.match(mobileBuild, /process\.argv\.includes\("--capacitor"\)/);
 assert.match(mobileBuild, /if \(!isCapacitorBuild\)/);

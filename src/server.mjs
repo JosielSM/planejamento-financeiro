@@ -18,7 +18,7 @@ const publicDirectory = isCloudflareWorker ? "" : join(projectRoot, "public");
 const viewsDirectory = isCloudflareWorker ? "" : join(moduleDirectory, "views");
 const androidApkPath = isCloudflareWorker ? "" : join(projectRoot, "downloads", "planejamento-financeiro.apk");
 const packageMetadata = isCloudflareWorker
-  ? { version: runtimeEnv.APP_VERSION || "2.2.0" }
+  ? { version: runtimeEnv.APP_VERSION || "2.3.0" }
   : JSON.parse(readFileSync(join(projectRoot, "package.json"), "utf8"));
 
 function loadView(relativePath) {
@@ -87,11 +87,20 @@ function ensureRuntimeServices() {
 }
 
 app.disable("x-powered-by");
-app.use(async (_request, response, next) => {
-  if (isCloudflareWorker && databaseUrl) {
+const databaseFreePaths = new Set(["/api/config/firebase", "/api/app-version"]);
+app.use(async (request, response, next) => {
+  if (isCloudflareWorker && databaseUrl && !databaseFreePaths.has(request.path)) {
     const client = new Client({ connectionString: databaseUrl });
     try {
       await client.connect();
+      let released = false;
+      const releaseClient = () => {
+        if (released) return;
+        released = true;
+        client.end().catch((error) => console.error("Erro ao liberar conexao com o banco:", error));
+      };
+      response.once("finish", releaseClient);
+      response.once("close", releaseClient);
       databaseContext.run(client, next);
     } catch (error) {
       console.error("Erro ao conectar ao banco nesta requisicao:", error);

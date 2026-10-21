@@ -1218,7 +1218,13 @@ A versão 2.2.0 centraliza a identidade visual em tokens semânticos e aplica um
 
 Formulários, menus, abas, cartões, tabelas, tooltips, badges e modais consomem os mesmos tokens. O seletor mantém a escolha do usuário no armazenamento local; sem preferência gravada, o aplicativo acompanha o tema do sistema, inclusive quando ele muda durante o uso. A cor da interface do navegador também acompanha o tema. O Android usa `versionCode 13`, `versionName 2.2.0`, e o cache PWA usa `planejamento-financeiro-pwa-v2.2.0`.
 
-### 38.10 Hospedagem definitiva
+### 38.10 Versão 2.3.0
+
+A versão 2.3.0 reduz o caminho crítico de abertura. As bibliotecas de PDF e Excel deixam de bloquear a inicialização e são carregadas somente quando o usuário solicita uma exportação, removendo aproximadamente 1,37 MB da carga inicial. Os scripts essenciais passam a ser baixados em paralelo com `defer`.
+
+O aplicativo agora restaura imediatamente a sessão e os dados locais validados, exibe a interface e atualiza conta, registros e fila de sincronização em segundo plano. A configuração pública do Firebase é reutilizada do cache local e atualizada silenciosamente. O PWA usa a estratégia *stale-while-revalidate* para navegações: abre o conteúdo instalado imediatamente e busca uma versão nova sem bloquear a tela. Endpoints públicos de configuração e versão não abrem conexão desnecessária com o banco. O Android usa `versionCode 14`, `versionName 2.3.0`, e o cache PWA usa `planejamento-financeiro-pwa-v2.3.0`.
+
+### 38.11 Hospedagem definitiva
 
 A aplicação utiliza exclusivamente a Cloudflare Workers. Um rollback de versão pode ser feito com `wrangler rollback`; essa operação não altera nem copia os dados do Neon. Não existe configuração de hospedagem alternativa no repositório.
 

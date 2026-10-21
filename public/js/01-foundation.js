@@ -174,7 +174,7 @@ function finishStartupSplash() {
   if (startupResolved) return;
   startupResolved = true;
   startupSplash?.classList.add("leaving");
-  setTimeout(() => { if (startupSplash) startupSplash.hidden = true; }, 300);
+  setTimeout(() => { if (startupSplash) startupSplash.hidden = true; }, 180);
   window.dispatchEvent(new Event("appready"));
 }
 
@@ -631,18 +631,23 @@ function setAuthMode(mode) {
 
 async function initializeFirebase({ allowCachedConfig = false } = {}) {
   if (!window.firebase?.initializeApp) throw new Error("Biblioteca do Firebase nao carregada");
-  let config;
-  try {
+  const cachedConfig = allowCachedConfig ? loadJSON(FIREBASE_CONFIG_KEY, null) : null;
+  let config = cachedConfig;
+  const fetchConfig = async () => {
     const response = await fetch(apiUrl("/api/config/firebase"), {
       headers: { Accept: "application/json" },
       cache: "no-store",
+      signal: AbortSignal.timeout(6000),
     });
-    config = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(config.error || "Firebase nao configurado");
-    localStorage.setItem(FIREBASE_CONFIG_KEY, JSON.stringify(config));
-  } catch (error) {
-    config = allowCachedConfig ? loadJSON(FIREBASE_CONFIG_KEY, null) : null;
-    if (!config) throw error;
+    const remoteConfig = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(remoteConfig.error || "Firebase nao configurado");
+    localStorage.setItem(FIREBASE_CONFIG_KEY, JSON.stringify(remoteConfig));
+    return remoteConfig;
+  };
+  if (!config) {
+    config = await fetchConfig();
+  } else {
+    fetchConfig().catch(() => {});
   }
   if (!window.firebase.apps.length) window.firebase.initializeApp(config);
   firebaseAuth = window.firebase.auth();
@@ -655,19 +660,33 @@ async function loadAuthenticatedUser(firebaseUser) {
     showAuth("Entre ou crie um cadastro para acessar seus dados.");
     return false;
   }
-  await firebaseUser.reload();
+  if (!firebaseUser.emailVerified) {
+    await firebaseUser.reload();
+  }
   if (!firebaseUser.emailVerified) {
     showVerification(firebaseUser);
     return false;
   }
 
-  await firebaseUser.getIdToken(true);
-  const data = await api.request("/api/auth/me");
-  saveCachedAccount(data.user);
-  await flushSyncQueue();
-  showApp(data.user);
-  await loadFromApi();
+  loadLocalSnapshot();
+  showApp(loadCachedAccount(firebaseUser));
   render();
   refreshIcons();
+
+  try {
+    await firebaseUser.getIdToken();
+    const data = await api.request("/api/auth/me");
+    saveCachedAccount(data.user);
+    showApp(data.user);
+    serverConnectionState = "online";
+    await flushSyncQueue();
+    await loadFromApi();
+    render();
+    refreshIcons();
+  } catch (error) {
+    serverConnectionState = "unavailable";
+    updateSyncStatus();
+    if (error.status === 401 || error.status === 403) throw error;
+  }
   return true;
 }

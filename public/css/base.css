@@ -94,7 +94,7 @@ body.modal-open {
   gap: 18px;
   background: #22352d;
   color: #fff;
-  transition: opacity .28s ease, visibility .28s ease;
+  transition: opacity .16s ease, visibility .16s ease;
 }
 
 .startup-splash img {

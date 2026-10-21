@@ -1,4 +1,4 @@
-const CACHE_VERSION = "planejamento-financeiro-pwa-v2.2.0";
+const CACHE_VERSION = "planejamento-financeiro-pwa-v2.3.0";
 const APP_SHELL = [
   "/", "/manifest.webmanifest", "/icons/apple-touch-icon.png", "/icons/favicon-64.png",
   "/icons/icon-192.png", "/icons/icon-512.png", "/icons/icon-maskable-512.png",
@@ -7,8 +7,7 @@ const APP_SHELL = [
   "/js/00-runtime.js", "/js/01-foundation.js", "/js/02-data.js", "/js/03-dashboard.js",
   "/js/04-ui.js", "/js/05-reports.js", "/js/06-goal-form.js", "/js/07-events.js", "/js/08-platform.js", "/js/09-auth-action.js",
   "/vendor/firebase/firebase-app-compat.js", "/vendor/firebase/firebase-auth-compat.js",
-  "/vendor/lucide/lucide.min.js", "/vendor/jspdf/jspdf.umd.min.js",
-  "/vendor/jspdf-autotable/jspdf.plugin.autotable.min.js", "/vendor/exceljs/exceljs.min.js"
+  "/vendor/lucide/lucide.min.js"
 ];
 
 self.addEventListener("install", (event) => {
@@ -31,11 +30,14 @@ self.addEventListener("fetch", (event) => {
   if (url.origin !== self.location.origin || url.pathname.startsWith("/api/") || url.pathname.startsWith("/download/")) return;
 
   if (request.mode === "navigate") {
-    event.respondWith(fetch(request).then((response) => {
-      const copy = response.clone();
-      caches.open(CACHE_VERSION).then((cache) => cache.put("/", copy));
+    const refresh = fetch(request).then((response) => {
+      if (response.ok) caches.open(CACHE_VERSION).then((cache) => cache.put("/", response.clone()));
       return response;
-    }).catch(async () => (await caches.match("/")) || new Response("Aplicativo indisponível. Conecte-se à internet e tente novamente.", { status: 503, headers: { "Content-Type": "text/plain; charset=utf-8" } })));
+    });
+    event.waitUntil(refresh.catch(() => undefined));
+    event.respondWith(caches.match("/").then((cached) => cached || refresh).catch(() => (
+      new Response("Aplicativo indisponível. Conecte-se à internet e tente novamente.", { status: 503, headers: { "Content-Type": "text/plain; charset=utf-8" } })
+    )));
     return;
   }
 

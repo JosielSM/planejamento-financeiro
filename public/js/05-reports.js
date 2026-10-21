@@ -1,3 +1,30 @@
+const reportLibraryLoads = new Map();
+
+function loadReportScript(source) {
+  if (reportLibraryLoads.has(source)) return reportLibraryLoads.get(source);
+  const load = new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    script.src = source;
+    script.async = true;
+    script.onload = resolve;
+    script.onerror = () => reject(new Error(`Nao foi possivel carregar ${source}`));
+    document.head.append(script);
+  });
+  reportLibraryLoads.set(source, load);
+  return load;
+}
+
+async function ensurePdfLibraries() {
+  if (!window.jspdf?.jsPDF) await loadReportScript("/vendor/jspdf/jspdf.umd.min.js");
+  if (typeof window.jspdf?.jsPDF?.API?.autoTable !== "function") {
+    await loadReportScript("/vendor/jspdf-autotable/jspdf.plugin.autotable.min.js");
+  }
+}
+
+async function ensureExcelLibrary() {
+  if (!window.ExcelJS) await loadReportScript("/vendor/exceljs/exceljs.min.js");
+}
+
 function getMonthSummary(monthValue) {
   const monthItems = transactions.filter((item) => isInMonth(item, monthValue));
   const income = monthItems.filter((item) => item.type === "income").reduce((sum, item) => sum + item.amount, 0);
@@ -149,7 +176,13 @@ function createReportCharts(summary) {
   return { dailyChart, categoryChart };
 }
 
-function generateMonthlyPdf(monthValue) {
+async function generateMonthlyPdf(monthValue) {
+  try {
+    await ensurePdfLibraries();
+  } catch {
+    await showNotice("Nao foi possivel carregar o gerador de PDF. Tente novamente com internet ativa.", "PDF indisponivel", "error");
+    return;
+  }
   const jsPDF = window.jspdf?.jsPDF;
   if (!jsPDF) {
     showNotice("Nao foi possivel carregar o gerador de PDF. Tente novamente com internet ativa.", "PDF indisponivel", "error");
@@ -298,6 +331,12 @@ function downloadBlob(blob, fileName) {
 }
 
 async function generateMonthlyExcel(monthValue) {
+  try {
+    await ensureExcelLibrary();
+  } catch {
+    await showNotice("Nao foi possivel carregar o gerador de Excel. Tente novamente com internet ativa.", "Excel indisponivel", "error");
+    return;
+  }
   if (!window.ExcelJS) {
     showNotice("Nao foi possivel carregar o gerador de Excel. Tente novamente com internet ativa.", "Excel indisponivel", "error");
     return;

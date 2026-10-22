@@ -29,12 +29,16 @@
 .compact-record-chevron { color: var(--muted); transition: transform 0.16s ease; }
 .compact-record[open] .compact-record-chevron { transform: rotate(180deg); }
 .compact-record[open] .compact-record-name { white-space: normal; overflow-wrap: anywhere; }
-.compact-record-details { padding: 12px; border-top: 1px solid var(--line); }
+.compact-record-details { padding: 12px; border-top: 1px solid var(--line); animation: details-enter 180ms ease-out; }
 .compact-record-details dl { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 0 0 12px; }
 .compact-record-details dt { font-size: 0.75rem; color: var(--muted); }
 .compact-record-details dd { margin: 3px 0 0; font-size: 0.85rem; overflow-wrap: anywhere; white-space: pre-wrap; }
 .compact-record-note { grid-column: 1 / -1; }
 .compact-record-details .delete-button { width: auto; height: auto; padding: 8px 12px; }
+@keyframes details-enter {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
 @media (max-width: 420px) {
   .compact-record summary { min-height: 38px; gap: 5px; padding: 5px 7px; }
   .compact-record summary .compact-record-icon { display: none; }
@@ -148,7 +152,10 @@ a, .text-button, .heading-with-icon svg, .profile-avatar { color: var(--primary)
   outline-offset: 5px;
 }
 @media (prefers-reduced-motion: reduce) {
-  .register-card { transition: none; }
+  .register-card, .tab-button, .compact-record-chevron { transition: none; }
+  .tab-screen.active, .profile-modal .modal-backdrop, .transaction-modal .modal-backdrop,
+  .system-dialog-backdrop, .profile-card, .transaction-modal .modal-card,
+  .system-dialog-card, .compact-record-details { animation: none; }
 }
 .badge, .status-badge, .pill.active, [aria-selected="true"] { background-color: var(--highlight); color: var(--primary); border-color: var(--green-line); }
 

@@ -1254,7 +1254,13 @@ A versão 2.8.0 torna a lista da tela **Registros** compacta e expansível. Cada
 
 A versão 2.8.1 fixa integralmente a navegação inferior em telas de celular. A barra **Início, Registrar, Metas, Destino e Registros** passa a usar `bottom: 0`, sem cálculos com a altura dinâmica da tela ou transformações. Isso impede deslocamentos quando a barra do navegador aparece, o teclado virtual é fechado ou a altura útil do Android e do iPhone muda. A barra mantém a área segura inferior e prioridade de empilhamento acima do conteúdo e abaixo dos modais. O Android usa `versionCode 21`, `versionName 2.8.1`, e o cache PWA usa `planejamento-financeiro-pwa-v2.8.1`.
 
-### 38.18 Hospedagem definitiva
+### 38.18 Versão 2.9.0
+
+A versão 2.9.0 introduz uma linguagem de movimento leve e consistente. A troca entre **Início, Registrar, Metas, Destino e Registros** usa uma entrada curta com transparência e deslocamento vertical de oito pixels, evitando a sensação de corte ou piscada. Pop-ups de transação, meta, relatório, perfil e avisos recebem transição independente no fundo e no cartão. A expansão dos detalhes de um registro ganha uma entrada curta, os indicadores rotacionam suavemente e botões apresentam resposta tátil visual ao toque.
+
+Todas as animações usam somente `opacity` e `transform`, propriedades que evitam recalcular o layout e preservam a fluidez em celulares modestos. Quando o sistema operacional está configurado para reduzir movimentos, as animações e transições decorativas são desativadas automaticamente. O Android usa `versionCode 22`, `versionName 2.9.0`, e o cache PWA usa `planejamento-financeiro-pwa-v2.9.0`.
+
+### 38.19 Hospedagem definitiva
 
 A aplicação utiliza exclusivamente a Cloudflare Workers. Um rollback de versão pode ser feito com `wrangler rollback`; essa operação não altera nem copia os dados do Neon. Não existe configuração de hospedagem alternativa no repositório.
 

@@ -279,6 +279,11 @@ button:hover,
   transform: translateY(-1px);
 }
 
+button:active:not(:disabled),
+.file-button:active {
+  transform: translateY(0) scale(0.98);
+}
+
 .layout {
   width: min(1180px, calc(100vw - 32px));
   margin: 24px auto 40px;

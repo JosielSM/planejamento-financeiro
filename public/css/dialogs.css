@@ -78,6 +78,17 @@
   padding: 18px;
 }
 
+.profile-modal .modal-backdrop,
+.transaction-modal .modal-backdrop,
+.system-dialog-backdrop {
+  animation: modal-backdrop-in 180ms ease-out;
+}
+
+.profile-card,
+.transaction-modal .modal-card {
+  animation: modal-card-in 240ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
 .profile-card {
   display: grid;
   gap: 16px;
@@ -392,6 +403,16 @@
 
 @keyframes system-dialog-in {
   from { opacity: 0; transform: translateY(8px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes modal-backdrop-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modal-card-in {
+  from { opacity: 0; transform: translateY(12px) scale(0.98); }
   to { opacity: 1; transform: translateY(0) scale(1); }
 }
 

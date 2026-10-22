@@ -11,6 +11,12 @@ function isAndroidDevice() {
   return /Android/i.test(navigator.userAgent);
 }
 
+function isChromeOnAndroid() {
+  return isAndroidDevice()
+    && /Chrome\//i.test(navigator.userAgent)
+    && !/(?:EdgA|OPR|SamsungBrowser|wv)\//i.test(navigator.userAgent);
+}
+
 function compareVersions(left, right) {
   const leftParts = String(left).split(".").map(Number);
   const rightParts = String(right).split(".").map(Number);
@@ -66,7 +72,7 @@ async function registerPwa() {
   await navigator.serviceWorker.register("/service-worker.js", { scope: "/" });
 }
 
-window.addEventListener("load", () => registerPwa().catch(() => {}));
+registerPwa().catch(() => {});
 window.addEventListener("appready", () => checkAndroidUpdate());
 
 document.addEventListener("visibilitychange", () => {
@@ -87,6 +93,23 @@ if (downloadAppButton && downloadAppMenu && downloadAppOptions && downloadAndroi
     downloadAppMenu.hidden = true;
   } else {
     let deferredInstallPrompt = null;
+    let resolveInstallPrompt = null;
+
+    const waitForInstallPrompt = (timeout = 6000) => {
+      if (deferredInstallPrompt) return Promise.resolve(deferredInstallPrompt);
+      return new Promise((resolve) => {
+        const timer = setTimeout(() => {
+          if (resolveInstallPrompt === complete) resolveInstallPrompt = null;
+          resolve(null);
+        }, timeout);
+        const complete = (event) => {
+          clearTimeout(timer);
+          resolveInstallPrompt = null;
+          resolve(event);
+        };
+        resolveInstallPrompt = complete;
+      });
+    };
 
     const closeDownloadOptions = () => {
       downloadAppOptions.hidden = true;
@@ -114,6 +137,8 @@ if (downloadAppButton && downloadAppMenu && downloadAppOptions && downloadAndroi
     window.addEventListener("beforeinstallprompt", (event) => {
       event.preventDefault();
       deferredInstallPrompt = event;
+      resolveInstallPrompt?.(event);
+      installPwaButton.querySelector("small").textContent = "Pronto para instalar";
     });
 
     window.addEventListener("appinstalled", () => {
@@ -124,10 +149,20 @@ if (downloadAppButton && downloadAppMenu && downloadAppOptions && downloadAndroi
 
     installPwaButton.addEventListener("click", async () => {
       closeDownloadOptions();
-      if (deferredInstallPrompt) {
-        await deferredInstallPrompt.prompt();
-        await deferredInstallPrompt.userChoice;
+      const detail = installPwaButton.querySelector("small");
+      const previousDetail = detail.textContent;
+      installPwaButton.disabled = true;
+      detail.textContent = "Preparando instalação...";
+
+      const installPrompt = deferredInstallPrompt || await waitForInstallPrompt();
+      installPwaButton.disabled = false;
+      detail.textContent = deferredInstallPrompt ? "Pronto para instalar" : previousDetail;
+
+      if (installPrompt) {
+        await installPrompt.prompt();
+        await installPrompt.userChoice;
         deferredInstallPrompt = null;
+        detail.textContent = "Instalar pelo navegador";
         return;
       }
 
@@ -141,9 +176,22 @@ if (downloadAppButton && downloadAppMenu && downloadAppOptions && downloadAndroi
       }
 
       if (isAndroidDevice()) {
+        if (!isChromeOnAndroid()) {
+          const openChrome = await askConfirmation({
+            title: "Instalar PWA no Android",
+            message: "Este navegador não disponibilizou a instalação automática. Abra o Planejamento Financeiro no Google Chrome para usar o instalador nativo do Android.",
+            confirmLabel: "Abrir no Chrome",
+            tone: "info",
+          });
+          if (openChrome) {
+            const target = `${location.host}${location.pathname}${location.search}`;
+            location.href = `intent://${target}#Intent;scheme=https;package=com.android.chrome;end`;
+          }
+          return;
+        }
         await showNotice(
-          "No Google Chrome, abra o menu de três pontos e escolha Instalar aplicativo ou Adicionar à tela inicial.",
-          "Instalar PWA no Android",
+          "O Chrome ainda não liberou o instalador. Aguarde alguns segundos e toque novamente em Baixar > Aplicativo PWA. Se ele já estiver instalado, procure Planejamento na tela inicial.",
+          "Preparando instalação PWA",
           "info",
         );
         return;

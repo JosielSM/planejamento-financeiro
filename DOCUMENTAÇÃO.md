@@ -1278,7 +1278,13 @@ A versão 3.2.0 transforma o botão **Baixar** do cabeçalho em um seletor com d
 
 O menu pode ser fechado ao clicar fora ou pressionar `Esc`, informa seu estado com atributos de acessibilidade e desaparece quando o sistema já está aberto como aplicativo nativo ou PWA instalado. O Android usa `versionCode 25`, `versionName 3.2.0`, e o cache PWA usa `planejamento-financeiro-pwa-v3.2.0`.
 
-### 38.22 Hospedagem definitiva
+### 38.22 Versão 3.2.1
+
+A versão 3.2.1 melhora o fluxo de instalação do PWA no Android. O service worker passa a ser registrado assim que os scripts essenciais são avaliados, permitindo que o navegador reconheça mais cedo que o site é instalável. Ao escolher **Aplicativo PWA**, a interface aguarda por alguns segundos o evento nativo `beforeinstallprompt` e, assim que disponível, abre diretamente a confirmação de instalação do navegador.
+
+Em navegadores Android que não oferecem o instalador PWA automático, o sistema explica a limitação e oferece **Abrir no Chrome**, usando o endereço atual para continuar a instalação no navegador compatível. O manifesto declara explicitamente preferência pela aplicação web. Por segurança do Android, a confirmação final em **Instalar** continua sendo feita pelo usuário. O Android usa `versionCode 26`, `versionName 3.2.1`, e o cache PWA usa `planejamento-financeiro-pwa-v3.2.1`.
+
+### 38.23 Hospedagem definitiva
 
 A aplicação utiliza exclusivamente a Cloudflare Workers. Um rollback de versão pode ser feito com `wrangler rollback`; essa operação não altera nem copia os dados do Neon. Não existe configuração de hospedagem alternativa no repositório.
 

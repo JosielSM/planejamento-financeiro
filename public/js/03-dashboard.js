@@ -414,21 +414,28 @@ function renderRecords() {
   emptyState.style.display = rows.length ? "none" : "block";
 
   rows.forEach((item) => {
-    const tr = document.createElement("tr");
-    tr.className = `transaction-row ${item.type === "income" ? "income-row" : "expense-row"}`;
+    const tr = document.createElement("details");
+    tr.className = `compact-record ${item.type === "income" ? "income-record" : "expense-record"}`;
     const dateLabel = item.frequency === "monthly"
       ? `Desde ${item.date.split("-").reverse().join("/")}`
       : item.date.split("-").reverse().join("/");
     tr.innerHTML = `
-      <td data-label="Data">${dateLabel}</td>
-      <td data-label="Descricao">
-        <strong class="record-title"><i data-lucide="${item.type === "income" ? "arrow-down-left" : "arrow-up-right"}" aria-hidden="true"></i>${escapeHTML(item.description)}</strong>
-        ${item.note ? `<div class="muted">${escapeHTML(item.note)}</div>` : ""}
-      </td>
-      <td data-label="Categoria">${escapeHTML(item.category)}</td>
-      <td data-label="Frequencia"><span class="pill">${frequencyLabels[item.frequency]}</span></td>
-      <td data-label="Valor" class="value ${item.type === "income" ? "positive" : "negative"}">${item.type === "income" ? "+" : "-"} ${money(item.amount)}</td>
-      <td data-label="Acao"><button class="delete-button" type="button" data-id="${item.id}" title="Excluir" aria-label="Excluir">x</button></td>
+      <summary>
+        <i class="compact-record-icon" data-lucide="${item.type === "income" ? "arrow-down-left" : "arrow-up-right"}" aria-hidden="true"></i>
+        <span class="compact-record-name">${escapeHTML(item.description)}</span>
+        <strong class="compact-record-value">${item.type === "income" ? "+" : "-"} ${money(item.amount)}</strong>
+        <i class="compact-record-chevron" data-lucide="chevron-down" aria-hidden="true"></i>
+      </summary>
+      <div class="compact-record-details">
+        <dl>
+          <div><dt>Tipo</dt><dd>${item.type === "income" ? "Ganho" : "Despesa"}</dd></div>
+          <div><dt>Data</dt><dd>${dateLabel}</dd></div>
+          <div><dt>Categoria</dt><dd>${escapeHTML(item.category)}</dd></div>
+          <div><dt>Frequência</dt><dd>${frequencyLabels[item.frequency]}</dd></div>
+          ${item.note ? `<div class="compact-record-note"><dt>Observações</dt><dd>${escapeHTML(item.note)}</dd></div>` : ""}
+        </dl>
+        <button class="delete-button" type="button" data-id="${item.id}" aria-label="Excluir ${escapeHTML(item.description)}">Excluir registro</button>
+      </div>
     `;
     recordsBody.append(tr);
   });

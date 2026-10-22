@@ -1,4 +1,44 @@
 /* Camada final do tema: componentes consomem tokens semânticos. */
+.compact-records { display: grid; gap: 6px; }
+.compact-record {
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--green);
+  border-radius: 9px;
+  background: var(--surface-raised);
+}
+.compact-record.expense-record { border-left-color: var(--red); }
+.compact-record summary {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 48px;
+  padding: 9px 12px;
+  cursor: pointer;
+  list-style: none;
+  border-radius: 8px;
+}
+.compact-record summary::-webkit-details-marker { display: none; }
+.compact-record summary:hover { background: var(--surface-subtle); }
+.compact-record summary:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.compact-record summary svg { width: 17px; height: 17px; flex: 0 0 auto; }
+.compact-record-icon, .income-record .compact-record-value { color: var(--green); }
+.expense-record .compact-record-icon, .expense-record .compact-record-value { color: var(--red); }
+.compact-record-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.86rem; }
+.compact-record-value { flex: 0 0 auto; font-size: 0.86rem; white-space: nowrap; }
+.compact-record-chevron { color: var(--muted); }
+.compact-record[open] .compact-record-chevron { transform: rotate(180deg); }
+.compact-record[open] .compact-record-name { white-space: normal; overflow-wrap: anywhere; }
+.compact-record-details { padding: 12px; border-top: 1px solid var(--line); }
+.compact-record-details dl { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 0 0 12px; }
+.compact-record-details dt { font-size: 0.75rem; color: var(--muted); }
+.compact-record-details dd { margin: 3px 0 0; font-size: 0.85rem; overflow-wrap: anywhere; white-space: pre-wrap; }
+.compact-record-note { grid-column: 1 / -1; }
+.compact-record-details .delete-button { width: auto; height: auto; padding: 8px 12px; }
+@media (max-width: 420px) {
+  .compact-record summary { gap: 6px; padding: 9px 8px; }
+  .compact-record summary .compact-record-icon { display: none; }
+}
 body { background: radial-gradient(circle at 8% 0%, color-mix(in srgb, var(--primary) 9%, transparent), transparent 28rem), var(--bg); }
 .topbar { background: color-mix(in srgb, var(--primary-hover) 78%, #17211d); }
 .app-tabs { background: color-mix(in srgb, var(--bg) 94%, transparent); }
@@ -43,6 +83,73 @@ a, .text-button, .heading-with-icon svg, .profile-avatar { color: var(--primary)
   border-color: var(--green-line);
 }
 .tab-button.active svg, .segmented input:checked + label svg { color: currentColor; }
+
+.register-card.income-card { --register-color: #067647; --register-edge: #045535; }
+.register-card.expense-card { --register-color: #b42318; --register-edge: #861a12; }
+.register-card {
+  position: relative;
+  border: 1px solid var(--register-edge);
+  border-bottom-width: 4px;
+  background: var(--register-color);
+  color: #fff;
+  box-shadow: 0 5px 0 var(--register-edge), 0 10px 20px #17211d26;
+  transition: transform 0.16s ease, box-shadow 0.16s ease, filter 0.16s ease;
+}
+.register-card svg, .register-card span, .register-card strong { color: inherit; }
+.register-card .register-cta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.register-card .register-cta > span { font-size: clamp(0.95rem, 2vw, 1.15rem); }
+.register-card .register-cta > svg:first-child {
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+  padding: 5px;
+  box-sizing: content-box;
+  border-radius: 10px;
+  background: #ffffff24;
+}
+.register-card .register-cta > svg:last-child {
+  flex: 0 0 auto;
+  width: 18px;
+  height: 18px;
+  margin-left: auto;
+}
+.register-card .register-hint { font-size: 0.8rem; font-weight: 500; }
+.register-card .register-total {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+  margin-top: 6px;
+  padding-top: 10px;
+  border-top: 1px solid #ffffff40;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+.register-card .register-total strong { font-size: 0.95rem; }
+@media (max-width: 420px) {
+  .register-card .register-cta { flex-wrap: wrap; gap: 6px; }
+  .register-card .register-cta > span { order: 1; flex-basis: 100%; }
+}
+.register-card:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.08);
+  box-shadow: 0 7px 0 var(--register-edge), 0 14px 24px #17211d30;
+}
+.register-card:active {
+  transform: translateY(4px);
+  box-shadow: 0 1px 0 var(--register-edge);
+}
+.register-card:focus-visible {
+  outline: 3px solid var(--text);
+  outline-offset: 5px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .register-card { transition: none; }
+}
 .badge, .status-badge, .pill.active, [aria-selected="true"] { background-color: var(--highlight); color: var(--primary); border-color: var(--green-line); }
 
 .secondary-button:hover, .google-auth-button:hover, .category-icon-button:hover,

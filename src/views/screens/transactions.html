@@ -9,14 +9,14 @@
 
           <div class="register-actions" aria-label="Escolha o tipo de registro">
             <button class="register-card income-card" type="button" data-transaction-type="income">
-              <i data-lucide="trending-up" aria-hidden="true"></i>
-              <span>Registrar ganho</span>
-              <strong id="registerIncomeValue">R$ 0,00</strong>
+              <span class="register-cta"><i data-lucide="plus" aria-hidden="true"></i><span>Registrar ganho</span><i data-lucide="arrow-right" aria-hidden="true"></i></span>
+              <span class="register-hint">Toque para adicionar uma entrada</span>
+              <span class="register-total">Ganhos no mês <strong id="registerIncomeValue">R$ 0,00</strong></span>
             </button>
             <button class="register-card expense-card" type="button" data-transaction-type="expense">
-              <i data-lucide="trending-down" aria-hidden="true"></i>
-              <span>Registrar despesa</span>
-              <strong id="registerExpenseValue">R$ 0,00</strong>
+              <span class="register-cta"><i data-lucide="plus" aria-hidden="true"></i><span>Registrar despesa</span><i data-lucide="arrow-right" aria-hidden="true"></i></span>
+              <span class="register-hint">Toque para adicionar uma saída</span>
+              <span class="register-total">Despesas no mês <strong id="registerExpenseValue">R$ 0,00</strong></span>
             </button>
           </div>
 

@@ -1250,7 +1250,11 @@ A versão 2.7.1 corrige a adaptação visual da tela **Registros** ao modo escur
 
 A versão 2.8.0 torna a lista da tela **Registros** compacta e expansível. Cada lançamento ocupa inicialmente uma única linha de 40 pixels — 38 pixels em celulares estreitos — exibindo apenas tipo, descrição, valor e indicador de expansão. Ao tocar ou acionar a linha pelo teclado, o item revela tipo, data, categoria, frequência, observações e o botão de exclusão; uma nova ativação recolhe os detalhes. O componente usa o elemento nativo `details`, preservando operação por toque e teclado sem JavaScript adicional de estado. O Android usa `versionCode 20`, `versionName 2.8.0`, e o cache PWA usa `planejamento-financeiro-pwa-v2.8.0`.
 
-### 38.17 Hospedagem definitiva
+### 38.17 Versão 2.8.1
+
+A versão 2.8.1 fixa integralmente a navegação inferior em telas de celular. A barra **Início, Registrar, Metas, Destino e Registros** passa a usar `bottom: 0`, sem cálculos com a altura dinâmica da tela ou transformações. Isso impede deslocamentos quando a barra do navegador aparece, o teclado virtual é fechado ou a altura útil do Android e do iPhone muda. A barra mantém a área segura inferior e prioridade de empilhamento acima do conteúdo e abaixo dos modais. O Android usa `versionCode 21`, `versionName 2.8.1`, e o cache PWA usa `planejamento-financeiro-pwa-v2.8.1`.
+
+### 38.18 Hospedagem definitiva
 
 A aplicação utiliza exclusivamente a Cloudflare Workers. Um rollback de versão pode ser feito com `wrangler rollback`; essa operação não altera nem copia os dados do Neon. Não existe configuração de hospedagem alternativa no repositório.
 

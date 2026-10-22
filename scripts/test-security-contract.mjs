@@ -79,6 +79,7 @@ assert.doesNotMatch(dashboardView, /data-tab-target=/);
 assert.match(dashboardView, /class="quick-actions report-only"/);
 assert.match(dashboardView, /<strong>Excel<\/strong>/);
 assert.match(responsiveStyles, /\.register-actions\s*\{\s*grid-template-columns:\s*repeat\(2,/);
+assert.match(responsiveStyles, /\.app-tabs\s*\{[^}]*position:\s*fixed;[^}]*bottom:\s*0;[^}]*top:\s*auto;[^}]*z-index:\s*25;[^}]*transform:\s*none;/s);
 assert.match(mobileBuild, /process\.argv\.includes\("--capacitor"\)/);
 assert.match(mobileBuild, /if \(!isCapacitorBuild\)/);
 assert.match(mobileBuild, /if \(isCapacitorBuild\) await rm\(capacitorAssetsDirectory/);

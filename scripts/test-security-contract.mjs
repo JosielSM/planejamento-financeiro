@@ -27,6 +27,7 @@ const reportScripts = await readFile(new URL("../public/js/05-reports.js", impor
 const scriptLayout = await readFile(new URL("../src/views/partials/scripts.html", import.meta.url), "utf8");
 const serviceWorker = await readFile(new URL("../public/service-worker.js", import.meta.url), "utf8");
 const dashboardView = await readFile(new URL("../src/views/screens/dashboard.html", import.meta.url), "utf8");
+const recordsView = await readFile(new URL("../src/views/screens/records.html", import.meta.url), "utf8");
 
 assert.match(server, /app\.delete\("\/api\/account"/);
 assert.match(server, /DELETE FROM users WHERE id = \$1/);
@@ -94,6 +95,11 @@ assert.match(baseStyles, /\.topbar\s*\{[^}]*position:\s*sticky;[^}]*top:\s*0;[^}
 assert.match(dashboardStyles, /\.app-tabs\s*\{[^}]*position:\s*static;/s);
 assert.match(transactionStyles, /\.records-band\s*\{[^}]*background:\s*linear-gradient\(145deg, var\(--surface\), var\(--surface-subtle\)\);/s);
 assert.match(themeStyles, /:root\[data-theme="dark"\] \.records-band \{ background-image: none; \}/);
+assert.match(themeStyles, /\.compact-record summary\s*\{[^}]*min-height:\s*40px;/s);
+assert.match(dashboard, /document\.createElement\("details"\)/);
+assert.match(dashboard, /<summary>/);
+assert.match(dashboard, /class="compact-record-details"/);
+assert.match(recordsView, /id="recordsBody" class="compact-records"/);
 assert.match(themeStyles, /background: var\(--highlight\)/);
 assert.match(foundation, /prefers-color-scheme: dark/);
 console.log("Contrato de segurança, privacidade e release validado.");

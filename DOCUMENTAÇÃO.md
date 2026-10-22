@@ -1246,7 +1246,11 @@ A versão 2.7.0 mantém o cabeçalho superior visível durante toda a rolagem. A
 
 A versão 2.7.1 corrige a adaptação visual da tela **Registros** ao modo escuro. O painel de registros, a navegação móvel, as linhas da tabela em celular, divisórias, etiquetas e botões de exclusão passam a consumir exclusivamente os tokens semânticos de superfície, borda e estado do tema. No modo escuro, o painel remove explicitamente o gradiente claro residual. O Android usa `versionCode 19`, `versionName 2.7.1`, e o cache PWA usa `planejamento-financeiro-pwa-v2.7.1`.
 
-### 38.16 Hospedagem definitiva
+### 38.16 Versão 2.8.0
+
+A versão 2.8.0 torna a lista da tela **Registros** compacta e expansível. Cada lançamento ocupa inicialmente uma única linha de 40 pixels — 38 pixels em celulares estreitos — exibindo apenas tipo, descrição, valor e indicador de expansão. Ao tocar ou acionar a linha pelo teclado, o item revela tipo, data, categoria, frequência, observações e o botão de exclusão; uma nova ativação recolhe os detalhes. O componente usa o elemento nativo `details`, preservando operação por toque e teclado sem JavaScript adicional de estado. O Android usa `versionCode 20`, `versionName 2.8.0`, e o cache PWA usa `planejamento-financeiro-pwa-v2.8.0`.
+
+### 38.17 Hospedagem definitiva
 
 A aplicação utiliza exclusivamente a Cloudflare Workers. Um rollback de versão pode ser feito com `wrangler rollback`; essa operação não altera nem copia os dados do Neon. Não existe configuração de hospedagem alternativa no repositório.
 

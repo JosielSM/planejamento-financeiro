@@ -1,5 +1,5 @@
 /* Camada final do tema: componentes consomem tokens semânticos. */
-.compact-records { display: grid; gap: 6px; }
+.compact-records { display: grid; gap: 4px; }
 .compact-record {
   min-width: 0;
   border: 1px solid var(--line);
@@ -12,8 +12,8 @@
   display: flex;
   align-items: center;
   gap: 9px;
-  min-height: 48px;
-  padding: 9px 12px;
+  min-height: 40px;
+  padding: 6px 10px;
   cursor: pointer;
   list-style: none;
   border-radius: 8px;
@@ -26,7 +26,7 @@
 .expense-record .compact-record-icon, .expense-record .compact-record-value { color: var(--red); }
 .compact-record-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.86rem; }
 .compact-record-value { flex: 0 0 auto; font-size: 0.86rem; white-space: nowrap; }
-.compact-record-chevron { color: var(--muted); }
+.compact-record-chevron { color: var(--muted); transition: transform 0.16s ease; }
 .compact-record[open] .compact-record-chevron { transform: rotate(180deg); }
 .compact-record[open] .compact-record-name { white-space: normal; overflow-wrap: anywhere; }
 .compact-record-details { padding: 12px; border-top: 1px solid var(--line); }
@@ -36,7 +36,7 @@
 .compact-record-note { grid-column: 1 / -1; }
 .compact-record-details .delete-button { width: auto; height: auto; padding: 8px 12px; }
 @media (max-width: 420px) {
-  .compact-record summary { gap: 6px; padding: 9px 8px; }
+  .compact-record summary { min-height: 38px; gap: 5px; padding: 5px 7px; }
   .compact-record summary .compact-record-icon { display: none; }
 }
 body { background: radial-gradient(circle at 8% 0%, color-mix(in srgb, var(--primary) 9%, transparent), transparent 28rem), var(--bg); }

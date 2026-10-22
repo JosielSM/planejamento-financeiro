@@ -1284,7 +1284,13 @@ A versão 3.2.1 melhora o fluxo de instalação do PWA no Android. O service wor
 
 Em navegadores Android que não oferecem o instalador PWA automático, o sistema explica a limitação e oferece **Abrir no Chrome**, usando o endereço atual para continuar a instalação no navegador compatível. O manifesto declara explicitamente preferência pela aplicação web. Por segurança do Android, a confirmação final em **Instalar** continua sendo feita pelo usuário. O Android usa `versionCode 26`, `versionName 3.2.1`, e o cache PWA usa `planejamento-financeiro-pwa-v3.2.1`.
 
-### 38.23 Hospedagem definitiva
+### 38.23 Versão 3.2.2
+
+A versão 3.2.2 separa visual e semanticamente o indicador **Gastos de hoje** do cartão **Meta diária de ganhos**. O total diário de despesas passa a ocupar um cartão independente logo abaixo da meta, preservando a proximidade das informações sem sugerir que os gastos façam parte do cálculo da meta de ganhos.
+
+O cálculo permanece restrito às despesas da data vigente e continua sendo atualizado após alterações nos registros. O Android usa `versionCode 27`, `versionName 3.2.2`, e o cache PWA usa `planejamento-financeiro-pwa-v3.2.2`.
+
+### 38.24 Hospedagem definitiva
 
 A aplicação utiliza exclusivamente a Cloudflare Workers. Um rollback de versão pode ser feito com `wrangler rollback`; essa operação não altera nem copia os dados do Neon. Não existe configuração de hospedagem alternativa no repositório.
 

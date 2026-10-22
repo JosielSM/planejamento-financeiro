@@ -275,20 +275,21 @@ label {
   gap: 10px;
 }
 
-.today-expense {
-  grid-column: 1 / -1;
+.today-expense-band {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 14px;
   min-height: 48px;
+  margin-bottom: 20px;
   padding: 11px 14px;
   border: 1px solid var(--red-line);
   border-radius: 12px;
   background: var(--red-soft);
+  box-shadow: var(--shadow);
 }
 
-.today-expense span {
+.today-expense-band span {
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -297,13 +298,13 @@ label {
   font-weight: 700;
 }
 
-.today-expense svg {
+.today-expense-band svg {
   width: 18px;
   height: 18px;
   color: var(--red);
 }
 
-.today-expense strong {
+.today-expense-band strong {
   color: var(--red);
   font-size: 1.08rem;
   white-space: nowrap;

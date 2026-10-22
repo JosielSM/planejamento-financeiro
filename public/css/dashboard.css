@@ -41,7 +41,7 @@
 }
 
 .tab-button.active {
-  background: #22352d;
+  background: var(--brand);
   color: #fff;
 }
 
@@ -353,8 +353,8 @@ label {
 }
 
 .primary-action {
-  border-color: #bcd8ca;
-  background: #e5f4ec;
+  border-color: var(--brand-line);
+  background: var(--brand-soft);
   color: var(--green);
 }
 

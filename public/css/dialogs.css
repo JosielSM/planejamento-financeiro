@@ -482,7 +482,7 @@
 .system-dialog.warning .danger-confirm-button,
 .system-dialog.success .danger-confirm-button,
 .system-dialog.error .danger-confirm-button {
-  border-color: #12613f;
+  border-color: var(--brand-hover);
   background: var(--green);
 }
 
@@ -577,6 +577,6 @@
 
 .excel-button {
   border-color: #8fc3a7;
-  background: #e5f4ec;
+  background: var(--brand-soft);
   color: var(--green);
 }

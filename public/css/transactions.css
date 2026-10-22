@@ -69,7 +69,7 @@
 }
 
 .segmented input:checked + label {
-  background: #dcefe5;
+  background: var(--brand-soft);
   color: var(--green);
 }
 
@@ -887,8 +887,8 @@ td.value {
 }
 
 .income-card {
-  border-color: #bcd8ca;
-  background: #eef8f2;
+  border-color: var(--brand-line);
+  background: var(--brand-soft);
 }
 
 .income-card svg,

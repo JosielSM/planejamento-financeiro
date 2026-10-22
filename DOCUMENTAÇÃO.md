@@ -1260,7 +1260,13 @@ A versão 2.9.0 introduz uma linguagem de movimento leve e consistente. A troca 
 
 Todas as animações usam somente `opacity` e `transform`, propriedades que evitam recalcular o layout e preservam a fluidez em celulares modestos. Quando o sistema operacional está configurado para reduzir movimentos, as animações e transições decorativas são desativadas automaticamente. O Android usa `versionCode 22`, `versionName 2.9.0`, e o cache PWA usa `planejamento-financeiro-pwa-v2.9.0`.
 
-### 38.19 Hospedagem definitiva
+### 38.19 Versão 3.0.0
+
+A versão 3.0.0 estabelece o azul-grafite como identidade visual do Planejamento Financeiro. O tom `#101820`, antes restrito ao fundo do modo escuro, passa a identificar o aplicativo também no modo claro: cabeçalho, cor do navegador, tela inicial, botões principais, links, ícones ativos, seleções, indicadores positivos e ações de ganho abandonam o verde anterior. O PWA também declara `#101820` como `theme_color` e `background_color`.
+
+No modo claro, a família da marca usa principal `#101820`, hover `#19242E`, destaque suave `#E8EEF2` e borda `#C5D2DC`. No modo escuro, componentes interativos usam azul-aço `#8FB8CD`, hover `#ACCBD9`, destaque `#203746` e borda `#46687A`, mantendo a mesma identidade azul-grafite com contraste acessível sobre o fundo `#101820`. Os tokens antigos de verde permanecem somente como aliases internos temporários da família da marca, evitando regressões nos componentes existentes; nenhuma cor verde anterior permanece na interface ativa. O Android usa `versionCode 23`, `versionName 3.0.0`, e o cache PWA usa `planejamento-financeiro-pwa-v3.0.0`.
+
+### 38.20 Hospedagem definitiva
 
 A aplicação utiliza exclusivamente a Cloudflare Workers. Um rollback de versão pode ser feito com `wrangler rollback`; essa operação não altera nem copia os dados do Neon. Não existe configuração de hospedagem alternativa no repositório.
 

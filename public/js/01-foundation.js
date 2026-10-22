@@ -187,7 +187,7 @@ function applyTheme(theme, savePreference = false) {
   themeToggleText.textContent = isDark ? "Modo claro" : "Modo escuro";
   themeToggleButton.querySelector("[data-lucide]")?.setAttribute("data-lucide", isDark ? "sun" : "moon");
   if (savePreference) localStorage.setItem(THEME_KEY, isDark ? "dark" : "light");
-  document.querySelector('meta[name="theme-color"]')?.setAttribute("content", isDark ? "#101820" : "#079668");
+  document.querySelector('meta[name="theme-color"]')?.setAttribute("content", "#101820");
   refreshIcons();
 }
 

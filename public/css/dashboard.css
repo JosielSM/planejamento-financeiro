@@ -275,6 +275,40 @@ label {
   gap: 10px;
 }
 
+.today-expense {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  min-height: 48px;
+  padding: 11px 14px;
+  border: 1px solid var(--red-line);
+  border-radius: 12px;
+  background: var(--red-soft);
+}
+
+.today-expense span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.today-expense svg {
+  width: 18px;
+  height: 18px;
+  color: var(--red);
+}
+
+.today-expense strong {
+  color: var(--red);
+  font-size: 1.08rem;
+  white-space: nowrap;
+}
+
 .goal-numbers {
   display: flex;
   justify-content: space-between;

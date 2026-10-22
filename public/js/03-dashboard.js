@@ -99,6 +99,13 @@ function getTodayIncome() {
     .reduce((sum, item) => sum + item.amount, 0);
 }
 
+function getTodayExpense() {
+  const today = todayISO();
+  return transactions
+    .filter((item) => item.type === "expense" && item.date === today)
+    .reduce((sum, item) => sum + Number(item.amount || 0), 0);
+}
+
 function getAverageDayCount(monthValue) {
   const year = Number(monthValue.slice(0, 4));
   const monthIndex = Number(monthValue.slice(5, 7)) - 1;
@@ -179,11 +186,13 @@ function renderRegisterOverview(monthItems, income, expense) {
 function renderGoal() {
   const goal = Number(settings.dailyGoal) || 0;
   const todayIncome = getTodayIncome();
+  const todayExpense = getTodayExpense();
   const percent = goal > 0 ? Math.min((todayIncome / goal) * 100, 100) : 0;
   const remaining = Math.max(goal - todayIncome, 0);
 
   dailyGoalInput.value = goal > 0 ? goal : "";
   document.querySelector("#todayIncome").textContent = `Hoje: ${money(todayIncome)}`;
+  document.querySelector("#todayExpense").textContent = money(todayExpense);
   document.querySelector("#goalPercent").textContent = `${Math.round(percent)}%`;
   document.querySelector("#goalProgressBar").style.width = `${percent}%`;
   document.querySelector("#goalStatus").textContent = goal > 0

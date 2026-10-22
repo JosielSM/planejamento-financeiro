@@ -1266,7 +1266,13 @@ A versão 3.0.0 estabelece o azul-grafite como identidade visual do Planejamento
 
 No modo claro, a família da marca usa principal `#101820`, hover `#19242E`, destaque suave `#E8EEF2` e borda `#C5D2DC`. No modo escuro, componentes interativos usam azul-aço `#8FB8CD`, hover `#ACCBD9`, destaque `#203746` e borda `#46687A`, mantendo a mesma identidade azul-grafite com contraste acessível sobre o fundo `#101820`. Os tokens antigos de verde permanecem somente como aliases internos temporários da família da marca, evitando regressões nos componentes existentes; nenhuma cor verde anterior permanece na interface ativa. O Android usa `versionCode 23`, `versionName 3.0.0`, e o cache PWA usa `planejamento-financeiro-pwa-v3.0.0`.
 
-### 38.20 Hospedagem definitiva
+### 38.20 Versão 3.1.0
+
+A versão 3.1.0 adiciona o indicador **Gastos de hoje** logo abaixo da meta diária no painel inicial. O valor soma apenas os lançamentos do tipo despesa cuja data corresponde à data local vigente do aparelho, independentemente do mês selecionado no histórico, e é recalculado sempre que os dados são renderizados após criar, sincronizar ou excluir um registro.
+
+O cartão usa os tokens semânticos de despesa nos modos claro e escuro, mantendo contraste e consistência com o restante da interface. O Android usa `versionCode 24`, `versionName 3.1.0`, e o cache PWA usa `planejamento-financeiro-pwa-v3.1.0`.
+
+### 38.21 Hospedagem definitiva
 
 A aplicação utiliza exclusivamente a Cloudflare Workers. Um rollback de versão pode ser feito com `wrangler rollback`; essa operação não altera nem copia os dados do Neon. Não existe configuração de hospedagem alternativa no repositório.
 

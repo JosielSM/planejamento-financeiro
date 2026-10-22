@@ -1290,7 +1290,13 @@ A versão 3.2.2 separa visual e semanticamente o indicador **Gastos de hoje** do
 
 O cálculo permanece restrito às despesas da data vigente e continua sendo atualizado após alterações nos registros. O Android usa `versionCode 27`, `versionName 3.2.2`, e o cache PWA usa `planejamento-financeiro-pwa-v3.2.2`.
 
-### 38.24 Hospedagem definitiva
+### 38.24 Versão 3.3.0
+
+A versão 3.3.0 torna o cartão **Gastos de hoje** expansível. Ao tocar no resumo, o usuário visualiza todas as despesas cuja data corresponde ao dia vigente, ordenadas da mais recente para a mais antiga, com descrição, categoria e valor. Um novo toque recolhe a lista; a seta do cartão acompanha visualmente o estado aberto ou fechado.
+
+Quando não existem despesas na data atual, a área expandida informa **Nenhuma despesa registrada hoje**. O total e a lista são recalculados juntos sempre que os dados da aplicação são renderizados. O Android usa `versionCode 28`, `versionName 3.3.0`, e o cache PWA usa `planejamento-financeiro-pwa-v3.3.0`.
+
+### 38.25 Hospedagem definitiva
 
 A aplicação utiliza exclusivamente a Cloudflare Workers. Um rollback de versão pode ser feito com `wrangler rollback`; essa operação não altera nem copia os dados do Neon. Não existe configuração de hospedagem alternativa no repositório.
 

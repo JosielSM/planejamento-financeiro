@@ -276,20 +276,34 @@ label {
 }
 
 .today-expense-band {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 14px;
-  min-height: 48px;
   margin-bottom: 20px;
-  padding: 11px 14px;
   border: 1px solid var(--red-line);
   border-radius: 12px;
   background: var(--red-soft);
   box-shadow: var(--shadow);
+  overflow: hidden;
 }
 
-.today-expense-band span {
+.today-expense-band summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 14px;
+  min-height: 48px;
+  padding: 11px 14px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.today-expense-band summary::-webkit-details-marker {
+  display: none;
+}
+
+.today-expense-band summary:hover {
+  background: color-mix(in srgb, var(--red-soft) 75%, var(--surface));
+}
+
+.today-expense-band summary > span {
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -298,16 +312,77 @@ label {
   font-weight: 700;
 }
 
-.today-expense-band svg {
+.today-expense-band summary > span svg {
   width: 18px;
   height: 18px;
   color: var(--red);
 }
 
-.today-expense-band strong {
+.today-expense-band summary > strong {
   color: var(--red);
   font-size: 1.08rem;
   white-space: nowrap;
+}
+
+.today-expense-chevron {
+  width: 18px;
+  height: 18px;
+  color: var(--muted);
+  transition: transform 180ms ease;
+}
+
+.today-expense-band[open] .today-expense-chevron {
+  transform: rotate(180deg);
+}
+
+.today-expense-list {
+  display: grid;
+  gap: 1px;
+  border-top: 1px solid var(--red-line);
+  background: var(--red-line);
+}
+
+.today-expense-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 14px;
+  background: var(--surface);
+}
+
+.today-expense-item div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.today-expense-item span {
+  overflow: hidden;
+  color: var(--text);
+  font-size: 0.9rem;
+  font-weight: 750;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.today-expense-item small {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.today-expense-item strong {
+  color: var(--red);
+  white-space: nowrap;
+}
+
+.today-expense-empty {
+  margin: 0;
+  padding: 14px;
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 0.86rem;
+  text-align: center;
 }
 
 .goal-numbers {

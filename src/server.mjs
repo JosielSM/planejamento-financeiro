@@ -18,7 +18,7 @@ const publicDirectory = isCloudflareWorker ? "" : join(projectRoot, "public");
 const viewsDirectory = isCloudflareWorker ? "" : join(moduleDirectory, "views");
 const androidApkPath = isCloudflareWorker ? "" : join(projectRoot, "downloads", "planejamento-financeiro.apk");
 const packageMetadata = isCloudflareWorker
-  ? { version: runtimeEnv.APP_VERSION || "3.2.2" }
+  ? { version: runtimeEnv.APP_VERSION || "3.3.0" }
   : JSON.parse(readFileSync(join(projectRoot, "package.json"), "utf8"));
 
 function loadView(relativePath) {

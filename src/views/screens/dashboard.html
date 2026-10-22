@@ -68,10 +68,14 @@
           </div>
         </section>
 
-        <section class="today-expense-band" aria-label="Total de gastos de hoje">
-          <span><i data-lucide="receipt-text" aria-hidden="true"></i> Gastos de hoje</span>
-          <strong id="todayExpense">R$ 0,00</strong>
-        </section>
+        <details class="today-expense-band">
+          <summary aria-label="Mostrar gastos de hoje">
+            <span><i data-lucide="receipt-text" aria-hidden="true"></i> Gastos de hoje</span>
+            <strong id="todayExpense">R$ 0,00</strong>
+            <i class="today-expense-chevron" data-lucide="chevron-down" aria-hidden="true"></i>
+          </summary>
+          <div class="today-expense-list" id="todayExpenseList"></div>
+        </details>
 
         <section class="quick-actions report-only" aria-label="Relatorio financeiro">
           <button class="action-tile report-action" id="pdfSummaryButton" type="button">

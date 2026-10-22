@@ -100,10 +100,31 @@ function getTodayIncome() {
 }
 
 function getTodayExpense() {
+  return getTodayExpenses()
+    .reduce((sum, item) => sum + Number(item.amount || 0), 0);
+}
+
+function getTodayExpenses() {
   const today = todayISO();
   return transactions
     .filter((item) => item.type === "expense" && item.date === today)
-    .reduce((sum, item) => sum + Number(item.amount || 0), 0);
+    .sort(compareTransactionsNewestFirst);
+}
+
+function renderTodayExpenses() {
+  const items = getTodayExpenses();
+  const target = document.querySelector("#todayExpenseList");
+  target.innerHTML = items.length
+    ? items.map((item) => `
+        <div class="today-expense-item">
+          <div>
+            <span>${escapeHTML(item.description)}</span>
+            <small>${escapeHTML(item.category || "Sem categoria")}</small>
+          </div>
+          <strong>- ${money(item.amount)}</strong>
+        </div>
+      `).join("")
+    : '<p class="today-expense-empty">Nenhuma despesa registrada hoje.</p>';
 }
 
 function getAverageDayCount(monthValue) {
@@ -193,6 +214,7 @@ function renderGoal() {
   dailyGoalInput.value = goal > 0 ? goal : "";
   document.querySelector("#todayIncome").textContent = `Hoje: ${money(todayIncome)}`;
   document.querySelector("#todayExpense").textContent = money(todayExpense);
+  renderTodayExpenses();
   document.querySelector("#goalPercent").textContent = `${Math.round(percent)}%`;
   document.querySelector("#goalProgressBar").style.width = `${percent}%`;
   document.querySelector("#goalStatus").textContent = goal > 0

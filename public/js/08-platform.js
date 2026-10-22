@@ -11,10 +11,6 @@ function isAndroidDevice() {
   return /Android/i.test(navigator.userAgent);
 }
 
-function isDesktopDevice() {
-  return !isIosDevice() && !isAndroidDevice();
-}
-
 function compareVersions(left, right) {
   const leftParts = String(left).split(".").map(Number);
   const rightParts = String(right).split(".").map(Number);
@@ -81,55 +77,83 @@ const appVersionLabel = document.querySelector("#appVersionLabel");
 if (appVersionLabel) appVersionLabel.textContent = `Versão ${APP_VERSION}`;
 
 const downloadAppButton = document.querySelector("#downloadAppButton");
-if (downloadAppButton) {
+const downloadAppMenu = document.querySelector("#downloadAppMenu");
+const downloadAppOptions = document.querySelector("#downloadAppOptions");
+const downloadAndroidButton = document.querySelector("#downloadAndroidButton");
+const installPwaButton = document.querySelector("#installPwaButton");
+
+if (downloadAppButton && downloadAppMenu && downloadAppOptions && downloadAndroidButton && installPwaButton) {
   if (isNativeRuntime() || isStandaloneApp()) {
-    downloadAppButton.hidden = true;
-  } else if (isIosDevice()) {
-    downloadAppButton.href = "#instalar-no-iphone";
-    downloadAppButton.setAttribute("aria-label", "Instalar aplicativo no iPhone");
-    downloadAppButton.querySelector("span").textContent = "Instalar no iPhone";
-    downloadAppButton.querySelector("[data-lucide]")?.setAttribute("data-lucide", "share-2");
-    downloadAppButton.addEventListener("click", async (event) => {
-      event.preventDefault();
-      await showNotice(
-        "No Safari, toque no botão Compartilhar (quadrado com seta para cima), escolha Adicionar à Tela de Início e confirme em Adicionar.",
-        "Instalar no iPhone",
-        "info",
-      );
-    });
-    refreshIcons();
-  } else if (isDesktopDevice()) {
+    downloadAppMenu.hidden = true;
+  } else {
     let deferredInstallPrompt = null;
-    downloadAppButton.href = "#instalar-no-computador";
-    downloadAppButton.setAttribute("aria-label", "Instalar aplicativo no computador");
-    downloadAppButton.querySelector("span").textContent = "Instalar no PC";
-    downloadAppButton.querySelector("[data-lucide]")?.setAttribute("data-lucide", "monitor-down");
+
+    const closeDownloadOptions = () => {
+      downloadAppOptions.hidden = true;
+      downloadAppButton.setAttribute("aria-expanded", "false");
+    };
+
+    downloadAppButton.addEventListener("click", () => {
+      const willOpen = downloadAppOptions.hidden;
+      downloadAppOptions.hidden = !willOpen;
+      downloadAppButton.setAttribute("aria-expanded", String(willOpen));
+      if (willOpen) downloadAndroidButton.focus();
+    });
+
+    document.addEventListener("click", (event) => {
+      if (!downloadAppMenu.contains(event.target)) closeDownloadOptions();
+    });
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && !downloadAppOptions.hidden) {
+        closeDownloadOptions();
+        downloadAppButton.focus();
+      }
+    });
 
     window.addEventListener("beforeinstallprompt", (event) => {
       event.preventDefault();
       deferredInstallPrompt = event;
-      downloadAppButton.hidden = false;
     });
 
     window.addEventListener("appinstalled", () => {
       deferredInstallPrompt = null;
-      downloadAppButton.hidden = true;
-      showToast("Aplicativo instalado no computador.", "success");
+      closeDownloadOptions();
+      showToast("Aplicativo PWA instalado.", "success");
     });
 
-    downloadAppButton.addEventListener("click", async (event) => {
-      event.preventDefault();
-      if (!deferredInstallPrompt) {
+    installPwaButton.addEventListener("click", async () => {
+      closeDownloadOptions();
+      if (deferredInstallPrompt) {
+        await deferredInstallPrompt.prompt();
+        await deferredInstallPrompt.userChoice;
+        deferredInstallPrompt = null;
+        return;
+      }
+
+      if (isIosDevice()) {
         await showNotice(
-          "Use o Google Chrome ou Microsoft Edge. No menu do navegador, escolha Instalar Planejamento Financeiro ou Aplicativos > Instalar este site como aplicativo.",
-          "Instalar no computador",
+          "No Safari, toque no botão Compartilhar (quadrado com seta para cima), escolha Adicionar à Tela de Início e confirme em Adicionar.",
+          "Instalar PWA no iPhone",
           "info",
         );
         return;
       }
-      await deferredInstallPrompt.prompt();
-      await deferredInstallPrompt.userChoice;
-      deferredInstallPrompt = null;
+
+      if (isAndroidDevice()) {
+        await showNotice(
+          "No Google Chrome, abra o menu de três pontos e escolha Instalar aplicativo ou Adicionar à tela inicial.",
+          "Instalar PWA no Android",
+          "info",
+        );
+        return;
+      }
+
+      await showNotice(
+        "Use o Google Chrome ou Microsoft Edge. No menu do navegador, escolha Instalar Planejamento Financeiro ou Aplicativos > Instalar este site como aplicativo.",
+        "Instalar PWA no computador",
+        "info",
+      );
     });
     refreshIcons();
   }

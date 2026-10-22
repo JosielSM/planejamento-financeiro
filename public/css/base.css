@@ -198,6 +198,83 @@ select {
   padding-inline: 12px;
 }
 
+.download-app-menu {
+  position: relative;
+}
+
+.download-app-options {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  z-index: 35;
+  display: grid;
+  width: min(300px, calc(100vw - 32px));
+  padding: 8px;
+  gap: 6px;
+  border: 1px solid var(--line);
+  border-radius: 15px;
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--shadow);
+  animation: download-menu-in 160ms ease-out;
+}
+
+.download-app-options[hidden] {
+  display: none;
+}
+
+.download-app-options a,
+.download-app-options button {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 11px;
+  width: 100%;
+  min-height: 58px;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 11px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.download-app-options a:hover,
+.download-app-options button:hover,
+.download-app-options a:focus-visible,
+.download-app-options button:focus-visible {
+  background: var(--highlight);
+  outline: none;
+}
+
+.download-app-options svg {
+  width: 22px;
+  height: 22px;
+  color: var(--brand);
+}
+
+.download-app-options span {
+  display: grid;
+  gap: 2px;
+}
+
+.download-app-options strong {
+  font-size: 0.92rem;
+}
+
+.download-app-options small {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+@keyframes download-menu-in {
+  from { opacity: 0; transform: translateY(-5px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
 .theme-toggle span {
   position: absolute;
   width: 1px;

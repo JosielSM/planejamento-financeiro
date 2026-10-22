@@ -29,6 +29,7 @@ const scriptLayout = await readFile(new URL("../src/views/partials/scripts.html"
 const serviceWorker = await readFile(new URL("../public/service-worker.js", import.meta.url), "utf8");
 const dashboardView = await readFile(new URL("../src/views/screens/dashboard.html", import.meta.url), "utf8");
 const recordsView = await readFile(new URL("../src/views/screens/records.html", import.meta.url), "utf8");
+const topbarView = await readFile(new URL("../src/views/partials/topbar.html", import.meta.url), "utf8");
 
 assert.match(server, /app\.delete\("\/api\/account"/);
 assert.match(server, /DELETE FROM users WHERE id = \$1/);
@@ -54,9 +55,15 @@ assert.equal(pwaManifest.display, "standalone");
 assert.equal(pwaManifest.theme_color, "#101820");
 assert.equal(pwaManifest.background_color, "#101820");
 assert.ok(pwaManifest.icons.some((icon) => icon.sizes === "512x512" && icon.purpose === "maskable"));
-assert.match(platform, /Instalar no iPhone/);
+assert.match(platform, /Instalar PWA no iPhone/);
 assert.match(platform, /beforeinstallprompt/);
-assert.match(platform, /Instalar no PC/);
+assert.match(platform, /Instalar PWA no computador/);
+assert.match(platform, /Instalar PWA no Android/);
+assert.match(platform, /deferredInstallPrompt\.prompt\(\)/);
+assert.match(topbarView, /id="downloadAndroidButton"[^>]*href="\/download\/android"/);
+assert.match(topbarView, /<strong>Aplicativo Android<\/strong>/);
+assert.match(topbarView, /id="installPwaButton"/);
+assert.match(topbarView, /<strong>Aplicativo PWA<\/strong>/);
 assert.match(data, /showAndroidOfflineWarning/);
 assert.match(events, /isNativeRuntime\(\) && firebaseAuth\?\.currentUser/);
 assert.match(platform, /serviceWorker\.register/);

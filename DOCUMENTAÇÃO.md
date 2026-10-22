@@ -1272,7 +1272,13 @@ A versão 3.1.0 adiciona o indicador **Gastos de hoje** logo abaixo da meta diá
 
 O cartão usa os tokens semânticos de despesa nos modos claro e escuro, mantendo contraste e consistência com o restante da interface. O Android usa `versionCode 24`, `versionName 3.1.0`, e o cache PWA usa `planejamento-financeiro-pwa-v3.1.0`.
 
-### 38.21 Hospedagem definitiva
+### 38.21 Versão 3.2.0
+
+A versão 3.2.0 transforma o botão **Baixar** do cabeçalho em um seletor com duas alternativas explícitas. **Aplicativo Android** baixa o APK do Capacitor, enquanto **Aplicativo PWA** aciona a instalação oferecida pelo navegador ou exibe instruções específicas para Android, iPhone e computador quando o aviso automático não está disponível.
+
+O menu pode ser fechado ao clicar fora ou pressionar `Esc`, informa seu estado com atributos de acessibilidade e desaparece quando o sistema já está aberto como aplicativo nativo ou PWA instalado. O Android usa `versionCode 25`, `versionName 3.2.0`, e o cache PWA usa `planejamento-financeiro-pwa-v3.2.0`.
+
+### 38.22 Hospedagem definitiva
 
 A aplicação utiliza exclusivamente a Cloudflare Workers. Um rollback de versão pode ser feito com `wrangler rollback`; essa operação não altera nem copia os dados do Neon. Não existe configuração de hospedagem alternativa no repositório.
 

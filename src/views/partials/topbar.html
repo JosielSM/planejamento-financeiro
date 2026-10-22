@@ -9,10 +9,22 @@
           <span id="syncStatusText">Sincronizado</span>
           <strong id="syncPendingCount" hidden>0</strong>
         </button>
-        <a class="download-app-button" id="downloadAppButton" href="/download/android" aria-label="Baixar aplicativo para Android">
-          <i data-lucide="download" aria-hidden="true"></i>
-          <span>Baixar para Android</span>
-        </a>
+        <div class="download-app-menu" id="downloadAppMenu">
+          <button class="download-app-button" id="downloadAppButton" type="button" aria-label="Abrir opções para instalar" aria-haspopup="menu" aria-expanded="false">
+            <i data-lucide="download" aria-hidden="true"></i>
+            <span>Baixar</span>
+          </button>
+          <div class="download-app-options" id="downloadAppOptions" role="menu" hidden>
+            <a id="downloadAndroidButton" href="/download/android" role="menuitem">
+              <i data-lucide="smartphone" aria-hidden="true"></i>
+              <span><strong>Aplicativo Android</strong><small>Baixar o arquivo APK</small></span>
+            </a>
+            <button id="installPwaButton" type="button" role="menuitem">
+              <i data-lucide="monitor-smartphone" aria-hidden="true"></i>
+              <span><strong>Aplicativo PWA</strong><small>Instalar pelo navegador</small></span>
+            </button>
+          </div>
+        </div>
         <button class="theme-toggle" id="themeToggleButton" type="button" aria-label="Ativar modo escuro" aria-pressed="false">
           <i data-lucide="moon" aria-hidden="true"></i>
           <span id="themeToggleText">Modo escuro</span>
